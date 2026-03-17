@@ -13,10 +13,17 @@ export const RegisterPage = () => {
   const [district, setDistrict] = useState('')
   const [method, setMethod] = useState<RegisterMethod>('password')
   const [password, setPassword] = useState('')
+  const [email, setEmail] = useState('')
+  const [telegramUsername, setTelegramUsername] = useState('')
   const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
   const { register } = useAuth()
   const navigate = useNavigate()
+
+  const normalizeTelegramUsername = (value: string) => {
+    const cleaned = value.trim().replace(/^@+/, '')
+    return cleaned ? `@${cleaned}` : ''
+  }
 
   const onSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -36,12 +43,19 @@ export const RegisterPage = () => {
       setError("Davom etish uchun shartlarga rozilik bering")
       return
     }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setError("Email manzili noto'g'ri")
+      return
+    }
+    const normalizedTelegram = normalizeTelegramUsername(telegramUsername)
     register({
       fullName: `${firstName} ${lastName}`.trim(),
       phone: normalizeUzPhone(phone),
       region: `${region}, ${district}`,
       password: method === 'password' ? password : undefined,
       authMethod: method,
+      email: email.trim() || undefined,
+      telegramUsername: normalizedTelegram || undefined,
     })
     navigate('/profile')
   }
@@ -107,6 +121,21 @@ export const RegisterPage = () => {
               value={district}
               onChange={(event) => setDistrict(event.target.value)}
               placeholder="Tuman"
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+            />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <input
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              type="email"
+              placeholder="Email (ixtiyoriy)"
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+            />
+            <input
+              value={telegramUsername}
+              onChange={(event) => setTelegramUsername(event.target.value)}
+              placeholder="Telegram username (ixtiyoriy)"
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
             />
           </div>

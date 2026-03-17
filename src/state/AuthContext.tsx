@@ -7,6 +7,8 @@ interface RegisterPayload {
   region: string
   password?: string
   authMethod: AuthMethod
+  email?: string
+  telegramUsername?: string
 }
 
 type AuthMethod = 'password' | 'otp'
