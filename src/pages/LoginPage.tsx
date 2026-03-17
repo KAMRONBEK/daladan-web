@@ -3,46 +3,36 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../state/AuthContext'
 import { formatUzPhoneInput, isUzPhoneComplete, normalizeUzPhone } from '../utils/phone'
 
-type LoginMode = 'password' | 'otp'
-
 export const LoginPage = () => {
-  const [mode, setMode] = useState<LoginMode>('password')
   const [phone, setPhone] = useState(formatUzPhoneInput(''))
   const [password, setPassword] = useState('')
-  const [otp, setOtp] = useState('')
   const [error, setError] = useState('')
-  const { loginWithPassword, requestOtp, loginWithOtp, pendingOtpPhone } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const { loginWithPassword } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
-  const submitPassword = (event: FormEvent) => {
+  const submitPassword = async (event: FormEvent) => {
     event.preventDefault()
     if (!isUzPhoneComplete(phone)) {
       setError("Telefon raqamini to'liq kiriting")
+      return
+    }
+    if (!password.trim()) {
+      setError("Parolni kiriting")
       return
     }
     setError('')
-    loginWithPassword(normalizeUzPhone(phone))
-    navigate(from)
-  }
-
-  const submitOtp = (event: FormEvent) => {
-    event.preventDefault()
-    if (!isUzPhoneComplete(phone)) {
-      setError("Telefon raqamini to'liq kiriting")
-      return
+    setIsSubmitting(true)
+    try {
+      await loginWithPassword(normalizeUzPhone(phone), password.trim())
+      navigate(from)
+    } catch (submissionError) {
+      setError(submissionError instanceof Error ? submissionError.message : 'Kirishda xatolik yuz berdi')
+    } finally {
+      setIsSubmitting(false)
     }
-    if (!pendingOtpPhone) {
-      requestOtp(normalizeUzPhone(phone))
-      setError('Telegramga kod yuborildi (demo: 1234)')
-      return
-    }
-    if (!loginWithOtp(otp)) {
-      setError("Kod noto'g'ri. Qayta urinib ko'ring. (demo: 1234)")
-      return
-    }
-    navigate(from)
   }
 
   return (
@@ -53,72 +43,26 @@ export const LoginPage = () => {
         </Link>
         <h1 className="text-4xl font-semibold text-slate-900">Kirish</h1>
         <p className="mt-2 text-base text-slate-600">Telefon raqamingiz orqali hisobga kiring.</p>
-        <div className="mt-5 flex gap-2 rounded-2xl bg-slate-100 p-1 text-base">
+        <form className="mt-5 space-y-3" onSubmit={submitPassword}>
+          <input
+            value={phone}
+            onChange={(event) => setPhone(formatUzPhoneInput(event.target.value))}
+            className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+          />
+          <input
+            value={password}
+            type="password"
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Parol"
+            className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+          />
           <button
-            type="button"
-            onClick={() => setMode('password')}
-            className={`flex-1 rounded-xl px-4 py-2.5 font-medium ${
-              mode === 'password' ? 'bg-white shadow-sm' : 'text-slate-600'
-            }`}
+            disabled={isSubmitting}
+            className="w-full rounded-2xl bg-daladan-primary px-4 py-3 text-xl font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
           >
-            Parol
+            {isSubmitting ? 'Kutilmoqda...' : 'Kirish'}
           </button>
-          <button
-            type="button"
-            onClick={() => setMode('otp')}
-            className={`flex-1 rounded-xl px-4 py-2.5 font-medium ${
-              mode === 'otp' ? 'bg-white shadow-sm' : 'text-slate-600'
-            }`}
-          >
-            Telegram orqali
-          </button>
-        </div>
-
-        {mode === 'password' ? (
-          <form className="mt-5 space-y-3" onSubmit={submitPassword}>
-            <input
-              value={phone}
-              onChange={(event) => setPhone(formatUzPhoneInput(event.target.value))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-            />
-            <input
-              value={password}
-              type="password"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Parol"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-            />
-            <button className="w-full rounded-2xl bg-daladan-primary px-4 py-3 text-xl font-semibold text-white">
-              Kirish
-            </button>
-          </form>
-        ) : (
-          <form className="mt-5 space-y-3" onSubmit={submitOtp}>
-            <div className="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-700">
-              1) Telegram ulangan telefon raqamingizni kiriting.
-              <br />
-              2) Tizim shu raqamning Telegram akkauntiga kod yuboradi.
-              <br />
-              3) Kodni kiriting va hisobga kiring.
-            </div>
-            <input
-              value={phone}
-              onChange={(event) => setPhone(formatUzPhoneInput(event.target.value))}
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-            />
-            {pendingOtpPhone && (
-              <input
-                value={otp}
-                onChange={(event) => setOtp(event.target.value)}
-                placeholder="4 xonali kod"
-                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-              />
-            )}
-            <button className="w-full rounded-2xl bg-daladan-primary px-4 py-3 text-xl font-semibold text-white">
-              {pendingOtpPhone ? 'Kod bilan kirish' : 'Telegramga kod yuborish'}
-            </button>
-          </form>
-        )}
+        </form>
 
         {error && <p className="mt-3 text-base text-amber-700">{error}</p>}
         <p className="mt-5 text-lg text-slate-700">

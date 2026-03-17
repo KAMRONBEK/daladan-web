@@ -1,73 +1,67 @@
-# React + TypeScript + Vite
+# Daladan Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Daladan frontend built with React, TypeScript, and Vite.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Install dependencies:
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+2. Create `.env` file in project root:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+VITE_API_BASE_URL=https://api.daladan.uz/api/v1
 ```
+
+3. Start development server:
+
+```bash
+npm run dev
+```
+
+## API Documentation
+
+- Swagger UI: [https://api.daladan.uz/api/documentation](https://api.daladan.uz/api/documentation)
+- OpenAPI JSON: [https://api.daladan.uz/docs?api-docs.json](https://api.daladan.uz/docs?api-docs.json)
+
+## Auth Integration
+
+Base URL:
+
+```text
+https://api.daladan.uz/api/v1
+```
+
+Implemented auth endpoints:
+
+- `POST /register?auth_type=password`
+- `POST /login`
+
+Register payload fields used by frontend:
+
+- `phone` (string)
+- `password` (string)
+- `fname` (string)
+- `lname` (string)
+- `region_id` (number)
+- `city_id` (number)
+- `email` (optional string)
+- `telegram` (optional string)
+
+Login payload fields used by frontend:
+
+- `phone` (string)
+- `password` (string)
+
+## Region and City Resources
+
+Endpoints used for registration form selections:
+
+- `GET /resources/regions`
+- `GET /resources/cities`
+- `GET /resources/cities?region_id={region_id}`
+
+The registration form loads regions first, then loads cities for the selected region.

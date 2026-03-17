@@ -1,63 +1,119 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
+import { Controller, useForm } from 'react-hook-form'
+import { authService } from '../services'
+import type { CityOption, RegionOption } from '../services/contracts'
 import { useAuth } from '../state/AuthContext'
 import { formatUzPhoneInput, isUzPhoneComplete, normalizeUzPhone } from '../utils/phone'
 
-type RegisterMethod = 'password' | 'otp'
+interface RegisterFormValues {
+  firstName: string
+  lastName: string
+  regionId: string
+  cityId: string
+  email: string
+  telegram: string
+  phone: string
+  password: string
+  confirmPassword: string
+  consent: boolean
+}
 
 export const RegisterPage = () => {
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [phone, setPhone] = useState(formatUzPhoneInput(''))
-  const [region, setRegion] = useState('')
-  const [district, setDistrict] = useState('')
-  const [method, setMethod] = useState<RegisterMethod>('password')
-  const [password, setPassword] = useState('')
-  const [email, setEmail] = useState('')
-  const [telegramUsername, setTelegramUsername] = useState('')
-  const [consent, setConsent] = useState(false)
-  const [error, setError] = useState('')
+  const [regions, setRegions] = useState<RegionOption[]>([])
+  const [cities, setCities] = useState<CityOption[]>([])
+  const [apiError, setApiError] = useState('')
+  const [isLoadingRegions, setIsLoadingRegions] = useState(true)
+  const [isLoadingCities, setIsLoadingCities] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const { register } = useAuth()
   const navigate = useNavigate()
 
-  const normalizeTelegramUsername = (value: string) => {
-    const cleaned = value.trim().replace(/^@+/, '')
-    return cleaned ? `@${cleaned}` : ''
-  }
+  const {
+    register: formRegister,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors, isValid, isSubmitting },
+  } = useForm<RegisterFormValues>({
+    mode: 'onChange',
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      regionId: '',
+      cityId: '',
+      email: '',
+      telegram: '',
+      phone: formatUzPhoneInput(''),
+      password: '',
+      confirmPassword: '',
+      consent: false,
+    },
+  })
 
-  const onSubmit = (event: FormEvent) => {
-    event.preventDefault()
-    if (!firstName || !lastName || !phone || !region || !district) {
-      setError("Barcha maydonlarni to'ldiring")
+  const selectedRegionId = watch('regionId')
+  const passwordValue = watch('password')
+
+  useEffect(() => {
+    const loadRegions = async () => {
+      setIsLoadingRegions(true)
+      try {
+        const response = await authService.getRegions()
+        setRegions(response)
+        const buxoro = response.find((region) => region.name.toLowerCase().includes('buxoro'))
+        if (buxoro) {
+          setValue('regionId', String(buxoro.id), { shouldValidate: true })
+        }
+      } catch (loadError) {
+        setApiError(loadError instanceof Error ? loadError.message : "Viloyatlar ro'yxatini yuklab bo'lmadi")
+      } finally {
+        setIsLoadingRegions(false)
+      }
+    }
+    void loadRegions()
+  }, [setValue])
+
+  useEffect(() => {
+    if (!selectedRegionId) {
+      setCities([])
+      setValue('cityId', '', { shouldValidate: true })
       return
     }
-    if (!isUzPhoneComplete(phone)) {
-      setError("Telefon raqamini to'liq kiriting")
-      return
+    const loadCities = async () => {
+      setIsLoadingCities(true)
+      try {
+        const response = await authService.getCities(Number(selectedRegionId))
+        setCities(response)
+        setValue('cityId', '', { shouldValidate: true })
+      } catch (loadError) {
+        setApiError(loadError instanceof Error ? loadError.message : "Tumanlar ro'yxatini yuklab bo'lmadi")
+      } finally {
+        setIsLoadingCities(false)
+      }
     }
-    if (method === 'password' && !password) {
-      setError("Parolni kiriting")
-      return
+    void loadCities()
+  }, [selectedRegionId, setValue])
+
+  const onSubmit = async (values: RegisterFormValues) => {
+    setApiError('')
+    try {
+      await register({
+        fname: values.firstName.trim(),
+        lname: values.lastName.trim(),
+        phone: normalizeUzPhone(values.phone),
+        password: values.password.trim(),
+        regionId: Number(values.regionId),
+        cityId: Number(values.cityId),
+        email: values.email.trim() || undefined,
+        telegram: values.telegram.trim() || undefined,
+      })
+      navigate('/profile')
+    } catch (submissionError) {
+      setApiError(submissionError instanceof Error ? submissionError.message : "Ro'yxatdan o'tishda xatolik yuz berdi")
     }
-    if (!consent) {
-      setError("Davom etish uchun shartlarga rozilik bering")
-      return
-    }
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setError("Email manzili noto'g'ri")
-      return
-    }
-    const normalizedTelegram = normalizeTelegramUsername(telegramUsername)
-    register({
-      fullName: `${firstName} ${lastName}`.trim(),
-      phone: normalizeUzPhone(phone),
-      region: `${region}, ${district}`,
-      password: method === 'password' ? password : undefined,
-      authMethod: method,
-      email: email.trim() || undefined,
-      telegramUsername: normalizedTelegram || undefined,
-    })
-    navigate('/profile')
   }
 
   return (
@@ -69,106 +125,146 @@ export const RegisterPage = () => {
         <h1 className="text-4xl font-semibold text-slate-900">Ro&apos;yxatdan o&apos;tish</h1>
         <p className="mt-2 text-base text-slate-600">Kerakli ma&apos;lumotlarni kiriting.</p>
 
-        <div className="mt-5 flex gap-2 rounded-2xl bg-slate-100 p-1 text-base">
-          <button
-            type="button"
-            onClick={() => setMethod('password')}
-            className={`flex-1 rounded-xl px-4 py-2.5 font-medium ${
-              method === 'password' ? 'bg-white shadow-sm' : 'text-slate-600'
-            }`}
-          >
-            Parol bilan
-          </button>
-          <button
-            type="button"
-            onClick={() => setMethod('otp')}
-            className={`flex-1 rounded-xl px-4 py-2.5 font-medium ${
-              method === 'otp' ? 'bg-white shadow-sm' : 'text-slate-600'
-            }`}
-          >
-            Telegram orqali
-          </button>
-        </div>
-
-        <form className="mt-5 space-y-3" onSubmit={onSubmit}>
+        <form className="mt-5 space-y-3" onSubmit={handleSubmit(onSubmit)}>
           <div className="grid gap-3 md:grid-cols-2">
             <input
-              value={firstName}
-              onChange={(event) => setFirstName(event.target.value)}
+              {...formRegister('firstName', { required: "Ismni kiriting" })}
               placeholder="Ism"
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
             />
             <input
-              value={lastName}
-              onChange={(event) => setLastName(event.target.value)}
+              {...formRegister('lastName', { required: "Familiyani kiriting" })}
               placeholder="Familiya"
               className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
             />
           </div>
+          {(errors.firstName || errors.lastName) && (
+            <p className="text-sm text-amber-700">{errors.firstName?.message || errors.lastName?.message}</p>
+          )}
+          <div className="grid gap-3 md:grid-cols-2">
+            <select
+              {...formRegister('regionId', { required: "Viloyatni tanlang" })}
+              disabled={isLoadingRegions}
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+            >
+              <option value="">Viloyatni tanlang</option>
+              {regions.map((region) => (
+                <option key={region.id} value={region.id}>
+                  {region.name}
+                </option>
+              ))}
+            </select>
+            <select
+              {...formRegister('cityId', { required: "Tumanni tanlang" })}
+              disabled={!selectedRegionId || isLoadingCities}
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+            >
+              <option value="">{isLoadingCities ? 'Yuklanmoqda...' : 'Tumanni tanlang'}</option>
+              {cities.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {(errors.regionId || errors.cityId) && (
+            <p className="text-sm text-amber-700">{errors.regionId?.message || errors.cityId?.message}</p>
+          )}
           <input
-            value={phone}
-            onChange={(event) => setPhone(formatUzPhoneInput(event.target.value))}
+            {...formRegister('email', {
+              validate: (value) =>
+                !value.trim() || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()) || "Email manzili noto'g'ri",
+            })}
+            type="email"
+            autoComplete="off"
+            placeholder="Email (ixtiyoriy)"
             className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
           />
-          <div className="grid gap-3 md:grid-cols-2">
+          {errors.email && <p className="text-sm text-amber-700">{errors.email.message}</p>}
+          <input
+            {...formRegister('telegram')}
+            autoComplete="off"
+            placeholder="Telegram (ixtiyoriy)"
+            className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+          />
+          <Controller
+            control={control}
+            name="phone"
+            rules={{
+              validate: (value) => isUzPhoneComplete(value) || "Telefon raqamini to'liq kiriting",
+            }}
+            render={({ field }) => (
+              <input
+                value={field.value}
+                onChange={(event) => field.onChange(formatUzPhoneInput(event.target.value))}
+                className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              />
+            )}
+          />
+          {errors.phone && <p className="text-sm text-amber-700">{errors.phone.message}</p>}
+
+          <div className="relative">
             <input
-              value={region}
-              onChange={(event) => setRegion(event.target.value)}
-              placeholder="Viloyat"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              {...formRegister('password', { required: "Parolni kiriting" })}
+              type={showPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Parol"
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 pr-12 outline-none"
             />
-            <input
-              value={district}
-              onChange={(event) => setDistrict(event.target.value)}
-              placeholder="Tuman"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-            />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <input
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              type="email"
-              placeholder="Email (ixtiyoriy)"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-            />
-            <input
-              value={telegramUsername}
-              onChange={(event) => setTelegramUsername(event.target.value)}
-              placeholder="Telegram username (ixtiyoriy)"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
-            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-500"
+              aria-label={showPassword ? 'Parolni yashirish' : "Parolni ko'rsatish"}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
           </div>
 
-          {method === 'password' ? (
+          <div className="relative">
             <input
-              value={password}
-              type="password"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder="Parol"
-              className="w-full rounded-2xl border border-slate-300 px-4 py-3 outline-none"
+              {...formRegister('confirmPassword', {
+                required: "Parolni tasdiqlang",
+                validate: (value) => value === passwordValue || 'Parollar bir xil emas',
+              })}
+              type={showConfirmPassword ? 'text' : 'password'}
+              autoComplete="new-password"
+              placeholder="Parolni tasdiqlang"
+              className="w-full rounded-2xl border border-slate-300 px-4 py-3 pr-12 outline-none"
             />
-          ) : (
-            <div className="rounded-2xl bg-blue-50 p-4 text-sm leading-6 text-blue-700">
-              Telegram ulangan telefon raqamingizga OTP kod yuboriladi.
-            </div>
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword((prev) => !prev)}
+              className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-500"
+              aria-label={showConfirmPassword ? 'Tasdiq parolini yashirish' : "Tasdiq parolini ko'rsatish"}
+            >
+              {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          {(errors.password || errors.confirmPassword) && (
+            <p className="text-sm text-amber-700">{errors.password?.message || errors.confirmPassword?.message}</p>
           )}
 
           <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-700 select-none">
             <input
               type="checkbox"
-              checked={consent}
-              onChange={(event) => setConsent(event.target.checked)}
+              {...formRegister('consent', {
+                validate: (value) => value || "Davom etish uchun shartlarga rozilik bering",
+              })}
               className="h-5 w-5 shrink-0 accent-daladan-primary"
             />
             <span>Foydalanish shartlari va maxfiylik siyosatiga roziman.</span>
           </label>
+          {errors.consent && <p className="text-sm text-amber-700">{errors.consent.message}</p>}
 
-          <button className="w-full rounded-2xl bg-daladan-primary px-4 py-3 text-xl font-semibold text-white">
-            Davom etish
+          <button
+            disabled={!isValid || isSubmitting || isLoadingRegions}
+            className="w-full rounded-2xl bg-daladan-primary px-4 py-3 text-xl font-semibold text-white disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {isSubmitting ? 'Kutilmoqda...' : 'Davom etish'}
           </button>
         </form>
-        {error && <p className="mt-3 text-base text-amber-700">{error}</p>}
+        {apiError && <p className="mt-3 text-base text-amber-700">{apiError}</p>}
         <p className="mt-5 text-lg text-slate-700">
           Hisobingiz bormi?{' '}
           <Link to="/login" className="font-semibold text-daladan-primary">
