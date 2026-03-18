@@ -75,9 +75,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           localStorage.removeItem(AUTH_STORAGE_KEY)
         }
       } finally {
-        if (!isMounted) return
-        setAuthMethod('password')
-        setIsAuthLoading(false)
+        if (isMounted) {
+          setAuthMethod('password')
+          setIsAuthLoading(false)
+        }
       }
     }
 
