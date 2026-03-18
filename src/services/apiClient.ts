@@ -43,13 +43,15 @@ const toMessage = (status: number, data: unknown) => {
 export const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
   const baseUrl = getApiBaseUrl()
   const token = getAuthToken()
-  const hasAuthorizationHeader =
-    Boolean(init?.headers) && Object.keys(new Headers(init?.headers)).some((key) => key.toLowerCase() === 'authorization')
+  const isFormDataBody = typeof FormData !== 'undefined' && init?.body instanceof FormData
+  const normalizedHeaders = new Headers(init?.headers)
+  const hasAuthorizationHeader = normalizedHeaders.has('authorization')
+  const hasContentTypeHeader = normalizedHeaders.has('content-type')
 
   const response = await fetch(`${baseUrl}${path}`, {
     ...init,
     headers: {
-      'Content-Type': 'application/json',
+      ...(!isFormDataBody && !hasContentTypeHeader ? { 'Content-Type': 'application/json' } : {}),
       ...(!hasAuthorizationHeader && token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers ?? {}),
     },

@@ -5,6 +5,7 @@ import { AdBoostPage } from './pages/AdBoostPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { ItemDetailsPage } from './pages/ItemDetailsPage'
 import { LoginPage } from './pages/LoginPage'
+import { CreateAdPage } from './pages/CreateAdPage'
 import { MarketplacePage } from './pages/MarketplacePage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RegisterPage } from './pages/RegisterPage'
@@ -24,6 +25,16 @@ function App() {
           <ProtectedRoute>
             <SiteLayout>
               <FavoritesPage />
+            </SiteLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/ads/new"
+        element={
+          <ProtectedRoute>
+            <SiteLayout>
+              <CreateAdPage />
             </SiteLayout>
           </ProtectedRoute>
         }

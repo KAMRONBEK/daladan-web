@@ -69,9 +69,17 @@ export const ProfilePage = () => {
       <div>
         <div className="mb-3 flex items-center justify-between">
           <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">E&apos;lonlarimni boshqarish</p>
-          <button type="button" className="text-sm font-semibold text-daladan-primary">
-            Barchasini ko&apos;rish
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/profile/ads/new"
+              className="rounded-lg bg-daladan-primary px-3 py-1.5 text-sm font-semibold text-white"
+            >
+              Yangi e&apos;lon
+            </Link>
+            <button type="button" className="text-sm font-semibold text-daladan-primary">
+              Barchasini ko&apos;rish
+            </button>
+          </div>
         </div>
         <div className="space-y-3">
           {myListings.map((listing, index) => (

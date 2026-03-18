@@ -1,9 +1,20 @@
-import type { BoostPlan, Listing, Profile } from '../types/marketplace'
+import type {
+  BoostPlan,
+  CategoryOption,
+  CreateProfileAdPayload,
+  Listing,
+  Profile,
+  ProfileAd,
+  SubcategoryOption,
+} from '../types/marketplace'
 
 export interface MarketplaceService {
   getListings(): Promise<Listing[]>
   getListingById(id: string): Promise<Listing | undefined>
   getBoostPlans(): Promise<BoostPlan[]>
+  getCategories(): Promise<CategoryOption[]>
+  getSubcategories(categoryId: number): Promise<SubcategoryOption[]>
+  createProfileAd(payload: CreateProfileAdPayload): Promise<ProfileAd>
 }
 
 export interface ProfileService {

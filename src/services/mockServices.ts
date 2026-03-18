@@ -1,5 +1,6 @@
 import { boostPlans, listings, profile } from '../data/mockData'
 import type { MarketplaceService, ProfileService } from './contracts'
+import type { CreateProfileAdPayload } from '../types/marketplace'
 
 const simulateLatency = async () => {
   await new Promise((resolve) => {
@@ -19,6 +20,20 @@ export const mockMarketplaceService: MarketplaceService = {
   async getBoostPlans() {
     await simulateLatency()
     return boostPlans
+  },
+  async getCategories() {
+    await simulateLatency()
+    return []
+  },
+  async getSubcategories(categoryId: number) {
+    await simulateLatency()
+    void categoryId
+    return []
+  },
+  async createProfileAd(payload: CreateProfileAdPayload) {
+    await simulateLatency()
+    void payload
+    return { id: 0 }
   },
 }
 
