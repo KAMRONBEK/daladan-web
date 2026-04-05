@@ -235,7 +235,9 @@ const createProfileAd = async (payload: CreateProfileAdPayload): Promise<Profile
       })
       return mapCreatedAd(multipartResponse)
     } catch (error) {
-      if (!canRetryWithJson(error) || payload.media.length === 0) {
+      const canRetry = canRetryWithJson(error)
+      const hasMediaUrls = payload.media.length > 0
+      if (!canRetry || !hasMediaUrls) {
         throw error
       }
     }

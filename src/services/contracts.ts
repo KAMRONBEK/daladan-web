@@ -34,6 +34,16 @@ export interface ProfileService {
   updatePassword(payload: UpdatePasswordPayload): Promise<void>
 }
 
+export interface GenerateAdDescriptionRequest {
+  categoryName: string
+  subcategoryName: string
+  title?: string
+}
+
+export interface AIService {
+  generateAdDescription(payload: GenerateAdDescriptionRequest): Promise<string>
+}
+
 export interface RegionOption {
   id: number
   name: string

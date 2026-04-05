@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import { ApiError, AUTH_STORAGE_KEY, getStoredAuthToken } from '../services/apiClient'
 import { authService } from '../services'
 import type { AuthResult, AuthUser } from '../services/contracts'
@@ -30,6 +30,15 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(() => {
+    if (!getStoredAuthToken()) {
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY)
+      } catch {
+        // Ignore storage cleanup issues.
+      }
+      return null
+    }
+
     try {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY)
       if (!raw) return null
@@ -42,9 +51,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [authMethod, setAuthMethod] = useState<AuthMethod>('password')
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => Boolean(getStoredAuthToken()))
 
+  const clearSession = useCallback(() => {
+    setUser(null)
+    setAuthMethod('password')
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY)
+    } catch {
+      // Ignore storage cleanup issues.
+    }
+  }, [])
+
   useEffect(() => {
     const token = getStoredAuthToken()
     if (!token) {
+      clearSession()
       setIsAuthLoading(false)
       return
     }
@@ -59,8 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         if (!isMounted) return
         if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
-          setUser(null)
-          localStorage.removeItem(AUTH_STORAGE_KEY)
+          clearSession()
         }
       } finally {
         if (isMounted) {
@@ -74,22 +93,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       isMounted = false
     }
-  }, [])
+  }, [clearSession])
 
-  const persistSession = (nextUser: AuthUser, token?: string) => {
+  const persistSession = (nextUser: AuthUser, token: string) => {
     localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ user: nextUser, token }))
   }
 
   const syncUserAfterAuth = async (result: AuthResult) => {
+    if (!result.token) {
+      clearSession()
+      throw new Error('Autentifikatsiya tokeni topilmadi')
+    }
+
     let nextUser = result.user
-    if (result.token) {
-      // Persist token first so profile/me request uses latest credentials.
-      persistSession(nextUser, result.token)
-      try {
-        nextUser = await authService.getMe()
-      } catch {
-        // Keep login/register payload user when profile fetch fails.
-      }
+    // Persist token first so profile/me request uses latest credentials.
+    persistSession(nextUser, result.token)
+    try {
+      nextUser = await authService.getMe()
+    } catch {
+      // Keep login/register payload user when profile fetch fails.
     }
 
     setUser(nextUser)
@@ -126,9 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // Clear local session regardless of backend logout response.
     }
-    setUser(null)
-    setAuthMethod('password')
-    localStorage.removeItem(AUTH_STORAGE_KEY)
+    clearSession()
   }
 
   return (

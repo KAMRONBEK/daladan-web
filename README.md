@@ -16,10 +16,51 @@ npm install
 VITE_API_BASE_URL=https://api.daladan.uz/api/v1
 ```
 
+For AI description generation on Vercel, add this server-side environment variable in the Vercel project settings (Preview + Production):
+
+```bash
+API_SECRET=your_deepseek_api_key
+```
+
+Do not expose this value in frontend env files with `VITE_` prefix.
+
 3. Start development server:
 
 ```bash
-npm run dev
+yarn dev
+```
+
+`yarn dev` runs `vercel pull` + `vite` so local env is synced before start.
+
+If you only need frontend without serverless routes, use:
+
+```bash
+yarn dev:vite
+```
+
+In local Vite mode, `/api/generate-description` is served by a dev middleware that reuses the same handler logic as the Vercel function.
+
+## AI Description Generation
+
+The create-ad form auto-generates Uzbek ad descriptions when both category and subcategory are selected (and you can still regenerate manually with the button).
+
+- Server endpoint: `POST /api/generate-description`
+- Request JSON: `{ "categoryName": string, "subcategoryName": string, "title"?: string }`
+- Response JSON: `{ "description": string }`
+
+Quick verification on Vercel preview:
+
+1. Open create-ad page and select category + subcategory.
+2. Confirm description field is auto-filled automatically with natural Uzbek text (10+ chars).
+3. (Optional) click `AI yordamida tavsif yaratish` to regenerate.
+4. Submit flow should work as before.
+
+Optional API smoke test:
+
+```bash
+curl -X POST "https://<your-preview-domain>/api/generate-description" \
+  -H "Content-Type: application/json" \
+  -d "{\"categoryName\":\"Mevalar\",\"subcategoryName\":\"Olma\",\"title\":\"Yangi hosil olma\"}"
 ```
 
 ## API Documentation

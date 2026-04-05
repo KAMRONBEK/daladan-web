@@ -13,6 +13,8 @@ export class ApiError extends Error {
 const DEFAULT_API_BASE_URL = 'https://api.daladan.uz/api/v1'
 const REFRESH_PATH = '/refresh'
 const SKIP_REFRESH_HEADER = 'x-skip-refresh'
+const AUTH_ERROR_STATUS = 401
+const NETWORK_ERROR_STATUS = 0
 const REFRESH_EXCLUDED_PATHS = ['/login', '/register', '/logout', REFRESH_PATH]
 export const AUTH_STORAGE_KEY = 'daladan.auth'
 
@@ -34,19 +36,21 @@ const parseResponseData = async (response: Response) => {
   return data
 }
 
-const extractToken = (data: unknown) => {
-  if (!data || typeof data !== 'object') return null
-  const root = data as { token?: unknown; access_token?: unknown; jwt?: unknown; data?: unknown }
-  const rootToken = [root.token, root.access_token, root.jwt].find(
-    (item): item is string => typeof item === 'string' && item.trim().length > 0,
-  )
-  if (rootToken) return rootToken
-
-  if (!root.data || typeof root.data !== 'object') return null
-  const nested = root.data as { token?: unknown; access_token?: unknown; jwt?: unknown }
-  return [nested.token, nested.access_token, nested.jwt].find(
+const readTokenFromBlock = (payload: unknown) => {
+  if (!payload || typeof payload !== 'object') return null
+  const block = payload as { token?: unknown; access_token?: unknown; accessToken?: unknown; jwt?: unknown }
+  return [block.token, block.access_token, block.accessToken, block.jwt].find(
     (item): item is string => typeof item === 'string' && item.trim().length > 0,
   ) ?? null
+}
+
+export const extractAuthToken = (data: unknown) => {
+  if (!data || typeof data !== 'object') return null
+  const root = data as { token?: unknown; access_token?: unknown; accessToken?: unknown; jwt?: unknown; data?: unknown }
+  const rootToken = readTokenFromBlock(root)
+  if (rootToken) return rootToken
+
+  return readTokenFromBlock(root.data)
 }
 
 const readStoredAuthPayload = () => {
@@ -61,7 +65,7 @@ const readStoredAuthPayload = () => {
 
 export const getStoredAuthToken = () => {
   const payload = readStoredAuthPayload()
-  return typeof payload.token === 'string' && payload.token.trim() ? payload.token : null
+  return extractAuthToken(payload)
 }
 
 export const setStoredAuthToken = (token: string | null | undefined) => {
@@ -86,11 +90,31 @@ const toMessage = (status: number, data: unknown) => {
   return 'So\'rovni bajarib bo\'lmadi'
 }
 
+const toApiError = (status: number, data: unknown, forceAuthError = false) => {
+  const normalizedStatus = forceAuthError ? AUTH_ERROR_STATUS : status
+  const normalizedMessage = forceAuthError
+    ? toMessage(AUTH_ERROR_STATUS, null)
+    : toMessage(normalizedStatus, data)
+  return new ApiError(normalizedMessage, normalizedStatus, data)
+}
+
+const toNetworkError = (details?: unknown) => new ApiError("Server bilan aloqa o'rnatilmadi", NETWORK_ERROR_STATUS, details)
+
 const shouldSkipRefresh = (path: string, init: RequestInit | undefined, hasAuthorizationHeader: boolean) => {
   if (hasAuthorizationHeader) return true
   if (REFRESH_EXCLUDED_PATHS.some((endpoint) => path.startsWith(endpoint))) return true
   const headers = new Headers(init?.headers)
   return headers.get(SKIP_REFRESH_HEADER) === '1'
+}
+
+const isAuthRedirectToLogin = (response: Response) => {
+  if (!response.redirected) return false
+  try {
+    const parsed = new URL(response.url)
+    return parsed.pathname === '/login' || parsed.pathname.endsWith('/login')
+  } catch {
+    return response.url.includes('/login')
+  }
 }
 
 const createHeaders = (init: RequestInit | undefined, token?: string | null) => {
@@ -108,21 +132,33 @@ const createHeaders = (init: RequestInit | undefined, token?: string | null) => 
   return headers
 }
 
-const refreshAuthToken = async (baseUrl: string, expiredToken: string) => {
-  const refreshResponse = await fetch(`${baseUrl}${REFRESH_PATH}`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${expiredToken}`,
-      [SKIP_REFRESH_HEADER]: '1',
-    },
-  })
-  const refreshData = await parseResponseData(refreshResponse)
-  if (!refreshResponse.ok) return null
+type RefreshTokenResult = {
+  token: string | null
+  failedByNetwork: boolean
+}
 
-  const nextToken = extractToken(refreshData)
-  if (!nextToken) return null
-  setStoredAuthToken(nextToken)
-  return nextToken
+const refreshAuthToken = async (baseUrl: string, expiredToken: string) => {
+  try {
+    const refreshResponse = await fetch(`${baseUrl}${REFRESH_PATH}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${expiredToken}`,
+      },
+    })
+    const refreshData = await parseResponseData(refreshResponse)
+    if (!refreshResponse.ok || isAuthRedirectToLogin(refreshResponse)) {
+      return { token: null, failedByNetwork: false } as RefreshTokenResult
+    }
+
+    const nextToken = extractAuthToken(refreshData)
+    if (!nextToken) {
+      return { token: null, failedByNetwork: false } as RefreshTokenResult
+    }
+    setStoredAuthToken(nextToken)
+    return { token: nextToken, failedByNetwork: false } as RefreshTokenResult
+  } catch {
+    return { token: null, failedByNetwork: true } as RefreshTokenResult
+  }
 }
 
 export const requestJson = async <T>(path: string, init?: RequestInit): Promise<T> => {
@@ -130,39 +166,96 @@ export const requestJson = async <T>(path: string, init?: RequestInit): Promise<
   const token = getStoredAuthToken()
   const normalizedHeaders = new Headers(init?.headers)
   const hasAuthorizationHeader = normalizedHeaders.has('authorization')
+  const canAttemptRefresh = Boolean(token && !shouldSkipRefresh(path, init, hasAuthorizationHeader))
 
-  const response = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: createHeaders(init, token),
-  })
-  const data = await parseResponseData(response)
+  const fetchWithHeaders = async (headers: Headers) => {
+    const response = await fetch(`${baseUrl}${path}`, {
+      ...init,
+      headers,
+    })
+    const data = await parseResponseData(response)
+    return { response, data }
+  }
 
-  if (
-    response.status === 401 &&
-    token &&
-    !shouldSkipRefresh(path, init, hasAuthorizationHeader)
-  ) {
-    const refreshedToken = await refreshAuthToken(baseUrl, token)
-    if (refreshedToken) {
-      const retryHeaders = createHeaders(init, refreshedToken)
-      retryHeaders.delete(SKIP_REFRESH_HEADER)
+  let response: Response
+  let data: unknown
+  try {
+    const fetched = await fetchWithHeaders(createHeaders(init, token))
+    response = fetched.response
+    data = fetched.data
+  } catch (error) {
+    if (!canAttemptRefresh || !token) {
+      throw toNetworkError(error)
+    }
 
-      const retryResponse = await fetch(`${baseUrl}${path}`, {
-        ...init,
-        headers: retryHeaders,
-      })
-      const retryData = await parseResponseData(retryResponse)
+    const refreshResult = await refreshAuthToken(baseUrl, token)
+    if (!refreshResult.token) {
+      if (refreshResult.failedByNetwork) {
+        throw toNetworkError(error)
+      }
+      throw toApiError(AUTH_ERROR_STATUS, null, true)
+    }
 
-      if (!retryResponse.ok) {
-        throw new ApiError(toMessage(retryResponse.status, retryData), retryResponse.status, retryData)
+    const retryHeaders = createHeaders(init, refreshResult.token)
+    retryHeaders.delete(SKIP_REFRESH_HEADER)
+
+    try {
+      const retryFetched = await fetchWithHeaders(retryHeaders)
+      const retryRedirectedToLogin = isAuthRedirectToLogin(retryFetched.response)
+      if (!retryFetched.response.ok || retryRedirectedToLogin) {
+        throw toApiError(retryFetched.response.status, retryFetched.data, retryRedirectedToLogin)
       }
 
-      return retryData as T
+      return retryFetched.data as T
+    } catch (retryError) {
+      if (retryError instanceof ApiError) throw retryError
+      throw toNetworkError(retryError)
     }
   }
 
-  if (!response.ok) {
-    throw new ApiError(toMessage(response.status, data), response.status, data)
+  const redirectedToLogin = isAuthRedirectToLogin(response)
+
+  const shouldTryRefresh =
+    token &&
+    canAttemptRefresh &&
+    (response.status === AUTH_ERROR_STATUS || redirectedToLogin)
+
+  if (shouldTryRefresh) {
+    const refreshResult = await refreshAuthToken(baseUrl, token)
+    if (refreshResult.token) {
+      const retryHeaders = createHeaders(init, refreshResult.token)
+      retryHeaders.delete(SKIP_REFRESH_HEADER)
+
+      try {
+        const retryResponse = await fetch(`${baseUrl}${path}`, {
+          ...init,
+          headers: retryHeaders,
+        })
+        const retryData = await parseResponseData(retryResponse)
+        const retryRedirectedToLogin = isAuthRedirectToLogin(retryResponse)
+
+        if (!retryResponse.ok || retryRedirectedToLogin) {
+          throw toApiError(retryResponse.status, retryData, retryRedirectedToLogin)
+        }
+
+        return retryData as T
+      } catch (retryError) {
+        if (retryError instanceof ApiError) throw retryError
+        throw toNetworkError(retryError)
+      }
+    }
+
+    if (!refreshResult.failedByNetwork) {
+      throw toApiError(AUTH_ERROR_STATUS, data, true)
+    }
+
+    if (redirectedToLogin) {
+      throw toApiError(response.status, data, true)
+    }
+  }
+
+  if (!response.ok || redirectedToLogin) {
+    throw toApiError(response.status, data, redirectedToLogin)
   }
 
   return data as T

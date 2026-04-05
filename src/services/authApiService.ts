@@ -1,4 +1,4 @@
-import { requestJson } from './apiClient'
+import { extractAuthToken, requestJson } from './apiClient'
 import {
   asRecord,
   extractCollection,
@@ -54,10 +54,7 @@ const mapAuthResult = (payload: unknown, fallback: { phone: string; fullName: st
   const data = asRecord(root.data)
   const userBlock =
     [asRecord(root.user), asRecord(data.user), data, root].find((candidate) => isNonEmptyRecord(candidate)) ?? {}
-  const token =
-    getString(root, 'token', 'access_token', 'jwt') ||
-    getString(data, 'token', 'access_token', 'jwt') ||
-    undefined
+  const token = extractAuthToken(payload) ?? undefined
 
   return {
     token,
@@ -122,9 +119,7 @@ export const authApiService: AuthService = {
     const response = await requestJson<unknown>('/refresh', {
       method: 'POST',
     })
-    const root = asRecord(response)
-    const data = asRecord(root.data)
-    return getString(root, 'token', 'access_token', 'jwt') || getString(data, 'token', 'access_token', 'jwt') || undefined
+    return extractAuthToken(response) ?? undefined
   },
 }
 
