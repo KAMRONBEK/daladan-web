@@ -55,14 +55,17 @@ export interface SubcategoryOption {
 export interface CreateProfileAdPayload {
   category_id: number
   subcategory_id: number
-  district: string
+  region_id?: number
+  city_id?: number
+  district?: string
   title: string
   description: string
-  price: number
-  quantity: number
-  quantity_description: string
-  unit: string
-  delivery_info: string
+  price?: number
+  quantity?: number
+  quantity_description?: string
+  unit?: string
+  delivery_available?: boolean
+  delivery_info?: string
   media: string[]
   files?: File[]
 }
@@ -70,6 +73,8 @@ export interface CreateProfileAdPayload {
 export interface UpdateProfileAdPayload {
   category_id?: number
   subcategory_id?: number
+  region_id?: number
+  city_id?: number
   district?: string
   title?: string
   description?: string
@@ -77,6 +82,7 @@ export interface UpdateProfileAdPayload {
   quantity?: number
   quantity_description?: string
   unit?: string
+  delivery_available?: boolean
   delivery_info?: string
   media?: string[]
   files?: File[]

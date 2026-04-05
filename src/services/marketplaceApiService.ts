@@ -92,7 +92,9 @@ const mapListing = (item: UnknownRecord): Listing => {
     getString(ownerObj, 'full_name', 'fullName') ||
     [getString(ownerObj, 'fname', 'first_name'), getString(ownerObj, 'lname', 'last_name')].filter(Boolean).join(' ').trim() ||
     'Sotuvchi'
-  const deliveryInfo = getString(item, 'delivery_info', 'delivery', 'deliveryInfo')
+  const deliveryInfoRaw = getString(item, 'delivery_info', 'delivery', 'deliveryInfo')
+  const hasDeliveryFlag = Object.prototype.hasOwnProperty.call(item, 'delivery_available')
+  const deliveryInfo = deliveryInfoRaw || (hasDeliveryFlag ? (getBoolean(item, 'delivery_available') ? 'Mavjud' : "Mavjud emas") : '')
   const unit = rawUnit ? `so'm / ${rawUnit}` : "so'm"
   const quantity = [quantityValue, rawUnit].filter(Boolean).join(' ').trim()
   const imageUrl =
@@ -166,6 +168,8 @@ const toBasePayload = (payload: CreateProfileAdPayload | UpdateProfileAdPayload)
 
   assign('category_id', payload.category_id)
   assign('subcategory_id', payload.subcategory_id)
+  assign('region_id', payload.region_id)
+  assign('city_id', payload.city_id)
   assign('district', payload.district)
   assign('title', payload.title)
   assign('description', payload.description)
@@ -173,6 +177,7 @@ const toBasePayload = (payload: CreateProfileAdPayload | UpdateProfileAdPayload)
   assign('quantity', payload.quantity)
   assign('quantity_description', payload.quantity_description)
   assign('unit', payload.unit)
+  assign('delivery_available', payload.delivery_available)
   assign('delivery_info', payload.delivery_info)
   if (Array.isArray(payload.media)) {
     next.media = payload.media
@@ -195,6 +200,8 @@ const createMultipartBody = (payload: CreateProfileAdPayload | UpdateProfileAdPa
 
   append('category_id', payload.category_id)
   append('subcategory_id', payload.subcategory_id)
+  append('region_id', payload.region_id)
+  append('city_id', payload.city_id)
   append('district', payload.district)
   append('title', payload.title)
   append('description', payload.description)
@@ -202,6 +209,7 @@ const createMultipartBody = (payload: CreateProfileAdPayload | UpdateProfileAdPa
   append('quantity', payload.quantity)
   append('quantity_description', payload.quantity_description)
   append('unit', payload.unit)
+  append('delivery_available', payload.delivery_available)
   append('delivery_info', payload.delivery_info)
 
   ;(payload.media ?? []).forEach((url) => {
