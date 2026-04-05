@@ -1,6 +1,6 @@
 import { Heart, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import type { KeyboardEvent, MouseEvent } from 'react'
+import type { KeyboardEvent, MouseEvent, SyntheticEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFavorites } from '../../state/FavoritesContext'
 import type { Listing } from '../../types/marketplace'
@@ -41,6 +41,13 @@ export const ListingCard = ({
     }
   }
 
+  const onImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    const target = event.currentTarget
+    if (target.dataset.fallbackApplied === '1') return
+    target.dataset.fallbackApplied = '1'
+    target.src = '/daladan-logo-full-transparent.png'
+  }
+
   return (
     <article
       role="link"
@@ -50,7 +57,7 @@ export const ListingCard = ({
       className="cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-colors hover:border-daladan-primary/40 dark:border-slate-700 dark:bg-slate-900"
     >
       <div className="relative">
-        <img src={listing.image} alt={listing.title} className="h-44 w-full object-cover" />
+        <img src={listing.image} alt={listing.title} onError={onImageError} className="h-44 w-full object-cover" />
         <div className="absolute left-3 top-3 flex flex-wrap gap-2 text-[10px] font-semibold">
           {listing.isTopSale && (
             <span className="rounded-md bg-daladan-accent px-2 py-1 text-daladan-accentDark">

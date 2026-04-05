@@ -13,7 +13,11 @@ export interface Listing {
   isBoosted?: boolean
   isFresh?: boolean
   phone: string
+  sellerName?: string
+  sellerTelegram?: string
   description: string
+  quantity?: string
+  deliveryInfo?: string
   image: string
 }
 

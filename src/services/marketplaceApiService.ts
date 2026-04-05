@@ -42,10 +42,26 @@ const getIdString = (item: UnknownRecord) => {
 const getMediaUrl = (media: unknown) => {
   if (!Array.isArray(media)) return ''
   for (const rawItem of media) {
-    if (typeof rawItem === 'string' && rawItem.trim()) return rawItem
+    if (typeof rawItem === 'string' && rawItem.trim()) {
+      return rawItem.replace(/([^:]\/)\/+/g, '$1')
+    }
     const item = asRecord(rawItem)
-    const url = getString(item, 'url', 'path', 'src', 'full_url', 'original_url', 'thumbnail', 'thumb')
-    if (url) return url
+    const url = getString(item, 'url', 'path', 'src', 'full_url', 'original_url', 'thumbnail', 'thumb', 'preview_url')
+    if (url) return url.replace(/([^:]\/)\/+/g, '$1')
+  }
+  return ''
+}
+
+const toDisplayQuantity = (value: unknown) => {
+  if (typeof value === 'number') {
+    return Number.isInteger(value) ? String(value) : String(value)
+  }
+  if (typeof value === 'string') {
+    const trimmed = value.trim()
+    if (!trimmed) return ''
+    const parsed = Number(trimmed)
+    if (Number.isNaN(parsed)) return trimmed
+    return Number.isInteger(parsed) ? String(parsed) : String(parsed)
   }
   return ''
 }
@@ -56,15 +72,34 @@ const mapListing = (item: UnknownRecord): Listing => {
   const regionObj = asRecord(item.region)
   const cityObj = asRecord(item.city)
   const ownerObj = pickFirstRecord(item.user, item.owner, item.seller)
+  const ownerRegionObj = asRecord(ownerObj.region)
+  const ownerCityObj = asRecord(ownerObj.city)
   const categoryName = getString(categoryObj, 'name_uz', 'name_oz', 'name', 'title') || getString(item, 'category_name', 'category')
   const subcategoryName =
     getString(subcategoryObj, 'name_uz', 'name_oz', 'name', 'title') || getString(item, 'subcategory_name', 'subcategory')
   const regionName =
-    getString(regionObj, 'name_uz', 'name_oz', 'name') || getString(item, 'region_name', 'region')
-  const cityName = getString(cityObj, 'name_uz', 'name_oz', 'name') || getString(item, 'city_name', 'city')
+    getString(regionObj, 'name_uz', 'name_oz', 'name') ||
+    getString(ownerRegionObj, 'name_uz', 'name_oz', 'name') ||
+    getString(item, 'region_name', 'region')
+  const cityName =
+    getString(cityObj, 'name_uz', 'name_oz', 'name') ||
+    getString(ownerCityObj, 'name_uz', 'name_oz', 'name') ||
+    getString(item, 'city_name', 'city')
   const districtName = getString(item, 'district')
   const rawUnit = getString(item, 'unit')
+  const quantityValue = toDisplayQuantity(item.quantity)
+  const sellerName =
+    getString(ownerObj, 'full_name', 'fullName') ||
+    [getString(ownerObj, 'fname', 'first_name'), getString(ownerObj, 'lname', 'last_name')].filter(Boolean).join(' ').trim() ||
+    'Sotuvchi'
+  const deliveryInfo = getString(item, 'delivery_info', 'delivery', 'deliveryInfo')
   const unit = rawUnit ? `so'm / ${rawUnit}` : "so'm"
+  const quantity = [quantityValue, rawUnit].filter(Boolean).join(' ').trim()
+  const imageUrl =
+    getMediaUrl(item.media) ||
+    getMediaUrl(item.media_list) ||
+    getMediaUrl(ownerObj.media) ||
+    getString(item, 'image', 'image_url', 'photo')
 
   return {
     id: getIdString(item) || '0',
@@ -79,8 +114,12 @@ const mapListing = (item: UnknownRecord): Listing => {
     isBoosted: getBoolean(item, 'is_boosted', 'boosted'),
     isFresh: getBoolean(item, 'is_fresh', 'fresh'),
     phone: getString(item, 'phone') || getString(ownerObj, 'phone'),
+    sellerName,
+    sellerTelegram: getString(ownerObj, 'telegram', 'telegram_username') || undefined,
     description: getString(item, 'description', 'desc') || "Tavsif ko'rsatilmagan",
-    image: getMediaUrl(item.media) || getString(item, 'image', 'image_url', 'photo') || '/daladan-logo-full-transparent.png',
+    quantity: quantity || undefined,
+    deliveryInfo: deliveryInfo || undefined,
+    image: imageUrl || '/daladan-logo-full-transparent.png',
   }
 }
 

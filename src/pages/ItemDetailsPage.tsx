@@ -1,5 +1,5 @@
 import { Bike, MapPin, MessageCircle, Phone, Send, Star, Truck } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
@@ -11,6 +11,12 @@ export const ItemDetailsPage = () => {
   const [relatedListings, setRelatedListings] = useState<Listing[]>([])
   const { user } = useAuth()
   const navigate = useNavigate()
+  const onImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    const target = event.currentTarget
+    if (target.dataset.fallbackApplied === '1') return
+    target.dataset.fallbackApplied = '1'
+    target.src = '/daladan-logo-full-transparent.png'
+  }
 
   useEffect(() => {
     if (!id) return
@@ -25,12 +31,18 @@ export const ItemDetailsPage = () => {
   }
 
   const canSeePhone = Boolean(user)
-  const canTelegramMessage = user?.authMethod === 'otp'
+  const hasTelegram = Boolean(listing.sellerTelegram)
+  const canTelegramMessage = user?.authMethod === 'otp' && hasTelegram
+  const telegramUsername = listing.sellerTelegram?.replace(/^@/, '')
+  const telegramUrl = telegramUsername ? `https://t.me/${telegramUsername}` : 'https://t.me/'
+  const quantityText = listing.quantity || "Miqdor ko'rsatilmagan"
+  const deliveryInfoText = listing.deliveryInfo || "Ma'lumot berilmagan"
+  const sellerName = listing.sellerName || 'Sotuvchi'
 
   return (
     <div className="mx-auto max-w-4xl space-y-4">
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <img src={listing.image} alt={listing.title} className="h-80 w-full object-cover" />
+        <img src={listing.image} alt={listing.title} onError={onImageError} className="h-80 w-full object-cover" />
       </section>
 
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-5">
@@ -67,7 +79,7 @@ export const ItemDetailsPage = () => {
             </p>
             <p className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
               <Bike size={18} className="text-daladan-primary" />
-              500 kg dan ortiq
+              {quantityText}
             </p>
           </div>
           <div className="rounded-xl bg-slate-50 p-4 dark:bg-slate-800">
@@ -76,7 +88,7 @@ export const ItemDetailsPage = () => {
             </p>
             <p className="flex items-center gap-2 text-lg font-semibold text-slate-900 dark:text-slate-100">
               <Truck size={18} className="text-daladan-primary" />
-              Viloyat bo&apos;ylab mavjud
+              {deliveryInfoText}
             </p>
           </div>
         </div>
@@ -86,7 +98,7 @@ export const ItemDetailsPage = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">Sotuvchi</p>
-            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Azizbek Dehqon</p>
+            <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{sellerName}</p>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {canSeePhone ? listing.phone : 'Telefon raqami uchun kirish talab qilinadi'}
             </p>
@@ -137,7 +149,7 @@ export const ItemDetailsPage = () => {
             if (!canTelegramMessage) {
               return
             }
-            window.open('https://t.me/', '_blank', 'noopener,noreferrer')
+            window.open(telegramUrl, '_blank', 'noopener,noreferrer')
           }}
           className={`rounded-xl px-4 py-3 text-base font-semibold ${
             canTelegramMessage ? 'bg-daladan-primary text-white' : 'bg-slate-200 text-slate-500 dark:bg-slate-700 dark:text-slate-300'
@@ -157,7 +169,7 @@ export const ItemDetailsPage = () => {
               to={`/item/${item.id}`}
               className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
             >
-              <img src={item.image} alt={item.title} className="h-32 w-full object-cover" />
+              <img src={item.image} alt={item.title} onError={onImageError} className="h-32 w-full object-cover" />
               <div className="p-3">
                 <p className="line-clamp-1 font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
                 <p className="text-sm font-semibold text-daladan-primary">{item.price.toLocaleString('en-US')} so&apos;m</p>
