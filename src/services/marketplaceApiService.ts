@@ -1,4 +1,4 @@
-import { boostPlans } from '../data/mockData'
+import { boostPlans } from '../data/boostPlans'
 import type {
   BoostPlan,
   CategoryOption,
