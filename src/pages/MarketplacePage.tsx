@@ -4,14 +4,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { ListingCard } from '../components/marketplace/ListingCard'
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
-import type { Listing } from '../types/marketplace'
+import type { Listing, SubcategoryOption } from '../types/marketplace'
 
 interface CategoryNode {
   label: string
   children?: CategoryNode[]
 }
 
-const categoryTree: CategoryNode[] = [
+const fallbackCategoryTree: CategoryNode[] = [
   {
     label: "Qishloq xo'jaligi",
     children: [
@@ -52,12 +52,50 @@ const gatherDescendants = (target: string, tree: CategoryNode[]): Set<string> =>
   return result
 }
 
+let categoryTreePromise: Promise<CategoryNode[]> | null = null
+
+const loadCategoryTree = (): Promise<CategoryNode[]> => {
+  if (categoryTreePromise) return categoryTreePromise
+
+  categoryTreePromise = (async () => {
+    const categories = await marketplaceService.getCategories()
+    if (categories.length === 0) return []
+
+    const subcategoryPairs: Array<[number, SubcategoryOption[]]> = await Promise.all(
+      categories.map(async (category): Promise<[number, SubcategoryOption[]]> => {
+        try {
+          const subcategories = await marketplaceService.getSubcategories(category.id)
+          return [category.id, subcategories]
+        } catch {
+          return [category.id, []]
+        }
+      }),
+    )
+
+    const subcategoriesByCategoryId = new Map<number, SubcategoryOption[]>(subcategoryPairs)
+
+    return categories
+      .filter((category) => Boolean(category.name))
+      .map((category) => ({
+        label: category.name,
+        children: (subcategoriesByCategoryId.get(category.id) ?? [])
+          .filter((subcategory) => Boolean(subcategory.name))
+          .map((subcategory) => ({ label: subcategory.name })),
+      }))
+  })().catch((error) => {
+    categoryTreePromise = null
+    throw error
+  })
+
+  return categoryTreePromise
+}
+
 export const MarketplacePage = () => {
   const [listings, setListings] = useState<Listing[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('Barchasi')
-  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
-    new Set(categoryTree.map((category) => category.label)),
-  )
+  const [categoryTree, setCategoryTree] = useState<CategoryNode[]>(fallbackCategoryTree)
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
+  const [isLoadingCategoryTree, setIsLoadingCategoryTree] = useState(true)
   const [minPrice, setMinPrice] = useState<string>('')
   const [maxPrice, setMaxPrice] = useState<string>('')
   const [currentPage, setCurrentPage] = useState(1)
@@ -70,8 +108,46 @@ export const MarketplacePage = () => {
     marketplaceService.getPublicAds({ perPage: 100 }).then(setListings)
   }, [])
 
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchTree = async () => {
+      setIsLoadingCategoryTree(true)
+      try {
+        const tree = await loadCategoryTree()
+        if (!isMounted) return
+        setCategoryTree(tree.length > 0 ? tree : fallbackCategoryTree)
+        setExpandedCategories(new Set())
+      } catch {
+        if (!isMounted) return
+        setCategoryTree(fallbackCategoryTree)
+        setExpandedCategories(new Set())
+      } finally {
+        if (isMounted) setIsLoadingCategoryTree(false)
+      }
+    }
+
+    void fetchTree()
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedCategory === 'Barchasi') return
+    const matches = gatherDescendants(selectedCategory, categoryTree)
+    if (matches.size === 0) {
+      setSelectedCategory('Barchasi')
+    }
+  }, [categoryTree, selectedCategory])
+
   const matchedCategories =
-    selectedCategory === 'Barchasi' ? null : gatherDescendants(selectedCategory, categoryTree)
+    selectedCategory === 'Barchasi'
+      ? null
+      : (() => {
+          const matches = gatherDescendants(selectedCategory, categoryTree)
+          return matches.size > 0 ? matches : null
+        })()
 
   const filtered = useMemo(() => {
     const min = minPrice ? Number(minPrice) : null
@@ -136,6 +212,7 @@ export const MarketplacePage = () => {
           <button
             type="button"
             onClick={() => selectCategory('Barchasi')}
+            disabled={isLoadingCategoryTree}
             className={`mb-3 w-full rounded-lg px-3 py-2 text-left text-sm ${
               selectedCategory === 'Barchasi'
                 ? 'bg-daladan-primary/10 text-daladan-primary'
@@ -151,6 +228,7 @@ export const MarketplacePage = () => {
                   <button
                     type="button"
                     onClick={() => toggleCategory(category.label)}
+                    disabled={isLoadingCategoryTree}
                     className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                     aria-label={`${category.label} ni ochish yopish`}
                   >
@@ -163,6 +241,7 @@ export const MarketplacePage = () => {
                   <button
                     type="button"
                     onClick={() => selectCategory(category.label)}
+                    disabled={isLoadingCategoryTree}
                     className={`w-full rounded-lg px-2 py-2 text-left text-sm font-medium ${
                       selectedCategory === category.label
                         ? 'bg-daladan-primary/10 text-daladan-primary'
@@ -179,6 +258,7 @@ export const MarketplacePage = () => {
                         key={sub.label}
                         type="button"
                         onClick={() => selectCategory(sub.label)}
+                        disabled={isLoadingCategoryTree}
                         className={`mt-1 block w-full rounded-lg px-2 py-1.5 text-left text-sm ${
                           selectedCategory === sub.label
                             ? 'bg-daladan-primary/10 font-medium text-daladan-primary'
