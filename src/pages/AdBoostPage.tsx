@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { marketplaceService } from '../services'
 import type { BoostPlan, Listing } from '../types/marketplace'
+import { formatPrice } from '../utils/price'
 
 export const AdBoostPage = () => {
   const { id } = useParams()
@@ -56,7 +57,7 @@ export const AdBoostPage = () => {
                 )}
               </div>
               <p className="mt-2 text-xl font-bold text-daladan-primary">
-                {plan.price.toLocaleString('en-US')} so&apos;m
+                {formatPrice(plan.price)} so&apos;m
               </p>
               <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{plan.description}</p>
             </button>
@@ -68,7 +69,7 @@ export const AdBoostPage = () => {
         <p className="text-sm text-slate-100/80">To&apos;lov tafsilotlari</p>
         <p className="mt-2 text-lg font-semibold">{selectedPlan?.name ?? '-'}</p>
         <p className="text-2xl font-bold">
-          {selectedPlan ? `${selectedPlan.price.toLocaleString('en-US')} so'm` : '0 so‘m'}
+          {selectedPlan ? `${formatPrice(selectedPlan.price)} so'm` : "0 so'm"}
         </p>
         <button
           type="button"

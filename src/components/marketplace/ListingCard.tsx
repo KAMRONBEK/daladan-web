@@ -4,6 +4,7 @@ import type { KeyboardEvent, MouseEvent, SyntheticEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useFavorites } from '../../state/FavoritesContext'
 import type { Listing } from '../../types/marketplace'
+import { formatPrice } from '../../utils/price'
 
 interface ListingCardProps {
   listing: Listing
@@ -91,7 +92,7 @@ export const ListingCard = ({
           {listing.location}
         </p>
         <p className="text-xl font-bold text-daladan-primary">
-          {listing.price.toLocaleString('en-US')} <span className="text-sm">{listing.unit}</span>
+          {formatPrice(listing.price)} <span className="text-sm">{listing.unit}</span>
         </p>
         <div className="flex gap-2">
           <Link

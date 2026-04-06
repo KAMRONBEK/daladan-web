@@ -7,6 +7,7 @@ import { aiService, authService, marketplaceService, profileService } from '../s
 import type { CityOption, RegionOption } from '../services/contracts'
 import { useAuth } from '../state/AuthContext'
 import type { CategoryOption, SubcategoryOption } from '../types/marketplace'
+import { formatPriceInput, parsePriceInput } from '../utils/price'
 
 interface CreateAdFormValues {
   categoryId: string
@@ -45,21 +46,6 @@ const UNIT_OPTIONS = [
   'karobka',
   'paket',
 ]
-
-const keepDigitsOnly = (value: string) => value.replace(/\D/g, '')
-
-const formatPriceInput = (value: string) => {
-  const digits = keepDigitsOnly(value)
-  if (!digits) return ''
-  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-}
-
-const parsePriceInput = (value: string) => {
-  const digits = keepDigitsOnly(value)
-  if (!digits) return undefined
-  const parsed = Number(digits)
-  return Number.isNaN(parsed) ? undefined : parsed
-}
 
 const getFieldBorderClass = (hasError: boolean) =>
   hasError

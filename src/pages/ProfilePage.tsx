@@ -14,6 +14,7 @@ import { marketplaceService, profileService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
 import { formatUzPhoneInput } from '../utils/phone'
+import { formatPrice } from '../utils/price'
 
 type ProfileTab = 'profile' | 'ads' | 'messages' | 'payments'
 
@@ -237,7 +238,7 @@ export const ProfilePage = () => {
                     <div>
                       <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{listing.title}</p>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Narxi: {listing.price.toLocaleString('en-US')} {listing.unit} • Joylashuv:{' '}
+                        Narxi: {formatPrice(listing.price)} {listing.unit} • Joylashuv:{' '}
                         {listing.location}
                       </p>
                     </div>
@@ -318,7 +319,7 @@ export const ProfilePage = () => {
             <CreditCard size={16} />
             Hisob balansi
           </p>
-          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">85,000 so&apos;m</p>
+          <p className="mt-2 text-3xl font-bold text-slate-900 dark:text-slate-100">{formatPrice(85000)} so&apos;m</p>
         </div>
       </div>
     </>
@@ -578,14 +579,14 @@ export const ProfilePage = () => {
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-slate-100 py-3 text-sm">
                 <p className="font-medium text-slate-900 dark:text-slate-100">Top Sotuv - Sarhil qizil olmalar</p>
-                <p className="font-semibold text-slate-700 dark:text-slate-300">45,000 so&apos;m</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">{formatPrice(45000)} so&apos;m</p>
                 <span className="rounded-full bg-daladan-primary/10 px-2 py-1 text-xs font-semibold text-daladan-primary">
                   To&apos;langan
                 </span>
               </div>
               <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-3 text-sm">
                 <p className="font-medium text-slate-900 dark:text-slate-100">Boosted - Issiqxona pomidorlari</p>
-                <p className="font-semibold text-slate-700 dark:text-slate-300">25,000 so&apos;m</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-300">{formatPrice(25000)} so&apos;m</p>
                 <span className="rounded-full bg-daladan-accent px-2 py-1 text-xs font-semibold text-daladan-accentDark">
                   Jarayonda
                 </span>

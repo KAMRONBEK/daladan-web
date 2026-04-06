@@ -4,6 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
+import { formatPrice } from '../utils/price'
 
 export const ItemDetailsPage = () => {
   const { id } = useParams()
@@ -63,7 +64,7 @@ export const ItemDetailsPage = () => {
             </p>
           </div>
           <p className="text-right text-5xl font-bold text-daladan-primary">
-            {listing.price.toLocaleString('en-US')}
+            {formatPrice(listing.price)}
             <span className="block text-2xl font-semibold text-slate-700 dark:text-slate-300">{listing.unit}</span>
           </p>
         </div>
@@ -172,7 +173,7 @@ export const ItemDetailsPage = () => {
               <img src={item.image} alt={item.title} onError={onImageError} className="h-32 w-full object-cover" />
               <div className="p-3">
                 <p className="line-clamp-1 font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
-                <p className="text-sm font-semibold text-daladan-primary">{item.price.toLocaleString('en-US')} so&apos;m</p>
+                <p className="text-sm font-semibold text-daladan-primary">{formatPrice(item.price)} so&apos;m</p>
               </div>
             </Link>
           ))}
