@@ -83,7 +83,6 @@ export const CreateAdPage = () => {
   const pendingDefaultCityIdRef = useRef<string>('')
   const unitFieldWrapperRef = useRef<HTMLDivElement | null>(null)
   const unitInputRef = useRef<HTMLInputElement | null>(null)
-  const lastGeneratedSelectionRef = useRef('')
 
   const {
     register,
@@ -120,6 +119,8 @@ export const CreateAdPage = () => {
   const isGenerateDescriptionDisabled =
     !selectedCategoryId ||
     !selectedSubcategoryId ||
+    !priceValue.trim() ||
+    !unitValue.trim() ||
     isLoadingCategories ||
     isLoadingSubcategories ||
     isGeneratingDescription
@@ -130,12 +131,7 @@ export const CreateAdPage = () => {
     return UNIT_OPTIONS.filter((unit) => unit.toLowerCase().includes(query))
   }, [unitValue])
 
-  const unitRegister = register('unit', {
-    validate: (value) => {
-      if (!getValues('price').trim()) return true
-      return Boolean(value.trim()) || 'Narx kiritilganda birlik tanlang'
-    },
-  })
+  const unitRegister = register('unit', { required: 'Birlik tanlang' })
 
   const selectUnitSuggestion = (unit: string) => {
     setValue('unit', unit, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
@@ -322,81 +318,80 @@ export const CreateAdPage = () => {
     }
   }, [clearErrors, selectedRegionId, getValues, setValue, user?.region])
 
-  const handleGenerateDescription = useCallback(
-    async (options?: { force?: boolean; clearFormError?: boolean }) => {
-      const force = options?.force ?? false
-      const clearFormError = options?.clearFormError ?? true
+  const handleGenerateDescription = useCallback(async () => {
+    setError('')
 
-      if (clearFormError) {
-        setError('')
-      }
+    if (!selectedCategoryId || !selectedSubcategoryId) {
+      setError('Avval kategoriya va subkategoriyani tanlang')
+      return
+    }
 
-      if (!selectedCategoryId || !selectedSubcategoryId) {
-        if (clearFormError) {
-          setError('Avval kategoriya va subkategoriyani tanlang')
-        }
-        return
-      }
+    const priceText = getValues('price').trim()
+    const unit = getValues('unit').trim()
+    if (!priceText) {
+      setError('AI uchun avval narx kiriting')
+      return
+    }
+    if (!unit) {
+      setError('AI uchun avval birlik tanlang')
+      return
+    }
 
-      if (isLoadingCategories || isLoadingSubcategories || isGeneratingDescription) {
-        return
-      }
+    if (isLoadingCategories || isLoadingSubcategories || isGeneratingDescription) {
+      return
+    }
 
-      const selectedCategory = categories.find((item) => String(item.id) === selectedCategoryId)
-      const selectedSubcategory = subcategories.find((item) => String(item.id) === selectedSubcategoryId)
+    const selectedCategory = categories.find((item) => String(item.id) === selectedCategoryId)
+    const selectedSubcategory = subcategories.find((item) => String(item.id) === selectedSubcategoryId)
 
-      if (!selectedCategory || !selectedSubcategory) {
-        if (clearFormError) {
-          setError("Kategoriya ma'lumotlarini topib bo'lmadi. Qayta urinib ko'ring.")
-        }
-        return
-      }
+    if (!selectedCategory || !selectedSubcategory) {
+      setError("Kategoriya ma'lumotlarini topib bo'lmadi. Qayta urinib ko'ring.")
+      return
+    }
 
-      const selectedKey = `${selectedCategoryId}:${selectedSubcategoryId}`
-      if (!force && lastGeneratedSelectionRef.current === selectedKey) {
-        return
-      }
+    const deliveryAvailable = getValues('deliveryAvailable')
+    const selectedRegion = regions.find((item) => String(item.id) === selectedRegionId)
+    const selectedCity = cities.find((item) => String(item.id) === selectedCityId)
 
-      lastGeneratedSelectionRef.current = selectedKey
-      setIsGeneratingDescription(true)
-      try {
-        const title = getValues('title').trim()
-        const description = await aiService.generateAdDescription({
-          categoryName: selectedCategory.name,
-          subcategoryName: selectedSubcategory.name,
-          title: title || undefined,
-        })
+    setIsGeneratingDescription(true)
+    try {
+      const title = getValues('title').trim()
+      const description = await aiService.generateAdDescription({
+        categoryName: selectedCategory.name,
+        subcategoryName: selectedSubcategory.name,
+        title: title || undefined,
+        priceText,
+        unit,
+        deliveryAvailable,
+        regionName: selectedRegion?.name,
+        districtName: selectedCity?.name,
+      })
 
-        setValue('description', description, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
-        clearErrors('description')
-      } catch (generationError) {
-        setError(generationError instanceof Error ? generationError.message : "AI tavsifni yaratib bo'lmadi")
-      } finally {
-        setIsGeneratingDescription(false)
-      }
-    },
+      setValue('description', description, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
+      clearErrors('description')
+    } catch (generationError) {
+      setError(generationError instanceof Error ? generationError.message : "AI tavsifni yaratib bo'lmadi")
+    } finally {
+      setIsGeneratingDescription(false)
+    }
+  },
     [
       categories,
+      cities,
       clearErrors,
       getValues,
       isGeneratingDescription,
       isLoadingCategories,
       isLoadingSubcategories,
+      regions,
       selectedCategoryId,
+      selectedCityId,
+      selectedRegionId,
       selectedSubcategoryId,
       setValue,
       subcategories,
     ],
   )
-
-  useEffect(() => {
-    if (!selectedCategoryId || !selectedSubcategoryId) {
-      lastGeneratedSelectionRef.current = ''
-      return
-    }
-
-    void handleGenerateDescription({ clearFormError: false })
-  }, [handleGenerateDescription, selectedCategoryId, selectedSubcategoryId])
 
   const onSubmit = async (values: CreateAdFormValues) => {
     setError('')
@@ -412,8 +407,8 @@ export const CreateAdPage = () => {
     const cityId = Number(values.cityId)
 
     const parsedPrice = parsePriceInput(values.price)
-    if (values.price.trim() && (parsedPrice === undefined || parsedPrice <= 0)) {
-      setError("Narx maydoni noto'g'ri")
+    if (!values.price.trim() || parsedPrice === undefined || parsedPrice <= 0) {
+      setError("Narx kiriting (to'g'ri raqam)")
       return
     }
 
@@ -429,7 +424,7 @@ export const CreateAdPage = () => {
         title: values.title.trim(),
         description: values.description.trim(),
         price: parsedPrice,
-        unit: values.unit.trim() || undefined,
+        unit: values.unit.trim(),
         delivery_available: values.deliveryAvailable,
         delivery_info: values.deliveryAvailable ? 'Mavjud' : "Mavjud emas",
         media: [],
@@ -544,67 +539,23 @@ export const CreateAdPage = () => {
         </section>
 
         <section className="space-y-3">
-          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Sarlavha va tavsif</p>
-          <input
-            {...register('title', {
-              required: "Sarlavha kiriting",
-              minLength: { value: 3, message: "Sarlavha kamida 3 ta belgidan iborat bo'lsin" },
-            })}
-            aria-invalid={Boolean(errors.title)}
-            placeholder="Sarlavha"
-            className={`rounded-xl border px-3 py-2 text-sm outline-none dark:bg-slate-800 dark:text-slate-100 ${getFieldBorderClass(
-              Boolean(errors.title),
-            )}`}
-          />
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Tavsifni kategoriya va subkategoriya asosida AI bilan avtomatik yozdiring.
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                void handleGenerateDescription({ force: true, clearFormError: true })
-              }}
-              disabled={isGenerateDescriptionDisabled}
-              className="rounded-xl border border-daladan-primary/40 px-3 py-2 text-xs font-semibold text-daladan-primary transition-colors hover:bg-daladan-primary/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-daladan-primary/60"
-            >
-              {isGeneratingDescription ? 'Yaratilmoqda...' : 'AI yordamida tavsif yaratish'}
-            </button>
-          </div>
-          <textarea
-            {...register('description', {
-              required: "Tavsif kiriting",
-              minLength: { value: 10, message: "Tavsif kamida 10 ta belgidan iborat bo'lsin" },
-            })}
-            aria-invalid={Boolean(errors.description)}
-            placeholder="Tavsif (AI keyinroq yordam beradi)"
-            className={`min-h-28 w-full rounded-xl border px-3 py-2 text-sm outline-none dark:bg-slate-800 dark:text-slate-100 ${getFieldBorderClass(
-              Boolean(errors.description),
-            )}`}
-          />
-          {errors.title || errors.description ? (
-            <p className={ERROR_TEXT_CLASS}>{errors.title?.message || errors.description?.message}</p>
-          ) : null}
-        </section>
-
-        <section className="space-y-3">
           <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Narx va yetkazib berish</p>
           <div className="grid gap-3 md:grid-cols-2">
             <div className="grid">
               <input
                 {...register('price', {
+                  required: 'Narx kiriting',
                   onChange: (event) => {
                     const target = event.target as HTMLInputElement
                     target.value = formatPriceInput(target.value)
                   },
                   validate: (value) => {
-                    if (!value.trim()) return true
                     const parsed = parsePriceInput(value)
                     return (parsed !== undefined && parsed > 0) || "Narx maydoni noto'g'ri"
                   },
                 })}
                 aria-invalid={Boolean(errors.price)}
-                placeholder="Narx (ixtiyoriy)"
+                placeholder="Narx"
                 className={`col-start-1 row-start-1 w-full rounded-xl border px-3 py-2 text-sm outline-none dark:bg-slate-800 dark:text-slate-100 ${getFieldBorderClass(
                   Boolean(errors.price),
                 )}`}
@@ -746,6 +697,53 @@ export const CreateAdPage = () => {
               </span>
             </label>
           </div>
+        </section>
+
+        <section className="space-y-3">
+          <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Sarlavha va tavsif</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Avval narx, birlik va yetkazib berishni to&apos;ldiring — AI tavsifda shu ma&apos;lumotlardan foydalanadi.
+          </p>
+          <input
+            {...register('title', {
+              required: "Sarlavha kiriting",
+              minLength: { value: 3, message: "Sarlavha kamida 3 ta belgidan iborat bo'lsin" },
+            })}
+            aria-invalid={Boolean(errors.title)}
+            placeholder="Sarlavha"
+            className={`rounded-xl border px-3 py-2 text-sm outline-none dark:bg-slate-800 dark:text-slate-100 ${getFieldBorderClass(
+              Boolean(errors.title),
+            )}`}
+          />
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Tavsifni yuqoridagi maydonlar (joylashuv, narx, birlik, yetkazib berish) asosida AI bilan yarating.
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                void handleGenerateDescription()
+              }}
+              disabled={isGenerateDescriptionDisabled}
+              className="rounded-xl border border-daladan-primary/40 px-3 py-2 text-xs font-semibold text-daladan-primary transition-colors hover:bg-daladan-primary/10 disabled:cursor-not-allowed disabled:opacity-60 dark:border-daladan-primary/60"
+            >
+              {isGeneratingDescription ? 'Yaratilmoqda...' : 'AI yordamida tavsif yaratish'}
+            </button>
+          </div>
+          <textarea
+            {...register('description', {
+              required: "Tavsif kiriting",
+              minLength: { value: 10, message: "Tavsif kamida 10 ta belgidan iborat bo'lsin" },
+            })}
+            aria-invalid={Boolean(errors.description)}
+            placeholder="Tavsif"
+            className={`min-h-28 w-full rounded-xl border px-3 py-2 text-sm outline-none dark:bg-slate-800 dark:text-slate-100 ${getFieldBorderClass(
+              Boolean(errors.description),
+            )}`}
+          />
+          {errors.title || errors.description ? (
+            <p className={ERROR_TEXT_CLASS}>{errors.title?.message || errors.description?.message}</p>
+          ) : null}
         </section>
 
         <section className="space-y-3">
