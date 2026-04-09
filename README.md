@@ -122,6 +122,8 @@ Use a **single** Vercel project and **one** production build (`yarn build`). The
 3. **Build command:** `yarn build` (default). Output directory: `dist` (Vite default).
 4. Environment variables are baked at build time. The repo includes [`.env.production`](.env.production) with `VITE_ADMIN_APP_HOSTS=admin.daladan.uz`. You can override values in **Vercel** → **Settings** → **Environment Variables** (Production / Preview) if needed.
 
+**If `admin.daladan.uz` shows the marketplace (not a redirect):** Vite embeds `VITE_ADMIN_APP_HOSTS` at **build** time. If the Vercel build ran without that value (e.g. an empty override in the dashboard, or a deploy from a branch without [`.env.production`](.env.production)), the bundle has no admin host and the app stays on the marketplace shell. Fix: set **Production** env `VITE_ADMIN_APP_HOSTS=admin.daladan.uz` and **redeploy**. The app also treats `admin.daladan.uz` as the admin host in production when the env is missing so this does not regress.
+
 You do **not** need a separate Vercel project for admin unless you want split pipelines (see below).
 
 #### Production build commands
