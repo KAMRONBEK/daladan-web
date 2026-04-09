@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { LayoutDashboard, LogOut, Menu, Moon, Sun, Tags, Users, X } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
@@ -16,6 +16,10 @@ export const AdminLayout = ({ children }: { children?: ReactNode }) => {
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  useEffect(() => {
+    document.title = 'Daladan Admin'
+  }, [])
 
   const closeMobile = () => setMobileOpen(false)
 

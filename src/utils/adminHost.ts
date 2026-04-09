@@ -1,24 +1,25 @@
-const parseAdminHosts = (): string[] => {
+const BUILTIN_ADMIN_HOSTS = ['admin.daladan.uz']
+
+const normalizeHost = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/.*$/, '')
+    .replace(/:\d+$/, '')
+
+const parseConfiguredAdminHosts = (): string[] => {
   const raw = import.meta.env.VITE_ADMIN_APP_HOSTS?.trim()
   if (!raw) return []
   return raw
     .split(',')
-    .map((host: string) => host.trim().toLowerCase())
+    .map(normalizeHost)
     .filter(Boolean)
 }
 
-/**
- * Production admin host. Used as a fallback when `VITE_ADMIN_APP_HOSTS` is missing from the
- * built bundle (e.g. Vercel Production did not inject it and `.env.production` was not applied).
- * Without this, `admin.daladan.uz` would load the marketplace shell from the same SPA.
- */
-const PRODUCTION_ADMIN_HOST_FALLBACK = 'admin.daladan.uz'
-
-/** True when the SPA is served on a hostname listed in `VITE_ADMIN_APP_HOSTS` (comma-separated). */
+/** Built-in production hostname plus optional env-configured hosts like localhost/admin.local. */
 export const isAdminApp = (): boolean => {
   if (typeof window === 'undefined') return false
-  const host = window.location.hostname.toLowerCase()
-  if (parseAdminHosts().includes(host)) return true
-  if (import.meta.env.PROD && host === PRODUCTION_ADMIN_HOST_FALLBACK) return true
-  return false
+  const host = normalizeHost(window.location.hostname)
+  return [...BUILTIN_ADMIN_HOSTS, ...parseConfiguredAdminHosts()].includes(host)
 }

@@ -105,7 +105,7 @@ Not used by design:
 
 ### Admin panel (`admin.daladan.uz`)
 
-The same SPA switches to the admin UI when the browser hostname is listed in `VITE_ADMIN_APP_HOSTS` (comma-separated hostnames, for example `admin.daladan.uz,localhost`). Admin screens call the same API base URL with Bearer auth on `/admin/categories`, `/admin/subcategories`, and `/admin/users`.
+The same SPA switches to the admin UI when the browser hostname matches the built-in production admin host `admin.daladan.uz`, or any extra hostname listed in `VITE_ADMIN_APP_HOSTS` (comma-separated, for example `localhost,admin.local`). Admin screens call the same API base URL with Bearer auth on `/admin/categories`, `/admin/subcategories`, and `/admin/users`.
 
 **Session:** The auth token is stored in `localStorage`, which is **not** shared between the main site and the admin subdomain. Admins must **log in on the admin host** so the token is stored for that origin.
 
@@ -120,9 +120,9 @@ Use a **single** Vercel project and **one** production build (`yarn build`). The
 1. **Vercel** → your project → **Settings** → **Domains** → **Add** → enter `admin.daladan.uz`.
 2. At your DNS provider, add the record Vercel shows (usually **CNAME** `admin` → `cname.vercel-dns.com` or an **A** record as instructed). Wait for DNS to verify.
 3. **Build command:** `yarn build` (default). Output directory: `dist` (Vite default).
-4. Environment variables are baked at build time. The repo includes [`.env.production`](.env.production) with `VITE_ADMIN_APP_HOSTS=admin.daladan.uz`. You can override values in **Vercel** → **Settings** → **Environment Variables** (Production / Preview) if needed.
+4. Environment variables are baked at build time. The repo includes [`.env.production`](.env.production) with `VITE_ADMIN_APP_HOSTS=admin.daladan.uz`. You can override values in **Vercel** → **Settings** → **Environment Variables** (Production / Preview) if needed. The code also has `admin.daladan.uz` as a built-in production host so the admin shell still renders if that env is missing from a deploy.
 
-**If `admin.daladan.uz` shows the marketplace (not a redirect):** Vite embeds `VITE_ADMIN_APP_HOSTS` at **build** time. If the Vercel build ran without that value (e.g. an empty override in the dashboard, or a deploy from a branch without [`.env.production`](.env.production)), the bundle has no admin host and the app stays on the marketplace shell. Fix: set **Production** env `VITE_ADMIN_APP_HOSTS=admin.daladan.uz` and **redeploy**. The app also treats `admin.daladan.uz` as the admin host in production when the env is missing so this does not regress.
+**If `admin.daladan.uz` shows the marketplace (not a redirect):** Vite embeds `VITE_ADMIN_APP_HOSTS` at **build** time. If the Vercel build ran without that value (e.g. an empty override in the dashboard, or a deploy from a branch without [`.env.production`](.env.production)), the bundle can miss extra admin hosts like `localhost`. The canonical production host `admin.daladan.uz` is now detected in code, but you should still set **Production** env `VITE_ADMIN_APP_HOSTS=admin.daladan.uz` and **redeploy** so your bundle configuration matches the deployment setup.
 
 You do **not** need a separate Vercel project for admin unless you want split pipelines (see below).
 
