@@ -1,0 +1,181 @@
+import { Camera, Heart, MapPin } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import type { MouseEvent, SyntheticEvent } from 'react'
+
+import { useFavorites } from '../../../state/FavoritesContext'
+import type { Listing } from '../../../types/marketplace'
+import { formatPrice } from '../../../utils/price'
+import { getListingPhotoCount } from '../model/listingHelpers'
+import type { ListingCardVariant } from '../model/types'
+
+const CARD_SHADOW =
+  'shadow-md shadow-slate-900/10 dark:shadow-none dark:ring-1 dark:ring-slate-700/80'
+
+const CARD_SHELL = `overflow-hidden rounded-2xl border border-slate-200 bg-white ${CARD_SHADOW} transition-colors hover:border-daladan-primary/40 dark:border-slate-700 dark:bg-slate-900`
+
+interface ListingCardProps {
+  listing: Listing
+  canFavorite: boolean
+  onFavoriteBlocked: () => void
+  variant?: ListingCardVariant
+}
+
+function PromoBadges({ listing }: { listing: Listing }) {
+  if (!listing.isTopSale && !listing.isBoosted) return null
+  return (
+    <div className="absolute left-3 top-3 z-[1] flex flex-wrap gap-2 text-[10px] font-semibold">
+      {listing.isTopSale && (
+        <span className="rounded-md bg-daladan-accent px-2 py-1 text-daladan-accentDark">TOP SOTUV</span>
+      )}
+      {listing.isBoosted && (
+        <span className="rounded-md bg-daladan-primary px-2 py-1 text-white">BOOST</span>
+      )}
+    </div>
+  )
+}
+
+function PhotoCountBadge({ count }: { count: number }) {
+  return (
+    <div className="pointer-events-none absolute bottom-2 left-2 z-[1] flex items-center gap-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[10px] font-semibold text-white backdrop-blur-[1px]">
+      <Camera size={12} className="shrink-0 opacity-95" aria-hidden />
+      <span>{count}</span>
+    </div>
+  )
+}
+
+function ListingMedia({
+  listing,
+  variant,
+  onImageError,
+}: {
+  listing: Listing
+  variant: ListingCardVariant
+  onImageError: (event: SyntheticEvent<HTMLImageElement>) => void
+}) {
+  const photoCount = getListingPhotoCount(listing)
+
+  if (variant === 'grid') {
+    return (
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100 leading-none dark:bg-slate-800">
+        <img
+          src={listing.image}
+          alt={listing.title}
+          onError={onImageError}
+          className="absolute inset-0 h-full w-full object-cover"
+          loading="lazy"
+        />
+        <PromoBadges listing={listing} />
+        <PhotoCountBadge count={photoCount} />
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative h-full min-h-0 min-w-0 w-full overflow-hidden rounded-l-2xl bg-slate-100 dark:bg-slate-800">
+      <img
+        src={listing.image}
+        alt={listing.title}
+        onError={onImageError}
+        className="absolute inset-0 h-full w-full object-cover"
+        loading="lazy"
+      />
+      <PromoBadges listing={listing} />
+      <PhotoCountBadge count={photoCount} />
+    </div>
+  )
+}
+
+function ListingMeta({
+  listing,
+  variant,
+}: {
+  listing: Listing
+  variant: ListingCardVariant
+}) {
+  return (
+    <>
+      <h3 className="line-clamp-2 font-semibold text-slate-900 dark:text-slate-100">
+        {variant === 'grid' ? (
+          <span className="text-lg">{listing.title}</span>
+        ) : (
+          <span className="text-base sm:text-lg">{listing.title}</span>
+        )}
+      </h3>
+      <p className="line-clamp-2 text-sm text-slate-500 dark:text-slate-400">{listing.description}</p>
+      <p className="flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+        <MapPin size={14} className="shrink-0" />
+        <span className="min-w-0 truncate">{listing.location}</span>
+      </p>
+      <p className="text-xl font-bold text-daladan-primary">
+        {formatPrice(listing.price)} <span className="text-sm">{listing.unit}</span>
+      </p>
+    </>
+  )
+}
+
+export const ListingCard = ({
+  listing,
+  canFavorite,
+  onFavoriteBlocked,
+  variant = 'grid',
+}: ListingCardProps) => {
+  const { isFavorite, toggleFavorite } = useFavorites()
+  const favorite = isFavorite(listing.id)
+  const itemPath = `/item/${listing.id}`
+
+  const onFavoriteClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault()
+    event.stopPropagation()
+    if (!canFavorite) {
+      onFavoriteBlocked()
+      return
+    }
+    toggleFavorite(listing.id)
+  }
+
+  const onImageError = (event: SyntheticEvent<HTMLImageElement>) => {
+    const target = event.currentTarget
+    if (target.dataset.fallbackApplied === '1') return
+    target.dataset.fallbackApplied = '1'
+    target.src = '/daladan-logo-full-transparent.png'
+  }
+
+  const linkClassName =
+    variant === 'grid'
+      ? `flex h-full min-h-0 flex-col ${CARD_SHELL}`
+      : `grid min-h-0 grid-cols-[7rem_1fr] items-stretch sm:grid-cols-[9rem_1fr] ${CARD_SHELL}`
+
+  return (
+    <div className="relative h-full">
+      <Link to={itemPath} className={linkClassName}>
+        {variant === 'grid' ? (
+          <>
+            <ListingMedia listing={listing} variant="grid" onImageError={onImageError} />
+            <div className="flex min-h-0 flex-1 flex-col space-y-2.5 p-4">
+              <ListingMeta listing={listing} variant="grid" />
+            </div>
+          </>
+        ) : (
+          <>
+            <ListingMedia listing={listing} variant="list" onImageError={onImageError} />
+            <div className="flex min-h-0 min-w-0 flex-col justify-start space-y-1.5 p-3 pr-11 sm:space-y-2 sm:p-4 sm:pr-12">
+              <ListingMeta listing={listing} variant="list" />
+            </div>
+          </>
+        )}
+      </Link>
+      <button
+        type="button"
+        aria-label={favorite ? 'Sevimlidan olib tashlash' : "Sevimlilariga qo'shish"}
+        onClick={onFavoriteClick}
+        className={`absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full shadow-sm ${
+          favorite
+            ? 'bg-daladan-accent text-daladan-accentDark'
+            : 'bg-white/95 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+        }`}
+      >
+        <Heart size={16} fill={favorite ? 'currentColor' : 'none'} />
+      </button>
+    </div>
+  )
+}

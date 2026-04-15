@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ListingCard } from '../components/marketplace/ListingCard'
+import { ListingCard, ListingViewToggle, useListingViewMode } from '../features/marketplace'
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import type { Listing, SubcategoryOption } from '../types/marketplace'
@@ -12,6 +12,8 @@ interface CategoryNode {
 }
 
 const CATEGORY_SKELETON_ROWS = 6
+const MARKETPLACE_GRID_PAGE_SIZE = 8
+const MARKETPLACE_LIST_PAGE_SIZE = 6
 
 const fallbackCategoryTree: CategoryNode[] = [
   {
@@ -101,6 +103,7 @@ export const MarketplacePage = () => {
   const [minPrice, setMinPrice] = useState<string>('')
   const [maxPrice, setMaxPrice] = useState<string>('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [listingView, setListingView] = useListingViewMode()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -143,6 +146,10 @@ export const MarketplacePage = () => {
     }
   }, [categoryTree, selectedCategory])
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [listingView])
+
   const matchedCategories =
     selectedCategory === 'Barchasi'
       ? null
@@ -176,7 +183,7 @@ export const MarketplacePage = () => {
     })
   }, [listings, matchedCategories, minPrice, maxPrice, searchQuery])
 
-  const pageSize = 6
+  const pageSize = listingView === 'grid' ? MARKETPLACE_GRID_PAGE_SIZE : MARKETPLACE_LIST_PAGE_SIZE
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize))
   const safePage = Math.min(currentPage, totalPages)
   const start = (safePage - 1) * pageSize
@@ -326,14 +333,24 @@ export const MarketplacePage = () => {
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h1 className="text-4xl font-semibold text-slate-900 dark:text-slate-100">Siz uchun saralangan mahsulotlar</h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">Jami: {filtered.length} ta e&apos;lon topildi</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <p className="text-sm text-slate-500 dark:text-slate-400">Jami: {filtered.length} ta e&apos;lon topildi</p>
+              <ListingViewToggle value={listingView} onChange={setListingView} />
+            </div>
           </div>
         </div>
-        <div className="columns-1 [column-gap:1rem] sm:columns-2 xl:columns-3">
+        <div
+          className={
+            listingView === 'grid'
+              ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              : 'flex flex-col gap-4'
+          }
+        >
           {pageItems.map((listing) => (
-            <div key={listing.id} className="mb-4 break-inside-avoid">
+            <div key={listing.id} className={listingView === 'grid' ? 'min-h-0' : ''}>
               <ListingCard
                 listing={listing}
+                variant={listingView}
                 canFavorite={Boolean(user)}
                 onFavoriteBlocked={redirectToLogin}
               />

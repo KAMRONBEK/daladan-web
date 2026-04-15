@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
-import { ListingCard } from '../components/marketplace/ListingCard'
+import { ListingCard, ListingViewToggle, useListingViewMode } from '../features/marketplace'
 import { marketplaceService } from '../services'
 import { useFavorites } from '../state/FavoritesContext'
 import type { Listing } from '../types/marketplace'
 
 export const FavoritesPage = () => {
   const [listings, setListings] = useState<Listing[]>([])
+  const [listingView, setListingView] = useListingViewMode()
   const { favoriteIds } = useFavorites()
 
   useEffect(() => {
@@ -17,10 +18,17 @@ export const FavoritesPage = () => {
   return (
     <section className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-        <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">Sevimli e&apos;lonlar</h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          Jami: {favoriteListings.length} ta saqlangan e&apos;lon
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-3xl font-semibold text-slate-900 dark:text-slate-100">Sevimli e&apos;lonlar</h1>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+              Jami: {favoriteListings.length} ta saqlangan e&apos;lon
+            </p>
+          </div>
+          {favoriteListings.length > 0 ? (
+            <ListingViewToggle value={listingView} onChange={setListingView} />
+          ) : null}
+        </div>
       </div>
 
       {favoriteListings.length === 0 ? (
@@ -28,11 +36,18 @@ export const FavoritesPage = () => {
           Hozircha sevimli e&apos;lonlar yo&apos;q.
         </div>
       ) : (
-        <div className="columns-1 [column-gap:1rem] sm:columns-2 xl:columns-3">
+        <div
+          className={
+            listingView === 'grid'
+              ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+              : 'flex flex-col gap-4'
+          }
+        >
           {favoriteListings.map((listing) => (
-            <div key={listing.id} className="mb-4 break-inside-avoid">
+            <div key={listing.id} className={listingView === 'grid' ? 'min-h-0' : ''}>
               <ListingCard
                 listing={listing}
+                variant={listingView}
                 canFavorite
                 onFavoriteBlocked={() => undefined}
               />
