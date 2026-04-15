@@ -3,8 +3,18 @@ import { ArrowLeft } from 'lucide-react'
 import { AdminAdDetailContent, useAdminUserAdDetailPage } from '../../features/admin-user-ad-detail'
 
 export const AdminUserAdDetailPage = () => {
-  const { userId, adId, user, ad, loading, error, forbidden, invalidParams, notFound, reload } =
-    useAdminUserAdDetailPage()
+  const {
+    sellerIdForRoutes,
+    adId,
+    user,
+    ad,
+    loading,
+    error,
+    forbidden,
+    invalidParams,
+    notFound,
+    reload,
+  } = useAdminUserAdDetailPage()
 
   if (invalidParams) {
     return (
@@ -21,7 +31,7 @@ export const AdminUserAdDetailPage = () => {
     <div className="mx-auto max-w-6xl">
       <div className="mb-6 flex flex-wrap gap-3">
         <Link
-          to={userId ? `/users/${userId}` : '/users'}
+          to={sellerIdForRoutes ? `/users/${sellerIdForRoutes}` : '/users'}
           className="inline-flex items-center gap-2 text-sm font-medium text-daladan-primary hover:underline"
         >
           <ArrowLeft size={18} aria-hidden />
@@ -52,8 +62,11 @@ export const AdminUserAdDetailPage = () => {
       ) : notFound ? (
         <p className="text-slate-600 dark:text-slate-400">
           E‘lon topilmadi (ID {adId}).{' '}
-          {userId ? (
-            <Link to={`/users/${userId}`} className="font-medium text-daladan-primary hover:underline">
+          {sellerIdForRoutes ? (
+            <Link
+              to={`/users/${sellerIdForRoutes}`}
+              className="font-medium text-daladan-primary hover:underline"
+            >
               Foydalanuvchi sahifasiga
             </Link>
           ) : null}

@@ -3,6 +3,7 @@ import type {
   AdminCheckAd,
   AdminSubcategoryPayload,
   AdminUserCreatePayload,
+  AdminUserNestedAd,
   AdminUserUpdatePayload,
   LaravelPaginated,
 } from '../../types/admin'
@@ -11,6 +12,7 @@ import {
   buildAdminQuery,
   mapAdminCheckAd,
   mapCategory,
+  mapAdminNestedAd,
   mapPaginated,
   mapSubcategory,
   mapUser,
@@ -30,6 +32,12 @@ export const adminApiService = {
     })
     const raw = await requestJson<unknown>(`/admin/ads${query}`)
     return mapPaginated(raw, mapAdminCheckAd)
+  },
+
+  /** Single ad (`GET /admin/ads/:id`) — use when nested `user.ads` omits this row. */
+  async getAd(id: number): Promise<AdminUserNestedAd> {
+    const raw = await requestJson<unknown>(`/admin/ads/${id}`)
+    return mapAdminNestedAd(unwrapRecord(raw))
   },
 
   async approveAd(adId: number) {

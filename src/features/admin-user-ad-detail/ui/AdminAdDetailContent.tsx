@@ -108,7 +108,8 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
 
   const pending = isPendingModerationStatus(ad.status)
 
-  const sellerName = [user.fname, user.lname].filter(Boolean).join(' ') || user.phone
+  const sellerName =
+    [user.fname, user.lname].filter(Boolean).join(' ') || user.phone || `Sotuvchi (ID ${user.id})`
   const sellerInitials = (() => {
     const f = user.fname?.trim()?.[0]
     const l = user.lname?.trim()?.[0]
@@ -313,8 +314,8 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
         </div>
       </div>
 
-      <div className="grid grid-cols-12 items-start gap-4">
-        <section className={`${cardClass} col-span-12 md:col-span-8 xl:col-span-4`}>
+      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-10">
+        <section className={`${cardClass} col-span-1 md:col-span-4`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Asosiy</h2>
           <div className="mt-3 space-y-3">
             <div>
@@ -369,7 +370,7 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
           </div>
         </section>
 
-        <section className={`${cardClass} col-span-12 md:col-span-4 xl:col-span-2`}>
+        <section className={`${cardClass} col-span-1 md:col-span-2`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Narx va miqdor</h2>
           <dl className="mt-3 space-y-0">
             <DetailRow label="Narx">{fmtPrice(ad)}</DetailRow>
@@ -378,7 +379,7 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
           </dl>
         </section>
 
-        <section className={`${cardClass} col-span-12 md:col-span-6 xl:col-span-3`}>
+        <section className={`${cardClass} col-span-1 md:col-span-2`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Joylashuv</h2>
           <dl className="mt-3 space-y-0">
             <DetailRow label="Viloyat">
@@ -404,7 +405,7 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
           </dl>
         </section>
 
-        <section className={`${cardClass} col-span-12 md:col-span-6 xl:col-span-3`}>
+        <section className={`${cardClass} col-span-1 md:col-span-2`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Kategoriya</h2>
           <dl className="mt-3 space-y-0">
             <DetailRow label="Kategoriya">{fmtPlaceWithId(ad.category?.name, ad.category_id)}</DetailRow>
@@ -412,14 +413,14 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
           </dl>
         </section>
 
-        <section className={`${cardClass} col-span-12`}>
+        <section className={`${cardClass} col-span-1 md:col-span-10`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Tavsif</h2>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-200">
             {ad.description || '—'}
           </p>
         </section>
 
-        <section className="col-span-12 rounded-ui border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900/80">
+        <section className="col-span-1 rounded-ui border border-slate-200 bg-slate-100/80 p-4 dark:border-slate-800 dark:bg-slate-900/80 md:col-span-10">
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Reklama (admin)</h2>
           <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
             Top sotuv yoki Boosted muddatini belgilash — backend API tayyor bo‘lganda yoqiladi.

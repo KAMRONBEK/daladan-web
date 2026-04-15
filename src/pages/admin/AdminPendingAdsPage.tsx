@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AdminPagination } from '../../components/admin/AdminPagination'
 import { adminApiService } from '../../services'
 import type { AdminCheckAd } from '../../types/admin'
@@ -8,6 +8,7 @@ import { isPendingModerationStatus } from '../../utils/adminModeration'
 import { formatUzbekDateTime } from '../../utils/uzbekDateFormat'
 
 export const AdminPendingAdsPage = () => {
+  const navigate = useNavigate()
   const [items, setItems] = useState<AdminCheckAd[]>([])
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(15)
@@ -87,17 +88,25 @@ export const AdminPendingAdsPage = () => {
                     </td>
                   </tr>
                 ) : (
-                  items.map((row) => (
-                    <tr key={row.id} className="border-b border-slate-100 dark:border-slate-800">
+                  items.map((row) => {
+                    const to = `/moderation/ads/${row.id}`
+                    return (
+                    <tr
+                      key={row.id}
+                      tabIndex={0}
+                      role="link"
+                      aria-label={`E‘lon ${row.id}: ${row.title}`}
+                      className="cursor-pointer border-b border-slate-100 transition-colors hover:bg-slate-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-daladan-primary dark:border-slate-800 dark:hover:bg-slate-800/50"
+                      onClick={() => navigate(to)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          navigate(to)
+                        }
+                      }}
+                    >
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.id}</td>
-                      <td className="px-4 py-3">
-                        <Link
-                          to={`/users/${row.seller_id}/ads/${row.id}`}
-                          className="font-medium text-daladan-primary hover:underline"
-                        >
-                          {row.title}
-                        </Link>
-                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{row.title}</td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.seller_id}</td>
                       <td className="px-4 py-3">
                         <span
@@ -112,7 +121,8 @@ export const AdminPendingAdsPage = () => {
                       </td>
                       <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{formatUzbekDateTime(row.created_at)}</td>
                     </tr>
-                  ))
+                    )
+                  })
                 )}
               </tbody>
             </table>

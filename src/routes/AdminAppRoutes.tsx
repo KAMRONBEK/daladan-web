@@ -24,6 +24,7 @@ export const AdminAppRoutes = () => {
         <Route index element={<AdminDashboardPage />} />
         <Route path="categories" element={<AdminCategoriesPage />} />
         <Route path="subcategories" element={<AdminSubcategoriesPage />} />
+        <Route path="moderation/ads/:adId" element={<AdminUserAdDetailPage />} />
         <Route path="moderation" element={<AdminPendingAdsPage />} />
         <Route path="users/:userId/ads/:adId" element={<AdminUserAdDetailPage />} />
         <Route path="users/:userId" element={<AdminUserDetailPage />} />
