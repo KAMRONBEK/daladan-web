@@ -3,7 +3,7 @@ import { ArrowLeft } from 'lucide-react'
 import { AdminAdDetailContent, useAdminUserAdDetailPage } from '../../features/admin-user-ad-detail'
 
 export const AdminUserAdDetailPage = () => {
-  const { userId, adId, user, ad, loading, error, forbidden, invalidParams, notFound } =
+  const { userId, adId, user, ad, loading, error, forbidden, invalidParams, notFound, reload } =
     useAdminUserAdDetailPage()
 
   if (invalidParams) {
@@ -29,6 +29,9 @@ export const AdminUserAdDetailPage = () => {
         </Link>
         <Link to="/users" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
           Barcha foydalanuvchilar
+        </Link>
+        <Link to="/moderation" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
+          Moderatsiya
         </Link>
       </div>
 
@@ -56,7 +59,7 @@ export const AdminUserAdDetailPage = () => {
           ) : null}
         </p>
       ) : ad && user ? (
-        <AdminAdDetailContent ad={ad} user={user} />
+        <AdminAdDetailContent ad={ad} user={user} onModerationComplete={reload} />
       ) : null}
     </div>
   )

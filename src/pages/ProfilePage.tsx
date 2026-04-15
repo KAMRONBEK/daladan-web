@@ -120,6 +120,9 @@ export const ProfilePage = () => {
     if (s === 'draft') {
       return { label: 'QORALAMA', className: 'bg-amber-500/15 text-amber-900 dark:text-amber-300' }
     }
+    if (s === 'pending') {
+      return { label: 'MODERATSIYADA', className: 'bg-amber-500/20 text-amber-950 dark:text-amber-200' }
+    }
     if (s === 'paused' || s === 'inactive') {
       return { label: "TO'XTATILGAN", className: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300' }
     }

@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { LayoutDashboard, LogOut, Menu, Moon, Sun, Tags, Users, X } from 'lucide-react'
+import { ClipboardList, LayoutDashboard, LogOut, Menu, Moon, Sun, Tags, Users, X } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
 import { useTheme } from '../../state/ThemeContext'
@@ -49,6 +49,10 @@ export const AdminLayout = ({ children }: { children?: ReactNode }) => {
         <NavLink to="/users" className={navClass} onClick={closeMobile}>
           <Users size={18} aria-hidden />
           Foydalanuvchilar
+        </NavLink>
+        <NavLink to="/moderation" className={navClass} onClick={closeMobile}>
+          <ClipboardList size={18} aria-hidden />
+          Moderatsiya
         </NavLink>
       </nav>
     </>

@@ -2,6 +2,7 @@ import type {
   AdminCategory,
   AdminAdMediaListItem,
   AdminAdNamedRef,
+  AdminCheckAd,
   AdminSubcategory,
   AdminUserListItem,
   AdminUserNestedAd,
@@ -98,6 +99,28 @@ const mapAdminNamedRef = (value: unknown): AdminAdNamedRef | undefined => {
   return { id, name: name || `ID ${id}` }
 }
 
+/** True when name is empty or only the generic `ID n` placeholder from mapAdminNamedRef. */
+const isPlaceholderNamedRef = (name: string, id: number) => {
+  const t = name.trim()
+  return !t || t === `ID ${id}`
+}
+
+/** Prefer nested relation with a real name; else flat string fields on the ad row. */
+const mapAdRegionCityRef = (
+  row: UnknownRecord,
+  nestedKey: 'region' | 'city',
+  idKey: 'region_id' | 'city_id',
+  ...flatNameKeys: string[]
+): AdminAdNamedRef | undefined => {
+  const id = getNumber(row, idKey)
+  const nested = mapAdminNamedRef(row[nestedKey])
+  const flat = getString(row, ...flatNameKeys)
+
+  if (nested && !isPlaceholderNamedRef(nested.name, nested.id)) return nested
+  if (flat && id) return { id, name: flat }
+  return undefined
+}
+
 const mapAdminMediaList = (value: unknown): AdminAdMediaListItem[] => {
   if (!Array.isArray(value)) return []
   return value.map((raw) => {
@@ -109,6 +132,18 @@ const mapAdminMediaList = (value: unknown): AdminAdMediaListItem[] => {
     }
   })
 }
+
+export const mapAdminCheckAd = (row: UnknownRecord): AdminCheckAd => ({
+  id: getNumber(row, 'id'),
+  seller_id: getNumber(row, 'seller_id'),
+  category_id: getNumber(row, 'category_id'),
+  subcategory_id: getNumber(row, 'subcategory_id'),
+  title: getString(row, 'title', 'name') || '—',
+  status: getString(row, 'status') || '',
+  reject_reason: nullableIsoString(row.reject_reason),
+  created_at: getString(row, 'created_at'),
+  updated_at: getString(row, 'updated_at'),
+})
 
 export const mapAdminNestedAd = (row: UnknownRecord): AdminUserNestedAd => {
   const mediaRaw = row.media
@@ -156,6 +191,8 @@ export const mapAdminNestedAd = (row: UnknownRecord): AdminUserNestedAd => {
     media_list: mapAdminMediaList(row.media_list),
     category: mapAdminNamedRef(row.category),
     subcategory: mapAdminNamedRef(row.subcategory),
+    region: mapAdRegionCityRef(row, 'region', 'region_id', 'region_name', 'region_name_uz'),
+    city: mapAdRegionCityRef(row, 'city', 'city_id', 'city_name', 'city_name_uz'),
     media,
   }
 }

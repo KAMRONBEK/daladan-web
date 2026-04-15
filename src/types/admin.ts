@@ -67,6 +67,19 @@ export interface AdminAdMediaListItem {
 /**
  * Full `ads[]` item from `GET /admin/users/:id` (admin API), mapped in `mapAdminNestedAd`.
  */
+/** Slim row from `GET /admin/ads` (moderation list). */
+export interface AdminCheckAd {
+  id: number
+  seller_id: number
+  category_id: number
+  subcategory_id: number
+  title: string
+  status: string
+  reject_reason: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface AdminUserNestedAd {
   id: number
   seller_id: number
@@ -91,6 +104,9 @@ export interface AdminUserNestedAd {
   media_list: AdminAdMediaListItem[]
   category?: AdminAdNamedRef
   subcategory?: AdminAdNamedRef
+  /** When API embeds region/city on the ad. */
+  region?: AdminAdNamedRef
+  city?: AdminAdNamedRef
   /** Spatie / full media payload as returned by API. */
   media: readonly unknown[]
 }

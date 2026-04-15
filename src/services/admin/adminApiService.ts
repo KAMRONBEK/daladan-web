@@ -1,12 +1,15 @@
 import type {
   AdminCategoryPayload,
+  AdminCheckAd,
   AdminSubcategoryPayload,
   AdminUserCreatePayload,
   AdminUserUpdatePayload,
+  LaravelPaginated,
 } from '../../types/admin'
 import { requestJson } from '../apiClient'
 import {
   buildAdminQuery,
+  mapAdminCheckAd,
   mapCategory,
   mapPaginated,
   mapSubcategory,
@@ -15,6 +18,31 @@ import {
 } from './adminApiMappers'
 
 export const adminApiService = {
+  async listModerationAds(params?: {
+    status?: 'pending' | 'active' | 'rejected' | 'sold' | 'deleted'
+    per_page?: number
+    page?: number
+  }): Promise<LaravelPaginated<AdminCheckAd>> {
+    const query = buildAdminQuery({
+      status: params?.status ?? 'pending',
+      per_page: params?.per_page,
+      page: params?.page,
+    })
+    const raw = await requestJson<unknown>(`/admin/ads${query}`)
+    return mapPaginated(raw, mapAdminCheckAd)
+  },
+
+  async approveAd(adId: number) {
+    await requestJson<unknown>(`/admin/ads/${adId}/approve`, { method: 'PATCH' })
+  },
+
+  async rejectAd(adId: number, payload: { reason: string }) {
+    await requestJson<unknown>(`/admin/ads/${adId}/reject`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+
   async listCategories(params?: { is_active?: boolean; per_page?: number; page?: number }) {
     const query = buildAdminQuery({
       is_active: params?.is_active,
