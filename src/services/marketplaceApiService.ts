@@ -188,6 +188,7 @@ export const mapListing = (item: UnknownRecord): Listing => {
     image: imageUrl || '/daladan-logo-full-transparent.png',
     images: mergedImages.length > 0 ? mergedImages : undefined,
     status: getString(item, 'status') || undefined,
+    createdAt: getString(item, 'created_at', 'createdAt') || undefined,
   }
 }
 

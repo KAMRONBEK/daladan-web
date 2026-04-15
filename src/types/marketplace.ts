@@ -23,6 +23,8 @@ export interface Listing {
   images?: string[]
   /** Raw ad status from API, e.g. active, expired */
   status?: string
+  /** ISO datetime from API when available */
+  createdAt?: string
 }
 
 export interface Profile {

@@ -1,11 +1,11 @@
-import { Camera, Heart, MapPin } from 'lucide-react'
+import { Calendar, Camera, Heart, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { MouseEvent, SyntheticEvent } from 'react'
 
 import { useFavorites } from '../../../state/FavoritesContext'
 import type { Listing } from '../../../types/marketplace'
 import { formatPrice } from '../../../utils/price'
-import { getListingPhotoCount } from '../model/listingHelpers'
+import { formatListingCreatedAt, getListingPhotoCount } from '../model/listingHelpers'
 import type { ListingCardVariant } from '../model/types'
 
 const CARD_SHADOW =
@@ -56,7 +56,7 @@ function ListingMedia({
 
   if (variant === 'grid') {
     return (
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-slate-100 leading-none dark:bg-slate-800">
+      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-slate-100 leading-none dark:bg-slate-800">
         <img
           src={listing.image}
           alt={listing.title}
@@ -92,6 +92,7 @@ function ListingMeta({
   listing: Listing
   variant: ListingCardVariant
 }) {
+  const createdLabel = formatListingCreatedAt(listing.createdAt)
   return (
     <>
       <h3 className="line-clamp-2 font-semibold text-slate-900 dark:text-slate-100">
@@ -109,6 +110,12 @@ function ListingMeta({
       <p className="text-xl font-bold text-daladan-primary">
         {formatPrice(listing.price)} <span className="text-sm">{listing.unit}</span>
       </p>
+      {createdLabel ? (
+        <p className="flex items-center gap-1 text-xs text-slate-400 dark:text-slate-500">
+          <Calendar size={12} className="shrink-0" aria-hidden />
+          <span>{createdLabel}</span>
+        </p>
+      ) : null}
     </>
   )
 }
@@ -143,7 +150,7 @@ export const ListingCard = ({
   const linkClassName =
     variant === 'grid'
       ? `flex h-full min-h-0 flex-col ${CARD_SHELL}`
-      : `grid min-h-0 grid-cols-[7rem_1fr] items-stretch sm:grid-cols-[9rem_1fr] ${CARD_SHELL}`
+      : `grid min-h-0 grid-cols-[11rem_1fr] items-stretch sm:grid-cols-[14rem_1fr] ${CARD_SHELL}`
 
   return (
     <div className="relative h-full">

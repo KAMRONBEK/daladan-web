@@ -1,4 +1,4 @@
-import { Bike, ChevronLeft, ChevronRight, MapPin, MessageCircle, Phone, Send, Star, Truck } from 'lucide-react'
+import { Bike, Calendar, ChevronLeft, ChevronRight, MapPin, MessageCircle, Phone, Send, Star, Truck } from 'lucide-react'
 import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { marketplaceService } from '../services'
@@ -6,6 +6,7 @@ import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
 import { formatPrice } from '../utils/price'
 import { ImageLightbox } from '../components/ui/ImageLightbox'
+import { formatListingCreatedAt } from '../features/marketplace/model/listingHelpers'
 
 const getListingSlides = (listing: Listing) =>
   listing.images && listing.images.length > 0 ? listing.images : [listing.image]
@@ -49,6 +50,7 @@ export const ItemDetailsPage = () => {
   const quantityText = listing.quantity || "Miqdor ko'rsatilmagan"
   const deliveryInfoText = listing.deliveryInfo || "Ma'lumot berilmagan"
   const sellerName = listing.sellerName || 'Sotuvchi'
+  const createdLabel = formatListingCreatedAt(listing.createdAt)
   const slides = getListingSlides(listing)
   const safeIdx = slides.length ? galleryIndex % slides.length : 0
 
@@ -159,6 +161,12 @@ export const ItemDetailsPage = () => {
               <MapPin size={15} />
               {listing.location}
             </p>
+            {createdLabel ? (
+              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
+                <Calendar size={15} className="shrink-0" aria-hidden />
+                <span>{createdLabel}</span>
+              </p>
+            ) : null}
           </div>
           <p className="text-right text-5xl font-bold text-daladan-primary">
             {formatPrice(listing.price)}
