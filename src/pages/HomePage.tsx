@@ -2,8 +2,9 @@ import { ChevronRight } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { DEFAULT_CATEGORY_TILE_IMAGE, getCategoryTileImage } from '../constants/categoryTileImages'
-import { ListingCard } from '../features/marketplace'
+import { ListingCard, ListingGridSkeletons } from '../features/marketplace'
 import { fallbackCategoryTree, loadCategoryTree, type CategoryNode } from '../features/marketplace/model/categoryTree'
+import { searchUrlForCategoryLabel } from '../features/marketplace/model/searchUrls'
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
@@ -18,7 +19,7 @@ function CategoryTileLink({ cat }: { cat: CategoryNode }) {
 
   return (
     <Link
-      to={`/search?cat=${encodeURIComponent(cat.label)}`}
+      to={searchUrlForCategoryLabel(cat.label)}
       aria-label={cat.label}
       className="group overflow-hidden rounded-ui border border-daladan-border bg-daladan-surfaceElevated shadow-sm dark:border-slate-700 dark:bg-slate-900"
     >
@@ -41,6 +42,7 @@ function CategoryTileLink({ cat }: { cat: CategoryNode }) {
 
 export const HomePage = () => {
   const [listings, setListings] = useState<Listing[]>([])
+  const [isLoadingListings, setIsLoadingListings] = useState(true)
   const [categoryTree, setCategoryTree] = useState<CategoryNode[]>(fallbackCategoryTree)
   const [loadingTree, setLoadingTree] = useState(true)
   const { user } = useAuth()
@@ -53,7 +55,19 @@ export const HomePage = () => {
   }
 
   useEffect(() => {
-    marketplaceService.getPublicAds({ perPage: 100 }).then(setListings)
+    let mounted = true
+    setIsLoadingListings(true)
+    marketplaceService
+      .getPublicAds({ perPage: 100 })
+      .then((data) => {
+        if (mounted) setListings(data)
+      })
+      .finally(() => {
+        if (mounted) setIsLoadingListings(false)
+      })
+    return () => {
+      mounted = false
+    }
   }, [])
 
   useEffect(() => {
@@ -114,7 +128,9 @@ export const HomePage = () => {
             <ChevronRight size={16} />
           </Link>
         </div>
-        {featured.length === 0 ? (
+        {isLoadingListings ? (
+          <ListingGridSkeletons count={FEATURED_LIMIT} />
+        ) : featured.length === 0 ? (
           <div className="rounded-ui border border-daladan-border bg-daladan-surfaceElevated px-6 py-10 text-center text-daladan-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
             Hozircha e&apos;lonlar yo&apos;q. Qidiruv sahifasiga o&apos;ting.
           </div>

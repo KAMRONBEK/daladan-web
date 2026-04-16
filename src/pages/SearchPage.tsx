@@ -1,11 +1,12 @@
 import { ChevronDown, ChevronRight, SlidersHorizontal } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ListingCard } from '../features/marketplace'
+import { ListingCard, ListingListSkeletons } from '../features/marketplace'
 import {
   collectLabelsInTree,
   fallbackCategoryTree,
   gatherDescendants,
+  isCategoryExpandedForFilter,
   loadCategoryTree,
   type CategoryNode,
 } from '../features/marketplace/model/categoryTree'
@@ -18,6 +19,7 @@ const SEARCH_LIST_PAGE_SIZE = 6
 
 export const SearchPage = () => {
   const [listings, setListings] = useState<Listing[]>([])
+  const [isLoadingListings, setIsLoadingListings] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState<string>('Barchasi')
   const [categoryTree, setCategoryTree] = useState<CategoryNode[]>(fallbackCategoryTree)
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set())
@@ -33,7 +35,19 @@ export const SearchPage = () => {
   const catParam = searchParams.get('cat')
 
   useEffect(() => {
-    marketplaceService.getPublicAds({ perPage: 100 }).then(setListings)
+    let mounted = true
+    setIsLoadingListings(true)
+    marketplaceService
+      .getPublicAds({ perPage: 100 })
+      .then((data) => {
+        if (mounted) setListings(data)
+      })
+      .finally(() => {
+        if (mounted) setIsLoadingListings(false)
+      })
+    return () => {
+      mounted = false
+    }
   }, [])
 
   useEffect(() => {
@@ -68,6 +82,12 @@ export const SearchPage = () => {
       setSelectedCategory('Barchasi')
     }
   }, [categoryTree, selectedCategory])
+
+  useEffect(() => {
+    if (selectedCategory === 'Barchasi') {
+      setExpandedCategories(new Set())
+    }
+  }, [selectedCategory])
 
   useEffect(() => {
     if (isLoadingCategoryTree) return
@@ -182,7 +202,13 @@ export const SearchPage = () => {
                   ))}
                 </div>
               ) : (
-                categoryTree.map((category) => (
+                categoryTree.map((category) => {
+                  const rowExpanded = isCategoryExpandedForFilter(
+                    category,
+                    selectedCategory,
+                    expandedCategories,
+                  )
+                  return (
                   <div key={category.label}>
                     <div className="flex items-center gap-1">
                       <button
@@ -192,7 +218,7 @@ export const SearchPage = () => {
                         className="rounded p-1 text-daladan-muted hover:bg-daladan-soft dark:text-slate-400 dark:hover:bg-slate-800"
                         aria-label={`${category.label} ni ochish yopish`}
                       >
-                        {expandedCategories.has(category.label) ? (
+                        {rowExpanded ? (
                           <ChevronDown size={14} />
                         ) : (
                           <ChevronRight size={14} />
@@ -211,7 +237,7 @@ export const SearchPage = () => {
                         {category.label}
                       </button>
                     </div>
-                    {category.children?.length && expandedCategories.has(category.label) ? (
+                    {category.children?.length && rowExpanded ? (
                       <div className="mt-1 border-l border-daladan-border pl-3 dark:border-slate-700">
                         {category.children.map((sub) => (
                           <button
@@ -231,7 +257,8 @@ export const SearchPage = () => {
                       </div>
                     ) : null}
                   </div>
-                ))
+                  )
+                })
               )}
             </div>
             <div className="mt-5 border-t border-daladan-border pt-4 dark:border-slate-700">
@@ -271,27 +298,39 @@ export const SearchPage = () => {
               <h1 className="text-2xl font-semibold text-daladan-heading dark:text-slate-100 sm:text-3xl lg:text-4xl">
                 Siz uchun saralangan mahsulotlar
               </h1>
-              <p className="text-sm text-daladan-muted dark:text-slate-400">Jami: {filtered.length} ta e&apos;lon topildi</p>
+              <p className="text-sm text-daladan-muted dark:text-slate-400">
+                {isLoadingListings ? (
+                  <span className="inline-block h-4 w-40 animate-pulse rounded bg-daladan-border dark:bg-slate-700" aria-hidden />
+                ) : (
+                  <>Jami: {filtered.length} ta e&apos;lon topildi</>
+                )}
+              </p>
             </div>
           </div>
-          <div className="flex flex-col gap-4">
-            {pageItems.map((listing) => (
-              <div key={listing.id} className="min-h-0">
-                <ListingCard
-                  listing={listing}
-                  variant="list"
-                  canFavorite={Boolean(user)}
-                  onFavoriteBlocked={redirectToLogin}
-                />
+          {isLoadingListings ? (
+            <ListingListSkeletons count={SEARCH_LIST_PAGE_SIZE} />
+          ) : (
+            <>
+              <div className="flex flex-col gap-4">
+                {pageItems.map((listing) => (
+                  <div key={listing.id} className="min-h-0">
+                    <ListingCard
+                      listing={listing}
+                      variant="list"
+                      canFavorite={Boolean(user)}
+                      onFavoriteBlocked={redirectToLogin}
+                    />
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {filtered.length === 0 ? (
-            <div className="rounded-ui border border-daladan-border bg-daladan-surfaceElevated p-8 text-center text-daladan-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
-              Filter bo&apos;yicha e&apos;lon topilmadi.
-            </div>
-          ) : null}
-          {totalPages > 1 ? (
+              {filtered.length === 0 ? (
+                <div className="rounded-ui border border-daladan-border bg-daladan-surfaceElevated p-8 text-center text-daladan-muted dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
+                  Filter bo&apos;yicha e&apos;lon topilmadi.
+                </div>
+              ) : null}
+            </>
+          )}
+          {!isLoadingListings && totalPages > 1 ? (
             <div className="flex items-center justify-center gap-2 pt-1">
               <button
                 type="button"

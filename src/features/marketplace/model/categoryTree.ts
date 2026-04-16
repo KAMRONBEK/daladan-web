@@ -65,6 +65,18 @@ export const collectLabelsInTree = (tree: CategoryNode[]): Set<string> => {
   return labels
 }
 
+/** True when the filter row should show subcategories: parent or a child is selected, or the user opened it with the chevron. */
+export const isCategoryExpandedForFilter = (
+  category: CategoryNode,
+  selectedCategory: string,
+  manuallyExpanded: ReadonlySet<string>,
+): boolean => {
+  if (!category.children?.length) return false
+  if (selectedCategory === category.label) return true
+  if (category.children.some((s) => s.label === selectedCategory)) return true
+  return manuallyExpanded.has(category.label)
+}
+
 export const loadCategoryTree = (): Promise<CategoryNode[]> => {
   if (categoryTreePromise) return categoryTreePromise
 
