@@ -149,16 +149,16 @@ export const ListingCard = ({
 
   const linkClassName =
     variant === 'grid'
-      ? `flex h-full min-h-0 flex-col ${CARD_SHELL}`
+      ? `flex w-full min-h-0 flex-col ${CARD_SHELL}`
       : `grid min-h-0 grid-cols-[11rem_1fr] items-stretch sm:grid-cols-[14rem_1fr] ${CARD_SHELL}`
 
   return (
-    <div className="relative h-full">
+    <div className={variant === 'grid' ? 'relative w-full' : 'relative h-full'}>
       <Link to={itemPath} className={linkClassName}>
         {variant === 'grid' ? (
           <>
             <ListingMedia listing={listing} variant="grid" onImageError={onImageError} />
-            <div className="flex min-h-0 flex-1 flex-col space-y-2.5 p-4">
+            <div className="flex flex-col space-y-2.5 p-4">
               <ListingMeta listing={listing} variant="grid" />
             </div>
           </>

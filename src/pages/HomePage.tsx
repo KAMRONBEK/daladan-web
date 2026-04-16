@@ -135,7 +135,7 @@ export const HomePage = () => {
             Hozircha e&apos;lonlar yo&apos;q. Qidiruv sahifasiga o&apos;ting.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {featured.map((listing) => (
               <div key={listing.id} className="min-h-0">
                 <ListingCard

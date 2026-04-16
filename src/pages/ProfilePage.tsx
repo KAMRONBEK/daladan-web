@@ -695,20 +695,41 @@ export const ProfilePage = () => {
                 3 yangi
               </span>
             </div>
-            <div className="space-y-3">
-              {[
-                { name: 'Jasur', text: "Olmalar hali bormi?", time: '10:21' },
-                { name: 'Aziza', text: "Narxni kelishsak bo'ladimi?", time: 'Kecha' },
-                { name: 'Dilshod', text: 'Yetkazib berish mavjudmi?', time: 'Dush' },
-              ].map((message) => (
-                <div key={message.name} className="rounded-ui border border-slate-200 p-3 dark:border-slate-700">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-slate-900 dark:text-slate-100">{message.name}</p>
-                    <p className="text-xs text-slate-400">{message.time}</p>
-                  </div>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{message.text}</p>
+            <div className="relative min-h-[240px] overflow-hidden rounded-lg">
+              <div
+                className="pointer-events-none select-none blur-md"
+                aria-hidden
+              >
+                <div className="space-y-3">
+                  {[
+                    { name: 'Jasur', text: "Olmalar hali bormi?", time: '10:21' },
+                    { name: 'Aziza', text: "Narxni kelishsak bo'ladimi?", time: 'Kecha' },
+                    { name: 'Dilshod', text: 'Yetkazib berish mavjudmi?', time: 'Dush' },
+                  ].map((message) => (
+                    <div key={message.name} className="rounded-ui border border-slate-200 p-3 dark:border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-slate-900 dark:text-slate-100">{message.name}</p>
+                        <p className="text-xs text-slate-400">{message.time}</p>
+                      </div>
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{message.text}</p>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <div
+                className="absolute inset-0 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[2px] dark:bg-slate-900/55"
+                role="status"
+                aria-live="polite"
+              >
+                <div className="max-w-md rounded-ui border border-daladan-primary/35 bg-white/95 px-6 py-5 text-center shadow-md dark:border-daladan-primary/40 dark:bg-slate-900/95">
+                  <p className="text-lg font-bold tracking-tight text-daladan-heading dark:text-slate-100">
+                    Under work
+                  </p>
+                  <p className="mt-1.5 text-sm text-daladan-muted dark:text-slate-400">
+                    Bu bo&apos;lim tez orada ishga tushadi.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         )}

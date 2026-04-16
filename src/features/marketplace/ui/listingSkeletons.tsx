@@ -7,9 +7,9 @@ const pulseBlock = 'animate-pulse bg-daladan-border dark:bg-slate-700'
 
 function ListingGridSkeletonItem() {
   return (
-    <div className={`flex h-full min-h-0 flex-col ${CARD_SHELL}`}>
+    <div className={`flex w-full min-h-0 flex-col ${CARD_SHELL}`}>
       <div className={`relative aspect-[16/9] w-full shrink-0 ${pulseBlock}`} />
-      <div className="flex min-h-0 flex-1 flex-col space-y-2.5 p-4">
+      <div className="flex flex-col space-y-2.5 p-4">
         <div className={`h-5 w-[80%] rounded ${pulseBlock}`} />
         <div className={`h-3.5 w-full rounded ${pulseBlock}`} />
         <div className={`h-3.5 w-[85%] rounded ${pulseBlock}`} />
@@ -22,7 +22,7 @@ function ListingGridSkeletonItem() {
 export function ListingGridSkeletons({ count }: { count: number }) {
   return (
     <div
-      className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
       aria-busy
       aria-label="E'lonlar yuklanmoqda"
     >
