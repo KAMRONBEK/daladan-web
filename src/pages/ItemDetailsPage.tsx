@@ -322,48 +322,46 @@ function ItemDetailSidebar({
     <div
       className={`space-y-4 rounded-ui border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-5 ${className}`}
     >
-      <div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        onClick={onCopyLink}
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-200 bg-daladan-soft px-3 text-sm font-semibold text-daladan-heading hover:border-daladan-primary/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+      >
+        <Link2 size={18} className="shrink-0" aria-hidden />
+        <span>{linkCopied ? 'Nusxa olindi' : 'Havolani nusxalash'}</span>
+      </button>
+
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto_1fr] sm:items-stretch">
+        <button
+          type="button"
+          onClick={onShareListingTelegram}
+          className="inline-flex h-10 min-h-[2.5rem] min-w-0 items-center justify-center gap-2 rounded-lg border border-[#229ED9]/40 bg-[#229ED9]/10 px-2 text-sm font-semibold text-[#1682b6] hover:bg-[#229ED9]/15 dark:border-[#229ED9]/35 dark:text-[#5ab4e6] sm:px-3"
+          aria-label="Telegramda ulashish"
+        >
+          <TelegramShareIcon className="h-5 w-5 shrink-0" />
+          <span className="min-w-0 truncate">Telegramda ulashish</span>
+        </button>
         <button
           type="button"
           aria-label={isFavorite ? 'Sevimlidan olib tashlash' : "Sevimlilariga qo'shish"}
           onClick={onFavoriteClick}
-          className={`inline-flex h-10 min-w-[2.5rem] flex-1 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors sm:flex-initial ${
+          className={`inline-flex h-10 min-h-[2.5rem] min-w-[2.75rem] shrink-0 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors ${
             isFavorite
               ? 'border-daladan-accent bg-daladan-accent/15 text-daladan-accentDark'
               : 'border-slate-200 bg-daladan-soft text-daladan-heading hover:border-daladan-primary/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200'
           }`}
         >
           <Heart size={18} className="shrink-0" fill={isFavorite ? 'currentColor' : 'none'} />
-          <span className="hidden sm:inline">{isFavorite ? 'Sevimlida' : 'Sevimli'}</span>
-        </button>
-        <button
-          type="button"
-          onClick={onCopyLink}
-          className="inline-flex h-10 min-w-[2.5rem] flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-daladan-soft px-3 text-sm font-semibold text-daladan-heading hover:border-daladan-primary/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 sm:flex-initial"
-        >
-          <Link2 size={18} className="shrink-0" aria-hidden />
-          <span className="hidden sm:inline">{linkCopied ? 'Nusxa olindi' : 'Havolani nusxalash'}</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        <button
-          type="button"
-          onClick={onShareListingTelegram}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#229ED9]/40 bg-[#229ED9]/10 px-3 text-sm font-semibold text-[#1682b6] hover:bg-[#229ED9]/15 dark:border-[#229ED9]/35 dark:text-[#5ab4e6]"
-          aria-label="Telegramda ulashish"
-        >
-          <TelegramShareIcon className="h-5 w-5 shrink-0" />
-          <span>Telegramda ulashish</span>
+          <span className="hidden min-[380px]:inline">{isFavorite ? 'Sevimlida' : 'Sevimli'}</span>
         </button>
         <button
           type="button"
           onClick={onShareListingInstagram}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-pink-500/30 bg-pink-500/10 px-3 text-sm font-semibold text-pink-700 hover:bg-pink-500/15 dark:text-pink-400"
+          className="inline-flex h-10 min-h-[2.5rem] min-w-0 items-center justify-center gap-2 rounded-lg border border-pink-500/30 bg-pink-500/10 px-2 text-sm font-semibold text-pink-700 hover:bg-pink-500/15 dark:text-pink-400 sm:px-3"
           aria-label="Instagramda ulashish"
         >
           <InstagramShareIcon className="h-5 w-5 shrink-0" />
-          <span>{instagramShareCopied ? 'Havola nusxalandi' : 'Instagramda ulashish'}</span>
+          <span className="min-w-0 truncate">{instagramShareCopied ? 'Havola nusxalandi' : 'Instagramda ulashish'}</span>
         </button>
       </div>
 

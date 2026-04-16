@@ -18,7 +18,7 @@ interface ListingCardProps {
   canFavorite: boolean
   onFavoriteBlocked: () => void
   variant?: ListingCardVariant
-  /** When true, shows relative posted time (e.g. on favorites). Home and search omit dates. */
+  /** When true, shows relative posted time (home / favorites). Search uses list layout without date. */
   showPostedDate?: boolean
 }
 
@@ -91,36 +91,96 @@ function ListingMeta({
   listing,
   variant,
   showPostedDate,
+  omitTitle = false,
 }: {
   listing: Listing
   variant: ListingCardVariant
   showPostedDate: boolean
+  omitTitle?: boolean
 }) {
   const createdLabel = showPostedDate ? formatListingCreatedAt(listing.createdAt) : null
+  const dateRow =
+    createdLabel ? (
+      <p className="flex items-center gap-1 text-xs text-daladan-muted/90 dark:text-slate-500">
+        <Clock size={12} className="shrink-0" aria-hidden />
+        <span>{createdLabel}</span>
+      </p>
+    ) : null
+
+  const title = omitTitle ? null : (
+    <h3 className="line-clamp-2 font-semibold text-daladan-heading dark:text-slate-100">
+      {variant === 'grid' ? (
+        <span className="text-lg">{listing.title}</span>
+      ) : (
+        <span className="text-base sm:text-lg">{listing.title}</span>
+      )}
+    </h3>
+  )
+
+  const price = (
+    <p className="text-xl font-bold text-daladan-price dark:text-daladan-primary">
+      {formatPrice(listing.price)} <span className="text-sm">so&apos;m</span>
+    </p>
+  )
+
+  const location = (
+    <p className="flex items-center gap-1 text-sm text-daladan-muted dark:text-slate-400">
+      <MapPin size={14} className="shrink-0" />
+      <span className="min-w-0 truncate">{listing.location}</span>
+    </p>
+  )
+
+  const description = (
+    <p className="line-clamp-2 text-sm text-daladan-muted dark:text-slate-400">{listing.description}</p>
+  )
+
+  /* Grid (home, favorites grid): title → price → location → description → date */
+  if (variant === 'grid') {
+    return (
+      <>
+        {title}
+        {price}
+        {location}
+        {description}
+        {dateRow}
+      </>
+    )
+  }
+
+  /* List (search): title → description → location → price → date */
   return (
     <>
-      <h3 className="line-clamp-2 font-semibold text-daladan-heading dark:text-slate-100">
-        {variant === 'grid' ? (
-          <span className="text-lg">{listing.title}</span>
-        ) : (
-          <span className="text-base sm:text-lg">{listing.title}</span>
-        )}
-      </h3>
-      <p className="line-clamp-2 text-sm text-daladan-muted dark:text-slate-400">{listing.description}</p>
-      <p className="flex items-center gap-1 text-sm text-daladan-muted dark:text-slate-400">
-        <MapPin size={14} className="shrink-0" />
-        <span className="min-w-0 truncate">{listing.location}</span>
-      </p>
-      <p className="text-xl font-bold text-daladan-price dark:text-daladan-primary">
-        {formatPrice(listing.price)} <span className="text-sm">so&apos;m</span>
-      </p>
-      {createdLabel ? (
-        <p className="flex items-center gap-1 text-xs text-daladan-muted/90 dark:text-slate-500">
-          <Clock size={12} className="shrink-0" aria-hidden />
-          <span>{createdLabel}</span>
-        </p>
-      ) : null}
+      {title}
+      {description}
+      {location}
+      {price}
+      {dateRow}
     </>
+  )
+}
+
+function FavoriteIconButton({
+  favorite,
+  onClick,
+  className = '',
+}: {
+  favorite: boolean
+  onClick: (e: MouseEvent<HTMLButtonElement>) => void
+  /** e.g. absolute placement straddling image / text */
+  className?: string
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={favorite ? 'Sevimlidan olib tashlash' : "Sevimlilariga qo'shish"}
+      onClick={onClick}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-md ${favorite
+        ? 'bg-daladan-accent text-daladan-accentDark'
+        : 'bg-white text-daladan-muted ring-1 ring-daladan-border/80 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600'
+        } ${className}`.trim()}
+    >
+      <Heart size={16} fill={favorite ? 'currentColor' : 'none'} />
+    </button>
   )
 }
 
@@ -152,42 +212,84 @@ export const ListingCard = ({
     target.src = '/daladan-logo-full-transparent.png'
   }
 
-  const linkClassName =
-    variant === 'grid'
-      ? `flex w-full min-h-0 flex-col ${CARD_SHELL}`
-      : `grid min-h-0 grid-cols-[11rem_1fr] items-stretch sm:grid-cols-[14rem_1fr] ${CARD_SHELL}`
+  const titleHeadingClass =
+    'line-clamp-2 font-semibold text-daladan-heading dark:text-slate-100'
 
   return (
     <div className={variant === 'grid' ? 'relative w-full' : 'relative h-full'}>
-      <Link to={itemPath} className={linkClassName}>
-        {variant === 'grid' ? (
-          <>
-            <ListingMedia listing={listing} variant="grid" onImageError={onImageError} />
-            <div className="flex flex-col space-y-2.5 p-4">
-              <ListingMeta listing={listing} variant="grid" showPostedDate={showPostedDate} />
-            </div>
-          </>
-        ) : (
-          <>
-            <ListingMedia listing={listing} variant="list" onImageError={onImageError} />
-            <div className="flex min-h-0 min-w-0 flex-col justify-start space-y-1.5 p-3 pr-11 sm:space-y-2 sm:p-4 sm:pr-12">
-              <ListingMeta listing={listing} variant="list" showPostedDate={showPostedDate} />
-            </div>
-          </>
-        )}
-      </Link>
-      <button
-        type="button"
-        aria-label={favorite ? 'Sevimlidan olib tashlash' : "Sevimlilariga qo'shish"}
-        onClick={onFavoriteClick}
-        className={`absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full shadow-sm ${
-          favorite
-            ? 'bg-daladan-accent text-daladan-accentDark'
-            : 'bg-daladan-surfaceElevated/95 text-daladan-muted dark:bg-slate-800 dark:text-slate-300'
-        }`}
-      >
-        <Heart size={16} fill={favorite ? 'currentColor' : 'none'} />
-      </button>
+      {variant === 'grid' ? (
+        <div className={`flex min-h-0 w-full flex-col ${CARD_SHELL}`}>
+          <div className="relative shrink-0">
+            <Link
+              to={itemPath}
+              className="block outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 focus-visible:ring-offset-2 ring-offset-daladan-surfaceElevated dark:ring-offset-slate-900"
+            >
+              <ListingMedia listing={listing} variant="grid" onImageError={onImageError} />
+            </Link>
+            <FavoriteIconButton
+              favorite={favorite}
+              onClick={onFavoriteClick}
+              className="absolute bottom-0 right-3 z-20 -translate-y-1/2 translate-y-1.5"
+            />
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col space-y-2.5 px-4 pb-4 pt-5">
+            <Link
+              to={itemPath}
+              className="block min-w-0 rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-daladan-primary/50"
+            >
+              <h3 className={`text-lg ${titleHeadingClass}`}>{listing.title}</h3>
+            </Link>
+            <Link
+              to={itemPath}
+              className="flex min-h-0 flex-col gap-2.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 focus-visible:ring-offset-2 ring-offset-daladan-surfaceElevated dark:ring-offset-slate-900 rounded-sm"
+            >
+              <ListingMeta
+                listing={listing}
+                variant="grid"
+                showPostedDate={showPostedDate}
+                omitTitle
+              />
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <div className={`grid min-h-0 grid-cols-[11rem_1fr] items-stretch sm:grid-cols-[14rem_1fr] ${CARD_SHELL}`}>
+          <div className="relative min-h-0 min-w-0">
+            <Link
+              to={itemPath}
+              className="relative block h-full min-h-[9rem] min-w-0 overflow-hidden rounded-l-ui outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 focus-visible:ring-inset"
+            >
+              <ListingMedia listing={listing} variant="list" onImageError={onImageError} />
+            </Link>
+            <FavoriteIconButton
+              favorite={favorite}
+              onClick={onFavoriteClick}
+              className="absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2"
+            />
+          </div>
+          <div className="flex min-h-0 min-w-0 flex-col gap-1.5 pl-5 pr-3 pt-3 sm:gap-2 sm:pl-6 sm:pr-4 sm:pt-4">
+            <Link
+              to={itemPath}
+              className="block min-w-0 rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-daladan-primary/50"
+            >
+              <h3 className={`text-base sm:text-lg ${titleHeadingClass}`}>{listing.title}</h3>
+            </Link>
+            <Link
+              to={itemPath}
+              className="block min-h-0 text-left outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 rounded-sm"
+            >
+              <div className="flex flex-col gap-1.5 sm:gap-2">
+                <ListingMeta
+                  listing={listing}
+                  variant="list"
+                  showPostedDate={showPostedDate}
+                  omitTitle
+                />
+              </div>
+            </Link>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -143,6 +143,7 @@ export const HomePage = () => {
                   variant="grid"
                   canFavorite={Boolean(user)}
                   onFavoriteBlocked={redirectToLogin}
+                  showPostedDate
                 />
               </div>
             ))}
