@@ -1,8 +1,9 @@
 import {
   Bike,
-  Calendar,
   ChevronLeft,
   ChevronRight,
+  Clock,
+  Eye,
   Heart,
   Link2,
   MapPin,
@@ -11,11 +12,20 @@ import {
   Send,
   Truck,
 } from 'lucide-react'
-import { Fragment, useEffect, useState, type MouseEvent, type SyntheticEvent } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type MouseEvent,
+  type SyntheticEvent,
+} from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ImageLightbox } from '../components/ui/ImageLightbox'
 import { ItemDetailsPageSkeleton, RelatedListingCardsSkeleton } from '../features/marketplace'
-import { formatListingCreatedAt } from '../features/marketplace/model/listingHelpers'
+import { formatListingCreatedAt, shuffleInPlace } from '../features/marketplace/model/listingHelpers'
 import { searchUrlForCategoryLabel } from '../features/marketplace/model/searchUrls'
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
@@ -28,8 +38,146 @@ const getListingSlides = (listing: Listing) =>
 
 const TITLE_MAX_LEN = 56
 
+const RELATED_SUGGESTIONS_COUNT = 6
+
 /** Flip to `true` when seller DMs / in-app chat is shipped. */
 const IN_APP_MESSAGING_AVAILABLE = false
+
+const scrollbarHide =
+  '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden'
+
+function RelatedSuggestionsCarousel({
+  listings,
+  onImageError,
+}: {
+  listings: Listing[]
+  onImageError: (event: SyntheticEvent<HTMLImageElement>) => void
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
+  const [hasOverflow, setHasOverflow] = useState(false)
+
+  const syncScroll = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const { scrollLeft, scrollWidth, clientWidth } = el
+    const maxScroll = Math.max(0, scrollWidth - clientWidth)
+    const epsilon = 3
+    setHasOverflow(maxScroll > epsilon)
+    setCanScrollLeft(scrollLeft > epsilon)
+    setCanScrollRight(scrollLeft < maxScroll - epsilon)
+  }, [])
+
+  useLayoutEffect(() => {
+    syncScroll()
+  }, [listings, syncScroll])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    syncScroll()
+    el.addEventListener('scroll', syncScroll, { passive: true })
+    const ro = new ResizeObserver(() => syncScroll())
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', syncScroll)
+      ro.disconnect()
+    }
+  }, [listings, syncScroll])
+
+  const scrollByDir = (dir: -1 | 1) => {
+    const el = scrollRef.current
+    if (!el) return
+    const step = Math.max(200, el.clientWidth * 0.85) * dir
+    el.scrollBy({ left: step, behavior: 'smooth' })
+  }
+
+  if (listings.length === 0) return null
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 sm:text-2xl">
+          Sizga ham yoqishi mumkin
+        </h3>
+        {hasOverflow ? (
+          <div className="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              aria-label="Oldingi takliflar"
+              disabled={!canScrollLeft}
+              onClick={() => scrollByDir(-1)}
+              className={`rounded-full border p-2 transition-colors ${
+                canScrollLeft
+                  ? 'border-slate-300 bg-white text-daladan-primary shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700'
+                  : 'cursor-not-allowed border-transparent bg-slate-100 text-slate-300 dark:bg-slate-800 dark:text-slate-600'
+              }`}
+            >
+              <ChevronLeft size={22} aria-hidden />
+            </button>
+            <button
+              type="button"
+              aria-label="Keyingi takliflar"
+              disabled={!canScrollRight}
+              onClick={() => scrollByDir(1)}
+              className={`rounded-full border p-2 transition-colors ${
+                canScrollRight
+                  ? 'border-slate-300 bg-white text-daladan-accent shadow-sm hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-daladan-primary dark:hover:bg-slate-700'
+                  : 'cursor-not-allowed border-transparent bg-slate-100 text-slate-300 dark:bg-slate-800 dark:text-slate-600'
+              }`}
+            >
+              <ChevronRight size={22} aria-hidden />
+            </button>
+          </div>
+        ) : null}
+      </div>
+
+      <div
+        ref={scrollRef}
+        className={`flex touch-pan-x gap-3 overflow-x-auto scroll-smooth pb-1 ${scrollbarHide} snap-x snap-mandatory`}
+      >
+        {listings.map((item) => {
+          const posted = formatListingCreatedAt(item.createdAt)
+          return (
+            <Link
+              key={item.id}
+              to={`/item/${item.id}`}
+              className="flex w-[min(100%,14rem)] min-w-[11rem] shrink-0 snap-start flex-col overflow-hidden rounded-ui border border-slate-200 bg-white shadow-sm transition-colors hover:border-daladan-primary/40 dark:border-slate-700 dark:bg-slate-900 sm:min-w-[12.5rem]"
+            >
+              <div className="relative shrink-0">
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  onError={onImageError}
+                  className="h-32 w-full object-cover"
+                />
+                <div className="pointer-events-none absolute bottom-2 right-2 max-w-[calc(100%-0.75rem)] truncate rounded-md bg-daladan-primary px-2 py-0.5 text-left text-xs font-bold text-white shadow-sm">
+                  {formatPrice(item.price)} so&apos;m
+                </div>
+              </div>
+              <div className="flex min-h-0 flex-1 flex-col p-3">
+                <p className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 dark:text-slate-100">
+                  {item.title}
+                </p>
+                <p className="mt-2 flex min-w-0 items-start gap-1 text-xs text-slate-500 dark:text-slate-400">
+                  <MapPin size={12} className="mt-0.5 shrink-0" aria-hidden />
+                  <span className="min-w-0 break-words leading-snug">{item.location}</span>
+                </p>
+                {posted ? (
+                  <p className="mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                    <Clock size={12} className="shrink-0" aria-hidden />
+                    <span>{posted}</span>
+                  </p>
+                ) : null}
+              </div>
+            </Link>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function TelegramShareIcon({ className }: { className?: string }) {
   return (
@@ -103,6 +251,38 @@ function ListingBreadcrumbs({ listing }: { listing: Listing }) {
   )
 }
 
+function ListingDetailHeader({ listing }: { listing: Listing }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
+        {listing.isTopSale && (
+          <span className="rounded-md bg-daladan-accent px-2 py-1 text-daladan-accentDark">TOP SOTUV</span>
+        )}
+        {listing.isFresh && (
+          <span className="rounded-md bg-daladan-primary/10 px-2 py-1 text-daladan-primary">Yangi hosil</span>
+        )}
+      </div>
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
+        <div className="min-w-0 space-y-2">
+          <h1 className="text-2xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
+            {listing.title}
+          </h1>
+          <p className="inline-flex items-center gap-1.5 text-sm font-medium text-daladan-primary">
+            <MapPin size={15} className="shrink-0" aria-hidden />
+            <span className="min-w-0">{listing.location}</span>
+          </p>
+        </div>
+        <div className="shrink-0 text-left md:text-right">
+          <p className="text-3xl font-bold leading-tight text-daladan-primary md:text-4xl">
+            {formatPrice(listing.price)}
+          </p>
+          <p className="mt-0.5 text-lg font-semibold text-slate-700 dark:text-slate-300">{listing.unit}</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ItemDetailSidebar({
   listing,
   sellerName,
@@ -142,13 +322,6 @@ function ItemDetailSidebar({
     <div
       className={`space-y-4 rounded-ui border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-5 ${className}`}
     >
-      <div>
-        <p className="text-3xl font-bold leading-tight text-daladan-primary md:text-4xl">
-          {formatPrice(listing.price)}
-        </p>
-        <p className="mt-0.5 text-lg font-semibold text-slate-700 dark:text-slate-300">{listing.unit}</p>
-      </div>
-
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
@@ -289,11 +462,44 @@ export const ItemDetailsPage = () => {
       .getPublicAdById(id)
       .then(setListing)
       .finally(() => setIsLoadingDetail(false))
-    marketplaceService
-      .getPublicAds({ perPage: 100 })
-      .then((items) => setRelatedListings(items.filter((item) => item.id !== id).slice(0, 3)))
-      .finally(() => setIsLoadingRelated(false))
   }, [id])
+
+  useEffect(() => {
+    if (!id) return
+    if (isLoadingDetail) return
+    if (!listing) {
+      setIsLoadingRelated(false)
+      return
+    }
+
+    let cancelled = false
+    setIsLoadingRelated(true)
+
+    const loadRelated = async () => {
+      try {
+        const filters =
+          listing.subcategoryId !== undefined
+            ? { subcategoryId: listing.subcategoryId, perPage: 80 }
+            : { perPage: 100 }
+        const items = await marketplaceService.getPublicAds(filters)
+        let others = items.filter((item) => item.id !== id)
+        if (others.length < RELATED_SUGGESTIONS_COUNT && listing.subcategoryId !== undefined) {
+          const fallback = await marketplaceService.getPublicAds({ perPage: 100 })
+          others = fallback.filter((item) => item.id !== id)
+        }
+        if (cancelled) return
+        shuffleInPlace(others)
+        setRelatedListings(others.slice(0, RELATED_SUGGESTIONS_COUNT))
+      } finally {
+        if (!cancelled) setIsLoadingRelated(false)
+      }
+    }
+
+    void loadRelated()
+    return () => {
+      cancelled = true
+    }
+  }, [id, listing, isLoadingDetail])
 
   useEffect(() => {
     if (!linkCopied) return
@@ -434,8 +640,9 @@ export const ItemDetailsPage = () => {
 
       <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(272px,360px)] lg:items-start lg:gap-10">
         <div className="min-w-0 space-y-6">
-          <div className="space-y-3">
+          <div className="space-y-4">
             <ListingBreadcrumbs listing={listing} />
+            <ListingDetailHeader listing={listing} />
             <section className="relative overflow-hidden rounded-ui border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <div className="relative aspect-[4/3] w-full bg-slate-100 dark:bg-slate-800">
                 <button
@@ -514,35 +721,6 @@ export const ItemDetailsPage = () => {
             </section>
           </div>
 
-          <section className="space-y-3 rounded-ui border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-5">
-            <div className="flex flex-wrap gap-2 text-[11px] font-semibold">
-              {listing.isTopSale && (
-                <span className="rounded-md bg-daladan-accent px-2 py-1 text-daladan-accentDark">TOP SOTUV</span>
-              )}
-              {listing.isFresh && (
-                <span className="rounded-md bg-daladan-primary/10 px-2 py-1 text-daladan-primary">Yangi hosil</span>
-              )}
-            </div>
-            <h1 className="text-2xl font-semibold leading-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
-              {listing.title}
-            </h1>
-            <p className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-daladan-primary">
-              <span className="inline-flex items-center gap-1">
-                <MapPin size={15} className="shrink-0" aria-hidden />
-                {listing.location}
-              </span>
-              {createdLabel ? (
-                <span className="inline-flex items-center gap-1 text-slate-500 dark:text-slate-400">
-                  <Calendar size={15} className="shrink-0" aria-hidden />
-                  {createdLabel}
-                </span>
-              ) : null}
-            </p>
-            <p className="text-xs text-slate-500 dark:text-slate-500">
-              E&apos;lon ID: <span className="font-mono text-slate-600 dark:text-slate-400">{id}</span>
-            </p>
-          </section>
-
           <div className="lg:hidden">
             <ItemDetailSidebar {...sidebarProps} />
           </div>
@@ -574,31 +752,30 @@ export const ItemDetailsPage = () => {
                 </p>
               </div>
             </div>
-          </section>
-
-          <section className="space-y-3">
-            <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 sm:text-2xl">
-              O&apos;xshash mahsulotlar
-            </h3>
-            {isLoadingRelated ? (
-              <RelatedListingCardsSkeleton count={3} />
-            ) : (
-              <div className="grid gap-3 sm:grid-cols-3">
-                {relatedListings.map((item) => (
-                  <Link
-                    key={item.id}
-                    to={`/item/${item.id}`}
-                    className="overflow-hidden rounded-ui border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900"
-                  >
-                    <img src={item.image} alt={item.title} onError={onImageError} className="h-32 w-full object-cover" />
-                    <div className="p-3">
-                      <p className="line-clamp-1 font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
-                      <p className="text-sm font-semibold text-daladan-primary">{formatPrice(item.price)} so&apos;m</p>
-                    </div>
-                  </Link>
-                ))}
+            <div className="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 dark:border-slate-700 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+              <div className="min-w-0 text-sm text-slate-500 dark:text-slate-400">
+                {createdLabel ? (
+                  <p>
+                    Joylashtirilgan:{' '}
+                    <span className="text-slate-700 dark:text-slate-300">{createdLabel}</span>
+                  </p>
+                ) : null}
+                <p className={createdLabel ? 'mt-1' : undefined}>
+                  E&apos;lon ID:{' '}
+                  <span className="font-mono text-slate-600 dark:text-slate-400">{listing.id}</span>
+                </p>
               </div>
-            )}
+              {listing.viewsCount !== undefined ? (
+                <div
+                  className="inline-flex shrink-0 items-center gap-1.5 self-end rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm font-medium text-slate-600 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-300 sm:self-auto"
+                  title="Ko'rishlar soni"
+                  aria-label={`Ko'rishlar soni: ${listing.viewsCount}`}
+                >
+                  <Eye size={16} className="shrink-0 text-daladan-primary" aria-hidden />
+                  <span aria-hidden>{listing.viewsCount}</span>
+                </div>
+              ) : null}
+            </div>
           </section>
         </div>
 
@@ -606,6 +783,16 @@ export const ItemDetailsPage = () => {
           <ItemDetailSidebar {...sidebarProps} />
         </aside>
       </div>
+
+      {isLoadingRelated || relatedListings.length > 0 ? (
+        <section className="mt-10 w-full border-t border-slate-200 pt-8 dark:border-slate-700">
+          {isLoadingRelated ? (
+            <RelatedListingCardsSkeleton count={RELATED_SUGGESTIONS_COUNT} variant="carousel" />
+          ) : (
+            <RelatedSuggestionsCarousel listings={relatedListings} onImageError={onImageError} />
+          )}
+        </section>
+      ) : null}
     </div>
   )
 }

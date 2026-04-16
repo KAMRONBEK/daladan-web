@@ -170,6 +170,15 @@ export const mapListing = (item: UnknownRecord): Listing => {
     mergedImages[0] ||
     getString(item, 'image', 'image_url', 'photo')
 
+  const subcategoryIdRaw =
+    getNumber(subcategoryObj, 'id', 'subcategory_id') || getNumber(item, 'subcategory_id')
+  const subcategoryId = subcategoryIdRaw > 0 ? subcategoryIdRaw : undefined
+
+  const hasViewsField =
+    Object.prototype.hasOwnProperty.call(item, 'views_count') ||
+    Object.prototype.hasOwnProperty.call(item, 'viewsCount')
+  const viewsCount = hasViewsField ? getNumber(item, 'views_count', 'viewsCount') : undefined
+
   return {
     id: getIdString(item) || '0',
     title: getString(item, 'title', 'name') || "Nomsiz e'lon",
@@ -193,6 +202,8 @@ export const mapListing = (item: UnknownRecord): Listing => {
     images: mergedImages.length > 0 ? mergedImages : undefined,
     status: getString(item, 'status') || undefined,
     createdAt: getString(item, 'created_at', 'createdAt') || undefined,
+    subcategoryId,
+    viewsCount,
   }
 }
 

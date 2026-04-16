@@ -1,4 +1,4 @@
-import { Calendar, Camera, Heart, MapPin } from 'lucide-react'
+import { Camera, Clock, Heart, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { MouseEvent, SyntheticEvent } from 'react'
 
@@ -108,11 +108,11 @@ function ListingMeta({
         <span className="min-w-0 truncate">{listing.location}</span>
       </p>
       <p className="text-xl font-bold text-daladan-price dark:text-daladan-primary">
-        {formatPrice(listing.price)} <span className="text-sm">{listing.unit}</span>
+        {formatPrice(listing.price)} <span className="text-sm">so&apos;m</span>
       </p>
       {createdLabel ? (
         <p className="flex items-center gap-1 text-xs text-daladan-muted/90 dark:text-slate-500">
-          <Calendar size={12} className="shrink-0" aria-hidden />
+          <Clock size={12} className="shrink-0" aria-hidden />
           <span>{createdLabel}</span>
         </p>
       ) : null}

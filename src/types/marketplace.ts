@@ -25,6 +25,10 @@ export interface Listing {
   status?: string
   /** ISO datetime from API when available */
   createdAt?: string
+  /** Public API subcategory id for related listings filtering */
+  subcategoryId?: number
+  /** View count when returned by API */
+  viewsCount?: number
 }
 
 export interface Profile {
