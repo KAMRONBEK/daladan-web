@@ -59,11 +59,11 @@ export const SiteHeader = () => {
         </Link>
         <form
           onSubmit={commitSearch}
-          className="hidden min-w-0 flex-1 items-center gap-1 rounded-ui border border-daladan-border/80 bg-daladan-soft px-2 py-1.5 md:flex dark:border-slate-600 dark:bg-slate-800"
+          className="site-header-search-form hidden min-w-0 flex-1 items-center gap-1 rounded-ui border border-daladan-border/80 bg-daladan-soft px-2 py-1.5 transition-shadow focus-within:border-daladan-primary/35 focus-within:shadow-sm focus-within:ring-2 focus-within:ring-daladan-primary/20 md:flex dark:border-slate-600 dark:bg-slate-800 dark:focus-within:border-daladan-primary/50 dark:focus-within:ring-daladan-primary/25"
         >
           <button
             type="submit"
-            className="inline-flex h-9 shrink-0 items-center justify-center rounded-md text-daladan-muted transition-colors hover:bg-daladan-border/40 hover:text-daladan-heading dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+            className="site-header-search-submit inline-flex h-9 shrink-0 items-center justify-center rounded-md text-daladan-muted transition-colors hover:bg-daladan-border/40 hover:text-daladan-heading dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-200"
             aria-label="Qidiruv"
           >
             <Search size={18} />
@@ -73,7 +73,7 @@ export const SiteHeader = () => {
             name="q"
             value={inputValue}
             onChange={(event) => setInputValue(event.target.value)}
-            className="min-w-0 flex-1 bg-transparent py-1 text-sm text-daladan-heading outline-none dark:text-slate-100"
+            className="site-header-search min-w-0 flex-1 rounded-md border-0 bg-transparent py-1 text-sm text-daladan-heading dark:text-slate-100"
             placeholder="Yozing, tushib qolmasin — har ikkalamiz qidiramiz"
             autoComplete="off"
           />

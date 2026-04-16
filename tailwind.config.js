@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       borderRadius: {
-        ui: '8px',
+        ui: '4px',
       },
       colors: {
         // Light theme: soft greys + muted green accents (reference: marketplace screenshots)

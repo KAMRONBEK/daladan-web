@@ -99,3 +99,10 @@ a:focus-visible {
   outline: 3px solid rgb(47 109 63);
   outline-offset: 2px;
 }
+
+/* Header search: whole bar gets focus-within ring; no inner rectangular outline */
+.site-header-search-form input.site-header-search:focus-visible,
+.site-header-search-form button.site-header-search-submit:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
