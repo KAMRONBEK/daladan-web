@@ -3,6 +3,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
 import { useTheme } from '../../state/ThemeContext'
+import { LOGIN_PATH, loginReturnState } from '../../utils/appPaths'
 
 export const SiteHeader = () => {
   const { user } = useAuth()
@@ -22,7 +23,7 @@ export const SiteHeader = () => {
   }, [location.pathname, location.search])
 
   const toLogin = () => {
-    navigate('/login', { state: { from: `${location.pathname}${location.search}` } })
+    navigate(LOGIN_PATH, loginReturnState(location))
   }
 
   const toFavorites = () => {

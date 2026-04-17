@@ -7,6 +7,8 @@ import type {
   AdminUserUpdatePayload,
   LaravelPaginated,
 } from '../../types/admin'
+import type { AdPromotion } from '../../types/marketplace'
+import { extractPromotionRows, mapAdPromotion } from '../adPromotionMappers'
 import { requestJson } from '../apiClient'
 import {
   buildAdminQuery,
@@ -53,6 +55,12 @@ export const adminApiService = {
   async getAd(id: number): Promise<AdminUserNestedAd> {
     const raw = await requestJson<unknown>(`/admin/ads/${id}`)
     return mapAdminNestedAd(unwrapRecord(raw))
+  },
+
+  /** Promotion history for an ad (`GET /admin/ads/:id/promotions`). */
+  async getAdPromotions(adId: number): Promise<AdPromotion[]> {
+    const raw = await requestJson<unknown>(`/admin/ads/${adId}/promotions`)
+    return extractPromotionRows(raw).map(mapAdPromotion)
   },
 
   async approveAd(adId: number) {

@@ -31,6 +31,7 @@ import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import { useFavorites } from '../state/FavoritesContext'
 import type { Listing } from '../types/marketplace'
+import { LOGIN_PATH, loginReturnState } from '../utils/appPaths'
 import { formatPrice } from '../utils/price'
 
 const getListingSlides = (listing: Listing) =>
@@ -436,8 +437,6 @@ export const ItemDetailsPage = () => {
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite } = useFavorites()
 
-  const loginFrom = `${location.pathname}${location.search}`
-
   const onImageError = (event: SyntheticEvent<HTMLImageElement>) => {
     const target = event.currentTarget
     if (target.dataset.fallbackApplied === '1') return
@@ -537,7 +536,7 @@ export const ItemDetailsPage = () => {
   const favorite = isFavorite(listing.id)
 
   const redirectToLogin = () => {
-    navigate('/login', { state: { from: loginFrom } })
+    navigate(LOGIN_PATH, loginReturnState(location))
   }
 
   const onFavoriteClick = (e: MouseEvent<HTMLButtonElement>) => {

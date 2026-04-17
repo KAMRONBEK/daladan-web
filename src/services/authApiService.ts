@@ -87,6 +87,11 @@ export const authApiService: AuthService = {
     })
   },
 
+  async refresh() {
+    const response = await requestJson<unknown>('/refresh', { method: 'POST' })
+    return mapAuthResult(response, { phone: '', fullName: 'Foydalanuvchi' })
+  },
+
   async getMe() {
     const response = await requestJson<unknown>('/profile')
     const root = asRecord(response)

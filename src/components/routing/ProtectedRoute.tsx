@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
+import { LOGIN_PATH, loginReturnState } from '../../utils/appPaths'
 
 export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   const { user, isAuthLoading } = useAuth()
@@ -15,7 +16,7 @@ export const ProtectedRoute = ({ children }: { children: ReactNode }) => {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace state={{ from: `${location.pathname}${location.search}` }} />
+    return <Navigate to={LOGIN_PATH} replace {...loginReturnState(location)} />
   }
 
   return <>{children}</>

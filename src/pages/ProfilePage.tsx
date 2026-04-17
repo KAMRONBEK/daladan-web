@@ -385,9 +385,16 @@ export const ProfilePage = () => {
                       </span>
                     </div>
 
-                    <div className="relative z-20 mt-4 grid gap-2 sm:grid-cols-[1fr_1fr_auto_auto] pointer-events-auto">
+                    <div className="relative z-20 mt-4 flex flex-wrap gap-2 pointer-events-auto">
                       <Link
-                        to={`/ad-boost/${listing.id}?plan=boosted`}
+                        to={`/profile/ads/${listing.id}/stats`}
+                        className="rounded-ui border border-slate-200 bg-white px-4 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        Statistika
+                      </Link>
+                      <Link
+                        to={`/profile/ads/${listing.id}/promotions?plan=boosted`}
                         className="rounded-ui bg-daladan-primary px-4 py-2 text-center text-sm font-semibold text-white"
                         onClick={(e) => e.stopPropagation()}
                       >
@@ -395,7 +402,7 @@ export const ProfilePage = () => {
                       </Link>
                       {active ? (
                         <Link
-                          to={`/ad-boost/${listing.id}?plan=top-sale`}
+                          to={`/profile/ads/${listing.id}/promotions?plan=top-sale`}
                           className="rounded-ui bg-daladan-accentMuted px-4 py-2 text-center text-sm font-semibold text-daladan-accentDark"
                           onClick={(e) => e.stopPropagation()}
                         >

@@ -8,6 +8,7 @@ import { searchUrlForCategoryLabel } from '../features/marketplace/model/searchU
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
+import { LOGIN_PATH, loginReturnState } from '../utils/appPaths'
 
 const FEATURED_LIMIT = 8
 const POPULAR_CATEGORY_LIMIT = 8
@@ -51,7 +52,7 @@ export const HomePage = () => {
   const [searchParams] = useSearchParams()
 
   const redirectToLogin = () => {
-    navigate('/login', { state: { from: `${location.pathname}${location.search}` } })
+    navigate(LOGIN_PATH, loginReturnState(location))
   }
 
   useEffect(() => {

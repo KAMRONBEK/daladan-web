@@ -23,6 +23,8 @@ interface AuthContextValue {
   authMethod: AuthMethod
   loginWithPassword: (phone: string, password: string) => Promise<void>
   register: (payload: RegisterPayload) => Promise<void>
+  /** Persists new token + user after `authService.refresh()` (see `features/session-refresh`). */
+  refreshSession: () => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -142,6 +144,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await syncUserAfterAuth(result)
   }
 
+  const refreshSession = async () => {
+    const result = await authService.refresh()
+    setAuthMethod('password')
+    await syncUserAfterAuth(result)
+  }
+
   const logout = async () => {
     try {
       await authService.logout()
@@ -152,7 +160,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isAuthLoading, authMethod, loginWithPassword, register, logout }}>
+    <AuthContext.Provider
+      value={{ user, isAuthLoading, authMethod, loginWithPassword, register, refreshSession, logout }}
+    >
       {children}
     </AuthContext.Provider>
   )

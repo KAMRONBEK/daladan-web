@@ -111,6 +111,26 @@ export interface ProfileAd {
   id: number
 }
 
+/** Aggregated metrics from `GET /profile/ads/{ad}/stats`. */
+export interface AdStats {
+  viewsCount: number
+  favoritesCount: number
+  messagesCount: number
+  phoneRevealsCount: number
+}
+
+/** Row from `GET /profile/ads/{ad}/promotions` (and admin mirror). */
+export interface AdPromotion {
+  id: number
+  kind: string
+  status?: string
+  planName?: string
+  startsAt?: string
+  endsAt?: string
+  createdAt?: string
+  price: number | null
+}
+
 export interface PublicAdsFilters {
   perPage?: number
   categoryId?: number

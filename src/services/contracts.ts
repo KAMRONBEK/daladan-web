@@ -1,4 +1,6 @@
 import type {
+  AdPromotion,
+  AdStats,
   BoostPlan,
   CategoryOption,
   CreateProfileAdPayload,
@@ -17,6 +19,8 @@ export interface MarketplaceService {
   getPublicAdById(id: string | number): Promise<Listing | undefined>
   getProfileAds(perPage?: number, page?: number): Promise<Listing[]>
   getProfileAdById(adId: number): Promise<Listing | undefined>
+  getProfileAdStats(adId: number): Promise<AdStats>
+  getProfileAdPromotions(adId: number): Promise<AdPromotion[]>
   updateProfileAd(adId: number, payload: UpdateProfileAdPayload): Promise<ProfileAd>
   deleteProfileAd(adId: number): Promise<void>
   getListings(): Promise<Listing[]>
@@ -92,6 +96,8 @@ export interface AuthResult {
 export interface AuthService {
   login(payload: LoginRequest): Promise<AuthResult>
   register(payload: RegisterRequest, authType?: 'password' | 'telegram'): Promise<AuthResult>
+  /** `POST /refresh` — new bearer token; profile sync happens in auth layer after persist. */
+  refresh(): Promise<AuthResult>
   getMe(): Promise<AuthUser>
   getRegions(): Promise<RegionOption[]>
   getCities(regionId?: number): Promise<CityOption[]>

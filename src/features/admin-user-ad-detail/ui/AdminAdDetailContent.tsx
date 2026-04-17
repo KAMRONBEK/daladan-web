@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
+import { getAdminAdPromotionsListPath } from '../../ad-promotions'
 import { AdminModal } from '../../../components/admin/AdminModal'
 import { adminApiService } from '../../../services'
 import type { AdminUserListItem, AdminUserNestedAd } from '../../../types/admin'
@@ -98,6 +99,9 @@ export type AdminAdDetailContentProps = {
 }
 
 export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAdDetailContentProps) => {
+  const routeParams = useParams<{ userId?: string; adId?: string }>()
+  const promotionsHref = getAdminAdPromotionsListPath(ad.id, routeParams.userId, routeParams.adId)
+
   const [moderationBusy, setModerationBusy] = useState<'approve' | 'reject' | null>(null)
   const [moderationError, setModerationError] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
@@ -362,6 +366,14 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
               <DetailGridCell label="Boosted">{fmtBool(ad.is_boosted)}</DetailGridCell>
               <DetailGridCell label="Boost tugashi">
                 {ad.boost_expires_at ? formatUzbekDateTime(ad.boost_expires_at) : '—'}
+              </DetailGridCell>
+              <DetailGridCell label="Reklama">
+                <Link
+                  to={promotionsHref}
+                  className="font-medium text-daladan-primary hover:underline"
+                >
+                  Tarixni ko‘rish
+                </Link>
               </DetailGridCell>
               <DetailGridCell label="E‘lon muddati tugashi">
                 {ad.expires_at ? formatUzbekDateTime(ad.expires_at) : '—'}

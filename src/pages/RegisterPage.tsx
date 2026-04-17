@@ -6,6 +6,7 @@ import { authService } from '../services'
 import type { CityOption, RegionOption } from '../services/contracts'
 import { useAuth } from '../state/AuthContext'
 import { useTheme } from '../state/ThemeContext'
+import { LOGIN_PATH } from '../utils/appPaths'
 import { formatUzPhoneInput, isUzPhoneComplete, normalizeUzPhone } from '../utils/phone'
 
 interface RegisterFormValues {
@@ -277,7 +278,7 @@ export const RegisterPage = () => {
         {apiError && <p className="mt-3 text-base text-daladan-accentDark">{apiError}</p>}
         <p className="mt-5 text-lg text-slate-700 dark:text-slate-300">
           Hisobingiz bormi?{' '}
-          <Link to="/login" className="font-semibold text-daladan-primary">
+          <Link to={LOGIN_PATH} className="font-semibold text-daladan-primary">
             Kirish
           </Link>
         </p>

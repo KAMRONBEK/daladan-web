@@ -13,6 +13,7 @@ import {
 import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
+import { LOGIN_PATH, loginReturnState } from '../utils/appPaths'
 
 const CATEGORY_SKELETON_ROWS = 6
 const SEARCH_LIST_PAGE_SIZE = 6
@@ -145,7 +146,7 @@ export const SearchPage = () => {
   const pageItems = filtered.slice(start, start + pageSize)
 
   const redirectToLogin = () => {
-    navigate('/login', { state: { from: `${location.pathname}${location.search}` } })
+    navigate(LOGIN_PATH, loginReturnState(location))
   }
 
   const toggleCategory = (label: string) => {

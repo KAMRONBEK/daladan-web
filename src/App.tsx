@@ -2,6 +2,8 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import { SiteLayout } from './components/layout/SiteLayout'
 import { ProtectedRoute } from './components/routing/ProtectedRoute'
 import { AdBoostPage } from './pages/AdBoostPage'
+import { AdPromotionsPage } from './pages/AdPromotionsPage'
+import { AdStatsPage } from './pages/AdStatsPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { ItemDetailsPage } from './pages/ItemDetailsPage'
 import { LoginPage } from './pages/LoginPage'
@@ -10,8 +12,10 @@ import { HomePage } from './pages/HomePage'
 import { SearchPage } from './pages/SearchPage'
 import { ProfilePage } from './pages/ProfilePage'
 import { RegisterPage } from './pages/RegisterPage'
+import { RefreshPage } from './pages/RefreshPage'
 import { AdminAppRoutes } from './routes/AdminAppRoutes'
 import { isAdminApp } from './utils/adminHost'
+import { LOGIN_PATH, SESSION_REFRESH_PATH } from './utils/appPaths'
 
 function App() {
   if (isAdminApp()) {
@@ -25,14 +29,35 @@ function App() {
         <Route path="/search" element={<SearchPage />} />
         <Route path="/item/:id" element={<ItemDetailsPage />} />
       </Route>
-      <Route path="/login" element={<LoginPage />} />
+      <Route path={LOGIN_PATH} element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path={SESSION_REFRESH_PATH} element={<RefreshPage />} />
       <Route
         path="/favorites"
         element={
           <ProtectedRoute>
             <SiteLayout>
               <FavoritesPage />
+            </SiteLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/ads/:ad/stats"
+        element={
+          <ProtectedRoute>
+            <SiteLayout>
+              <AdStatsPage />
+            </SiteLayout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile/ads/:ad/promotions"
+        element={
+          <ProtectedRoute>
+            <SiteLayout>
+              <AdPromotionsPage />
             </SiteLayout>
           </ProtectedRoute>
         }

@@ -8,6 +8,7 @@ import { aiService, authService, marketplaceService, profileService } from '../s
 import type { CityOption, RegionOption } from '../services/contracts'
 import { useAuth } from '../state/AuthContext'
 import type { CategoryOption, SubcategoryOption } from '../types/marketplace'
+import { LOGIN_PATH } from '../utils/appPaths'
 import { formatPriceInput, parsePriceInput } from '../utils/price'
 
 interface CreateAdFormValues {
@@ -440,7 +441,7 @@ export const CreateAdPage = () => {
         } catch {
           // Session cleared in logout; ignore secondary errors.
         }
-        navigate('/login', { replace: true })
+        navigate(LOGIN_PATH, { replace: true })
         return
       }
       setError(submissionError instanceof Error ? submissionError.message : "E'lon yaratishda xatolik yuz berdi")

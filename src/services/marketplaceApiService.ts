@@ -1,5 +1,7 @@
 import { boostPlans } from '../data/boostPlans'
 import type {
+  AdPromotion,
+  AdStats,
   BoostPlan,
   CategoryOption,
   CreateProfileAdPayload,
@@ -21,6 +23,8 @@ import {
   type UnknownRecord,
 } from './apiMappers'
 import type { MarketplaceService } from './contracts'
+import { extractPromotionRows, mapAdPromotion } from './adPromotionMappers'
+import { extractStatsRecord, mapAdStats } from './adStatsMappers'
 
 /**
  * Create form uses Uzbek labels; API expects a string unit (backend rule: length > 3).
@@ -422,6 +426,16 @@ export const marketplaceApiService: MarketplaceService = {
     const response = await requestJson<unknown>(`/profile/ads/${adId}`)
     const ad = extractSingleAd(response)
     return ad ? mapListing(ad) : undefined
+  },
+
+  async getProfileAdStats(adId: number): Promise<AdStats> {
+    const response = await requestJson<unknown>(`/profile/ads/${adId}/stats`)
+    return mapAdStats(extractStatsRecord(response))
+  },
+
+  async getProfileAdPromotions(adId: number): Promise<AdPromotion[]> {
+    const response = await requestJson<unknown>(`/profile/ads/${adId}/promotions`)
+    return extractPromotionRows(response).map(mapAdPromotion)
   },
 
   async updateProfileAd(adId: number, payload: UpdateProfileAdPayload) {
