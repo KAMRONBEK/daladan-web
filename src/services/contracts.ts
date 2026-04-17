@@ -36,6 +36,9 @@ export interface ProfileService {
   updateProfile(payload: UpdateProfilePayload): Promise<Profile>
   updateAvatar(file: File): Promise<Profile>
   updatePassword(payload: UpdatePasswordPayload): Promise<void>
+  getFavorites(): Promise<Listing[]>
+  addFavorite(adId: number): Promise<void>
+  removeFavorite(adId: number): Promise<void>
 }
 
 export interface GenerateAdDescriptionRequest {

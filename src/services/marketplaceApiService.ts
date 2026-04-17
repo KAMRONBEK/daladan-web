@@ -393,7 +393,7 @@ const updateProfileAd = async (adId: number, payload: UpdateProfileAdPayload): P
   return mapCreatedAd(response)
 }
 
-const mapListingCollection = (payload: unknown) =>
+export const mapListingCollection = (payload: unknown) =>
   extractCollection(payload).map(mapListing).filter((listing) => listing.id !== '0')
 
 export const marketplaceApiService: MarketplaceService = {

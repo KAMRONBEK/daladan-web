@@ -1,4 +1,4 @@
-export { isValidAdId } from './model/adId'
+export { isValidAdId, parseListingAdId } from './model/adId'
 export { profileAdCopy } from './model/copy'
 export { ProfileAdSectionShell } from './ui/ProfileAdSectionShell'
 export { InlineAlert } from './ui/InlineAlert'

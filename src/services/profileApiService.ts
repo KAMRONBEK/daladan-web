@@ -1,6 +1,7 @@
 import { requestJson } from './apiClient'
 import { asRecord, getNumber, getString, isNonEmptyRecord } from './apiMappers'
 import type { ProfileService } from './contracts'
+import { mapListingCollection } from './marketplaceApiService'
 import type { Profile, UpdatePasswordPayload, UpdateProfilePayload } from '../types/marketplace'
 
 const mapProfile = (payload: unknown): Profile => {
@@ -66,6 +67,19 @@ export const profileApiService: ProfileService = {
       method: 'PUT',
       body: JSON.stringify(payload),
     })
+  },
+
+  async getFavorites() {
+    const response = await requestJson<unknown>('/profile/favorites')
+    return mapListingCollection(response)
+  },
+
+  async addFavorite(adId: number) {
+    await requestJson<unknown>(`/profile/favorites/${adId}`, { method: 'POST' })
+  },
+
+  async removeFavorite(adId: number) {
+    await requestJson<unknown>(`/profile/favorites/${adId}`, { method: 'DELETE' })
   },
 }
 
