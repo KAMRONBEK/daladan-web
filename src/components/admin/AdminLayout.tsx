@@ -1,6 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react'
-import { ClipboardList, LayoutDashboard, LogOut, Megaphone, Menu, Moon, Sun, Tags, Users, X } from 'lucide-react'
-import { NavLink, Outlet } from 'react-router-dom'
+import {
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  Menu,
+  Moon,
+  Newspaper,
+  Sun,
+  Tags,
+  Users,
+  X,
+} from 'lucide-react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
 import { useTheme } from '../../state/ThemeContext'
 
@@ -12,10 +23,15 @@ const navClass = ({ isActive }: { isActive: boolean }) =>
       : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
   ].join(' ')
 
+/** `/ads` list and `/ads/:id` detail — E'lonlar nav (includes Moderatsiya holati `?status=pending`). */
+const isAdminAdsSectionPath = (pathname: string) => pathname === '/ads' || pathname.startsWith('/ads/')
+
 export const AdminLayout = ({ children }: { children?: ReactNode }) => {
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
+  const { pathname } = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const adsNavActive = isAdminAdsSectionPath(pathname)
 
   useEffect(() => {
     document.title = 'Daladan Admin'
@@ -54,9 +70,14 @@ export const AdminLayout = ({ children }: { children?: ReactNode }) => {
           <Megaphone size={18} aria-hidden />
           Reklama buyurtmalari
         </NavLink>
-        <NavLink to="/moderation" className={navClass} onClick={closeMobile}>
-          <ClipboardList size={18} aria-hidden />
-          Moderatsiya
+        <NavLink
+          to="/ads"
+          end
+          className={({ isActive }) => navClass({ isActive: isActive || adsNavActive })}
+          onClick={closeMobile}
+        >
+          <Newspaper size={18} aria-hidden />
+          E'lonlar
         </NavLink>
       </nav>
     </>

@@ -8,6 +8,7 @@ import { AdPromotionsTable } from './AdPromotionsTable'
 import { PromotionsEmptyState } from './PromotionsEmptyState'
 import { adPromotionMessages } from '../model/adPromotionMessages'
 import { useAdminPromotionRequestsPage } from '../model/useAdminPromotionRequestsPage'
+import { ADMIN_ADS_MODERATION_LIST } from '../../../utils/adminAdsRoutes'
 
 export function AdminPromotionRequestsPage() {
   const {
@@ -37,8 +38,8 @@ export function AdminPromotionRequestsPage() {
         <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
           Barcha promo so&apos;rovlari — tasdiqlash uchun ro&apos;yxat.
         </p>
-        <Link to="/moderation" className="mt-3 inline-block text-sm font-medium text-daladan-primary hover:underline">
-          ← Moderatsiyaga
+        <Link to={ADMIN_ADS_MODERATION_LIST} className="mt-3 inline-block text-sm font-medium text-daladan-primary hover:underline">
+          ← Moderatsiya navbatiga
         </Link>
       </div>
 

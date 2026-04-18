@@ -6,7 +6,7 @@ export function getAdminAdDetailPath(adId: number, sellerId?: number | null): st
   if (sellerId != null && Number.isFinite(sellerId) && sellerId > 0) {
     return `/users/${sellerId}/ads/${adId}`
   }
-  return `/moderation/ads/${adId}`
+  return `/ads/${adId}`
 }
 
 /**
@@ -21,5 +21,5 @@ export function getAdminAdPromotionsListPath(
   if (routeUserId && routeAdId) {
     return `/users/${routeUserId}/ads/${routeAdId}/promotions`
   }
-  return `/moderation/ads/${adId}/promotions`
+  return `/ads/${adId}/promotions`
 }

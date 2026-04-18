@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getAdminAdPromotionsListPath } from '../../ad-promotions'
+import { ADMIN_ADS_MODERATION_LIST } from '../../../utils/adminAdsRoutes'
 import { AdminModal } from '../../../components/admin/AdminModal'
 import { adminApiService } from '../../../services'
 import type { AdminUserListItem, AdminUserNestedAd } from '../../../types/admin'
@@ -196,7 +197,7 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
               Rad etish
             </button>
             <Link
-              to="/moderation"
+              to={ADMIN_ADS_MODERATION_LIST}
               className="inline-flex items-center rounded-ui px-4 py-2 text-sm font-medium text-daladan-primary hover:underline"
             >
               Moderatsiya ro‘yxati

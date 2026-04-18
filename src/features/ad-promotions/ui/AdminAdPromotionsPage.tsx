@@ -8,8 +8,9 @@ import { AdPromotionsTable } from './AdPromotionsTable'
 import { PromotionsEmptyState } from './PromotionsEmptyState'
 import { adPromotionMessages } from '../model/adPromotionMessages'
 import type { AdPromotion } from '../../../types/marketplace'
+import { ADMIN_ADS_MODERATION_LIST } from '../../../utils/adminAdsRoutes'
 
-/** Admin routes: `moderation/ads/:adId/promotions`, `users/:userId/ads/:adId/promotions` */
+/** Admin routes: `ads/:adId/promotions`, `users/:userId/ads/:adId/promotions` */
 export function AdminAdPromotionsPage() {
   const { userId: userIdParam, adId: adIdParam } = useParams<{
     userId?: string
@@ -39,7 +40,7 @@ export function AdminAdPromotionsPage() {
   const [confirmRow, setConfirmRow] = useState<AdPromotion | null>(null)
   const [confirmTx, setConfirmTx] = useState('')
 
-  const backToAd = hasUserInPath ? `/users/${userId}/ads/${adId}` : `/moderation/ads/${adId}`
+  const backToAd = hasUserInPath ? `/users/${userId}/ads/${adId}` : `/ads/${adId}`
   const backToUser = ad ? `/users/${ad.seller_id}` : hasUserInPath ? `/users/${userId}` : '/users'
 
   return (
@@ -55,7 +56,10 @@ export function AdminAdPromotionsPage() {
         <Link to={backToUser} className="text-sm text-slate-600 hover:underline dark:text-slate-400">
           Foydalanuvchi
         </Link>
-        <Link to="/moderation" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
+        <Link to="/ads" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
+          E'lonlar
+        </Link>
+        <Link to={ADMIN_ADS_MODERATION_LIST} className="text-sm text-slate-600 hover:underline dark:text-slate-400">
           Moderatsiya
         </Link>
       </div>

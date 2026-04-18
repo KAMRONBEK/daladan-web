@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import { AdminAdDetailContent, useAdminUserAdDetailPage } from '../../features/admin-user-ad-detail'
+import { ADMIN_ADS_MODERATION_LIST } from '../../utils/adminAdsRoutes'
 
 export const AdminUserAdDetailPage = () => {
   const {
@@ -40,7 +41,10 @@ export const AdminUserAdDetailPage = () => {
         <Link to="/users" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
           Barcha foydalanuvchilar
         </Link>
-        <Link to="/moderation" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
+        <Link to="/ads" className="text-sm text-slate-600 hover:underline dark:text-slate-400">
+          E'lonlar
+        </Link>
+        <Link to={ADMIN_ADS_MODERATION_LIST} className="text-sm text-slate-600 hover:underline dark:text-slate-400">
           Moderatsiya
         </Link>
       </div>

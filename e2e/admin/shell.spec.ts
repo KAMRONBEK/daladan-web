@@ -19,6 +19,9 @@ test.describe('admin shell (logged out)', () => {
     await page.goto('/moderation')
     await expectAdminLoginPage(page)
 
+    await page.goto('/ads')
+    await expectAdminLoginPage(page)
+
     await page.goto('/users')
     await expectAdminLoginPage(page)
   })
