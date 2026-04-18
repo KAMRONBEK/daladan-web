@@ -5,10 +5,6 @@ import { ApiError } from '../../../services/apiClient'
 import type { AdPromotion, BoostPlan, Listing } from '../../../types/marketplace'
 import { adPromotionMessages } from './adPromotionMessages'
 
-/** Backend currently responds with 405 for GET; omit the request unless this is set when the API supports listing. */
-const shouldFetchProfilePromotionHistory =
-  import.meta.env.VITE_ENABLE_PROFILE_AD_PROMOTIONS_HISTORY === 'true'
-
 type ProfileAdPromotionsState = {
   listing: Listing | undefined
   rows: AdPromotion[]
@@ -62,13 +58,11 @@ export function useProfileAdPromotionsPage(adId: number) {
 
       let rows: AdPromotion[] = []
       let promoHistoryNote = ''
-      if (shouldFetchProfilePromotionHistory) {
-        try {
-          rows = await marketplaceService.getProfileAdPromotions(adId)
-        } catch {
-          rows = []
-          promoHistoryNote = adPromotionMessages.promoHistoryUnavailable
-        }
+      try {
+        rows = await marketplaceService.getProfileAdPromotions(adId)
+      } catch {
+        rows = []
+        promoHistoryNote = adPromotionMessages.promoHistoryUnavailable
       }
 
       setState({

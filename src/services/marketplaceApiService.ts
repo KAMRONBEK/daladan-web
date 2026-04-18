@@ -12,7 +12,7 @@ import type {
   SubcategoryOption,
   UpdateProfileAdPayload,
 } from '../types/marketplace'
-import { ApiError, requestJson } from './apiClient'
+import { requestJson } from './apiClient'
 import {
   asRecord,
   extractCollection,
@@ -54,7 +54,15 @@ const mapPromotionPlanResource = (item: UnknownRecord, index: number): Promotion
   const durationDaysRaw = getNumber(item, 'duration_days', 'duration_in_days', 'days', 'duration')
   const durationDays = durationDaysRaw > 0 ? durationDaysRaw : 7
   if (!label) return null
-  const kindRaw = getString(item, 'kind', 'type', 'promotion_type', 'plan_kind', 'promotion_kind')
+  const kindRaw = getString(
+    item,
+    'kind',
+    'type',
+    'promotion_type',
+    'plan_kind',
+    'promotion_kind',
+    'category',
+  )
   return {
     id,
     label,
@@ -375,15 +383,8 @@ export const marketplaceApiService: MarketplaceService = {
   },
 
   async getProfileAdPromotions(adId: number): Promise<AdPromotion[]> {
-    try {
-      const response = await requestJson<unknown>(`/profile/ads/${adId}/promotions`)
-      return extractPromotionRows(response).map(mapAdPromotion)
-    } catch (e) {
-      if (e instanceof ApiError && (e.status === 405 || e.status === 404 || e.status === 501)) {
-        return []
-      }
-      throw e
-    }
+    const response = await requestJson<unknown>(`/profile/ads/${adId}/promotions`)
+    return extractPromotionRows(response).map(mapAdPromotion)
   },
 
   async updateProfileAd(adId: number, payload: UpdateProfileAdPayload) {
