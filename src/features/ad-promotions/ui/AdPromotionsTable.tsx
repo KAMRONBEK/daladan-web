@@ -1,6 +1,7 @@
 import type { AdPromotion } from '../../../types/marketplace'
 import { formatPrice } from '../../../utils/price'
 import { formatUzbekDateTime } from '../../../utils/uzbekDateFormat'
+import { isPromotionConfirmable } from '../model/promotionConfirm'
 import { getPromotionKindLabel } from '../model/promotionLabels'
 
 export type AdPromotionsTableVariant = 'profile' | 'admin'
@@ -8,10 +9,20 @@ export type AdPromotionsTableVariant = 'profile' | 'admin'
 type AdPromotionsTableProps = {
   rows: AdPromotion[]
   variant: AdPromotionsTableVariant
+  onConfirmPromotion?: (row: AdPromotion) => void
+  confirmingPromotionId?: number | null
+  confirmLabel?: string
 }
 
-export function AdPromotionsTable({ rows, variant }: AdPromotionsTableProps) {
+export function AdPromotionsTable({
+  rows,
+  variant,
+  onConfirmPromotion,
+  confirmingPromotionId,
+  confirmLabel = 'Tasdiqlash',
+}: AdPromotionsTableProps) {
   const showId = variant === 'admin'
+  const showActions = variant === 'admin' && typeof onConfirmPromotion === 'function'
 
   return (
     <div className="overflow-x-auto rounded-ui border border-slate-200 dark:border-slate-700">
@@ -27,6 +38,9 @@ export function AdPromotionsTable({ rows, variant }: AdPromotionsTableProps) {
             <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">Boshlanish</th>
             <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">Tugash</th>
             <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">Narx</th>
+            {showActions ? (
+              <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">Amallar</th>
+            ) : null}
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -49,6 +63,22 @@ export function AdPromotionsTable({ rows, variant }: AdPromotionsTableProps) {
               <td className="px-3 py-2.5 text-slate-900 dark:text-slate-100">
                 {row.price != null ? `${formatPrice(row.price)} so'm` : '—'}
               </td>
+              {showActions ? (
+                <td className="px-3 py-2.5">
+                  {isPromotionConfirmable(row.status) ? (
+                    <button
+                      type="button"
+                      disabled={confirmingPromotionId === row.id}
+                      onClick={() => onConfirmPromotion?.(row)}
+                      className="rounded-ui bg-daladan-primary px-2.5 py-1 text-xs font-semibold text-white disabled:opacity-60"
+                    >
+                      {confirmingPromotionId === row.id ? '...' : confirmLabel}
+                    </button>
+                  ) : (
+                    <span className="text-slate-400">—</span>
+                  )}
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>

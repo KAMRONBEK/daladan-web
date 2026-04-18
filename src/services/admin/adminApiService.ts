@@ -1,4 +1,5 @@
 import type {
+  AdminAdPromotionConfirmPayload,
   AdminCategoryPayload,
   AdminCheckAd,
   AdminSubcategoryPayload,
@@ -7,9 +8,15 @@ import type {
   AdminUserUpdatePayload,
   LaravelPaginated,
 } from '../../types/admin'
+import type { UpdateProfileAdPayload } from '../../types/marketplace'
 import type { AdPromotion } from '../../types/marketplace'
 import { extractPromotionRows, mapAdPromotion } from '../adPromotionMappers'
 import { requestJson } from '../apiClient'
+import {
+  canRetryWithJson,
+  createMultipartBody,
+  toBasePayload,
+} from '../profileAdPayloadBuilders'
 import {
   buildAdminQuery,
   mapAdminCheckAd,
@@ -71,6 +78,45 @@ export const adminApiService = {
     await requestJson<unknown>(`/admin/ads/${adId}/reject`, {
       method: 'PATCH',
       body: JSON.stringify(payload),
+    })
+  },
+
+  /** `PATCH /admin/ads/:id/edit` — same payload shape as user `UpdateProfileAdPayload`. */
+  async editAd(adId: number, payload: UpdateProfileAdPayload): Promise<AdminUserNestedAd> {
+    const files = payload.files ?? []
+    const jsonPayload = toBasePayload(payload)
+
+    if (files.length > 0) {
+      try {
+        const body = createMultipartBody(payload)
+        body.append('_method', 'PATCH')
+        const raw = await requestJson<unknown>(`/admin/ads/${adId}/edit`, {
+          method: 'POST',
+          body,
+        })
+        return mapAdminNestedAd(unwrapRecord(raw))
+      } catch (error) {
+        if (!canRetryWithJson(error) || !Array.isArray(payload.media) || payload.media.length === 0) {
+          throw error
+        }
+      }
+    }
+
+    const raw = await requestJson<unknown>(`/admin/ads/${adId}/edit`, {
+      method: 'PATCH',
+      body: JSON.stringify(jsonPayload),
+    })
+    return mapAdminNestedAd(unwrapRecord(raw))
+  },
+
+  /** `PATCH /admin/ad-promotions/:promotion/confirm` — optional Click/Payme transaction id. */
+  async confirmAdPromotion(promotionId: number, payload?: AdminAdPromotionConfirmPayload) {
+    const tx = payload?.payment_transaction_id
+    const trimmed = typeof tx === 'string' ? tx.trim() : ''
+    const hasBody = trimmed.length > 0
+    await requestJson<unknown>(`/admin/ad-promotions/${promotionId}/confirm`, {
+      method: 'PATCH',
+      ...(hasBody ? { body: JSON.stringify({ payment_transaction_id: trimmed }) } : {}),
     })
   },
 

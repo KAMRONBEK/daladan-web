@@ -115,6 +115,11 @@ export interface AdminUserNestedAd {
   media: readonly unknown[]
 }
 
+/** Optional body for `PATCH /admin/ad-promotions/{promotion}/confirm` (e.g. after Click/Payme). */
+export interface AdminAdPromotionConfirmPayload {
+  payment_transaction_id?: string | null
+}
+
 export interface AdminUserListItem {
   id: number
   fname: string | null

@@ -28,17 +28,38 @@ DEEPSEEK_API_SECRET=your_deepseek_api_key
 
 Do not expose this value in frontend env files with `VITE_` prefix.
 
-3. Start development server:
+3. Start development servers:
 
-**Marketplace (default):**
+**Marketplace + admin together (default):**
 
 ```bash
 yarn dev
 ```
 
-`yarn dev` runs `vercel pull` + `vite` so local env is synced before start.
+`yarn dev` runs `vercel pull` once, then starts two Vite processes:
 
-**Admin UI locally** (uses [`/.env.admin`](.env.admin) via `vite --mode admin` so `localhost` is an admin host; does not affect `yarn dev`):
+- **Website:** [http://localhost:5173/](http://localhost:5173/) — marketplace (`development` mode; no [`.env.admin`](.env.admin))
+- **Admin:** [http://localhost:5174/](http://localhost:5174/) — admin UI ([`.env.admin`](.env.admin) sets `VITE_ADMIN_APP_HOSTS=localhost` so `isAdminApp()` is true only on this dev server)
+
+Without Vercel pull:
+
+```bash
+yarn dev:vite
+```
+
+**Marketplace only** (single process on port 5173):
+
+```bash
+yarn dev:site
+```
+
+Without Vercel pull:
+
+```bash
+yarn dev:site:vite
+```
+
+**Admin only** on port 5174 (uses [`/.env.admin`](.env.admin) via `vite --mode admin`):
 
 ```bash
 yarn admin:dev
@@ -50,13 +71,15 @@ Without Vercel pull:
 yarn admin:dev:vite
 ```
 
-If you only need the marketplace frontend without serverless routes, use:
-
-```bash
-yarn dev:vite
-```
-
 In local Vite mode, `/api/generate-description` is served by a dev middleware that reuses the same handler logic as the Vercel function.
+
+## Quality checks
+
+- **`yarn typecheck`** — TypeScript project references (`tsc -b`), same check as the first step of `yarn build`.
+- **`yarn react-doctor`** — [React Doctor](https://www.react.doctor/) against the whole repo (`npx -y react-doctor@latest . -y`).
+- **`yarn check`** — runs `typecheck` then a full `react-doctor` scan.
+
+**Git hooks:** After `yarn install`, Husky runs **`yarn typecheck`** and **`react-doctor`** on changed files (`--diff`) on every commit. To skip hooks for a single commit (e.g. emergency fix), use `HUSKY=0 git commit` (see [Husky docs](https://typicode.github.io/husky/how-to.html)).
 
 ## AI Description Generation
 
@@ -111,7 +134,7 @@ The same SPA switches to the admin UI when the browser hostname matches the buil
 
 **Session:** The auth token is stored in `localStorage`, which is **not** shared between the main site and the admin subdomain. Admins must **log in on the admin host** so the token is stored for that origin.
 
-**Local development:** Run `yarn admin:dev` (or `yarn admin:dev:vite`) and open `http://localhost:5173`. The committed `.env.admin` file sets `VITE_ADMIN_APP_HOSTS=localhost` only for that command. Override locally with `.env.admin.local` if needed (gitignored).
+**Local development:** With `yarn dev`, open the marketplace at `http://localhost:5173` and the admin app at `http://localhost:5174`. For admin alone, run `yarn admin:dev` (or `yarn admin:dev:vite`) and open `http://localhost:5174`. The committed [`.env.admin`](.env.admin) sets `VITE_ADMIN_APP_HOSTS=localhost` only when Vite runs with `--mode admin`. Override locally with `.env.admin.local` if needed (gitignored).
 
 **CORS:** The API must allow the origin `https://admin.daladan.uz`.
 

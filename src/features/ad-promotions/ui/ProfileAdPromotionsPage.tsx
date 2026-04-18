@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { InlineAlert, ProfileAdListingSubtitle, ProfileAdSectionShell } from '../../profile-ad'
 import { useProfileAdPromotionsPage } from '../model/useProfileAdPromotionsPage'
 import { getHighlightedPlanFromQuery } from '../model/planHighlight'
@@ -8,11 +8,10 @@ import { AdPromotionsTable } from './AdPromotionsTable'
 import { PromotionsEmptyState } from './PromotionsEmptyState'
 import { adPromotionMessages } from '../model/adPromotionMessages'
 
-type ProfileAdPromotionsViewProps = {
-  adId: number
-}
-
-export function ProfileAdPromotionsView({ adId }: ProfileAdPromotionsViewProps) {
+/** Route: `/profile/ads/:ad/promotions` */
+export function ProfileAdPromotionsPage() {
+  const { ad } = useParams()
+  const adId = ad ? Number(ad) : NaN
   const [searchParams] = useSearchParams()
   const { listing, rows, loading, error } = useProfileAdPromotionsPage(adId)
   const planFromUrl = searchParams.get('plan')

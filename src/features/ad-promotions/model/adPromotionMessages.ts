@@ -8,4 +8,9 @@ export const adPromotionMessages = {
   adminAdNotFound: 'E‘lon topilmadi.',
   adminLoadFailed: "Ma'lumotlarni yuklashda xatolik",
   promoListFailed: 'Reklama ro‘yxatini yuklashda xatolik',
+  confirmPromoTitle: 'To‘lovni tasdiqlash',
+  confirmPromoHint:
+    'Click yoki Payme tranzaksiya ID sini kiriting (ixtiyoriy). Tasdiqlashdan keyin promo faollashadi.',
+  confirmPromoFailed: 'Tasdiqlashda xatolik',
+  confirmPromoSubmit: 'Tasdiqlash',
 } as const

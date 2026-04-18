@@ -17,6 +17,7 @@ import {
   formatUzbekDateTime,
   formatUzbekDateTimeFromDate,
 } from '../../../utils/uzbekDateFormat'
+import { AdminAdEditSection } from './AdminAdEditSection'
 
 const fmtBool = (v: boolean) => (v ? 'Ha' : 'Yo‘q')
 
@@ -261,6 +262,8 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
           </label>
         </AdminModal>
       ) : null}
+
+      <AdminAdEditSection ad={ad} onSaved={runAfterModeration} />
 
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
         <div className="space-y-3">

@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { adminApiService } from '../../../services'
 import { ApiError } from '../../../services/apiClient'
+import type { AdminAdPromotionConfirmPayload, AdminUserNestedAd } from '../../../types/admin'
 import type { AdPromotion } from '../../../types/marketplace'
-import type { AdminUserNestedAd } from '../../../types/admin'
 import { getAdminErrorMessage, isAdminForbidden } from '../../../utils/adminApiError'
 import { adPromotionMessages } from './adPromotionMessages'
 import { isValidAdId, isValidUserId } from './adPromotionGuards'
@@ -124,5 +124,26 @@ export function useAdminAdPromotionsPage({
     void load()
   }, [load])
 
-  return { ...state, reload: load }
+  const [confirmingId, setConfirmingId] = useState<number | null>(null)
+  const [confirmError, setConfirmError] = useState('')
+
+  const confirmPromotion = useCallback(
+    async (promotionId: number, payload?: AdminAdPromotionConfirmPayload) => {
+      setConfirmError('')
+      setConfirmingId(promotionId)
+      try {
+        await adminApiService.confirmAdPromotion(promotionId, payload)
+        await load()
+      } catch (e) {
+        const message = getAdminErrorMessage(e, adPromotionMessages.confirmPromoFailed)
+        setConfirmError(message)
+        throw e
+      } finally {
+        setConfirmingId(null)
+      }
+    },
+    [load],
+  )
+
+  return { ...state, reload: load, confirmPromotion, confirmingId, confirmError, clearConfirmError: () => setConfirmError('') }
 }

@@ -1,0 +1,4 @@
+#!/usr/bin/env sh
+set -e
+yarn typecheck
+npx -y react-doctor@latest . -y --diff

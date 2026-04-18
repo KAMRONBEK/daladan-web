@@ -11,7 +11,7 @@ import type {
   SubcategoryOption,
   UpdateProfileAdPayload,
 } from '../types/marketplace'
-import { ApiError, requestJson } from './apiClient'
+import { requestJson } from './apiClient'
 import {
   asRecord,
   extractCollection,
@@ -25,48 +25,11 @@ import {
 import type { MarketplaceService } from './contracts'
 import { extractPromotionRows, mapAdPromotion } from './adPromotionMappers'
 import { extractStatsRecord, mapAdStats } from './adStatsMappers'
-
-/**
- * Create form uses Uzbek labels; API expects a string unit (backend rule: length > 3).
- * Values use readable English tokens / snake_case (min 4 characters each).
- */
-const UI_TO_API_UNIT: Record<string, string> = {
-  kg: 'kilogram',
-  gramm: 'gram',
-  tonna: 'tonne',
-  litr: 'liter',
-  millilitr: 'milliliter',
-  dona: 'piece',
-  juft: 'pair',
-  quti: 'crate',
-  qop: 'sack',
-  savat: 'basket',
-  banka: 'bottle',
-  "bog'lam": 'bundle',
-  paqir: 'pack',
-  metr: 'meter',
-  santimetr: 'centimeter',
-  m2: 'square_meter',
-  m3: 'cubic_meter',
-  sotix: 'sotix',
-  gektar: 'hectare',
-  bosh: 'generic',
-  "to'plam": 'set_pack',
-  karobka: 'carton',
-  paket: 'packet',
-}
-
-const mapUiUnitToApi = (raw: string) => {
-  const t = raw.trim()
-  if (!t) return t
-  const lower = t.toLowerCase()
-  return (
-    UI_TO_API_UNIT[t] ??
-    UI_TO_API_UNIT[lower] ??
-    Object.entries(UI_TO_API_UNIT).find(([key]) => key.toLowerCase() === lower)?.[1] ??
-    t
-  )
-}
+import {
+  canRetryWithJson,
+  createMultipartBody,
+  toBasePayload,
+} from './profileAdPayloadBuilders'
 
 const mapCategory = (item: UnknownRecord): CategoryOption => {
   const slugRaw = getString(item, 'slug', 'slug_en', 'slug_uz')
@@ -265,80 +228,6 @@ const mapCreatedAd = (payload: unknown): ProfileAd => {
   const source = [data, root].find((candidate) => isNonEmptyRecord(candidate)) ?? {}
   const id = getNumber(source, 'id', 'ad_id')
   return { id }
-}
-
-const toBasePayload = (payload: CreateProfileAdPayload | UpdateProfileAdPayload) => {
-  const next: Record<string, unknown> = {}
-  const assign = (key: string, value: unknown) => {
-    if (value === undefined || value === null) return
-    if (typeof value === 'string' && !value.trim()) return
-    next[key] = value
-  }
-
-  assign('category_id', payload.category_id)
-  assign('subcategory_id', payload.subcategory_id)
-  assign('region_id', payload.region_id)
-  assign('city_id', payload.city_id)
-  assign('district', payload.district)
-  assign('title', payload.title)
-  assign('description', payload.description)
-  assign('price', payload.price)
-  assign('quantity', payload.quantity)
-  assign('quantity_description', payload.quantity_description)
-  if (typeof payload.unit === 'string' && payload.unit.trim()) {
-    assign('unit', mapUiUnitToApi(payload.unit))
-  }
-  assign('delivery_available', payload.delivery_available)
-  assign('delivery_info', payload.delivery_info)
-  if (Array.isArray(payload.media)) {
-    next.media = payload.media
-  }
-
-  return next
-}
-
-const canRetryWithJson = (error: unknown) =>
-  error instanceof ApiError && [400, 415, 422].includes(error.status)
-
-const createMultipartBody = (payload: CreateProfileAdPayload | UpdateProfileAdPayload) => {
-  const body = new FormData()
-
-  const append = (key: string, value: unknown) => {
-    if (value === undefined || value === null) return
-    if (typeof value === 'string' && !value.trim()) return
-    body.append(key, String(value))
-  }
-
-  const appendBool = (key: string, value: boolean | undefined) => {
-    if (value === undefined) return
-    body.append(key, value ? '1' : '0')
-  }
-
-  append('category_id', payload.category_id)
-  append('subcategory_id', payload.subcategory_id)
-  append('region_id', payload.region_id)
-  append('city_id', payload.city_id)
-  append('district', payload.district)
-  append('title', payload.title)
-  append('description', payload.description)
-  append('price', payload.price)
-  append('quantity', payload.quantity)
-  append('quantity_description', payload.quantity_description)
-  if (typeof payload.unit === 'string' && payload.unit.trim()) {
-    append('unit', mapUiUnitToApi(payload.unit))
-  }
-  appendBool('delivery_available', payload.delivery_available)
-  append('delivery_info', payload.delivery_info)
-
-  ;(payload.media ?? []).forEach((url) => {
-    body.append('media[]', url)
-  })
-
-  payload.files?.forEach((file) => {
-    body.append('media[]', file)
-  })
-
-  return body
 }
 
 const createProfileAd = async (payload: CreateProfileAdPayload): Promise<ProfileAd> => {

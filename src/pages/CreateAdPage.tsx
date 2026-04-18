@@ -8,6 +8,7 @@ import { aiService, authService, marketplaceService, profileService } from '../s
 import type { CityOption, RegionOption } from '../services/contracts'
 import { useAuth } from '../state/AuthContext'
 import type { CategoryOption, SubcategoryOption } from '../types/marketplace'
+import { PROFILE_AD_UNIT_OPTIONS } from '../services/profileAdPayloadBuilders'
 import { LOGIN_PATH } from '../utils/appPaths'
 import { formatPriceInput, parsePriceInput } from '../utils/price'
 
@@ -22,32 +23,6 @@ interface CreateAdFormValues {
   unit: string
   deliveryAvailable: boolean
 }
-
-const UNIT_OPTIONS = [
-  'kg',
-  'gramm',
-  'tonna',
-  'litr',
-  'millilitr',
-  'dona',
-  'juft',
-  'quti',
-  'qop',
-  'savat',
-  'banka',
-  "bog'lam",
-  'paqir',
-  'metr',
-  'santimetr',
-  'm2',
-  'm3',
-  'sotix',
-  'gektar',
-  'bosh',
-  "to'plam",
-  'karobka',
-  'paket',
-]
 
 const getFieldBorderClass = (hasError: boolean) =>
   hasError
@@ -129,8 +104,8 @@ export const CreateAdPage = () => {
 
   const unitSuggestions = useMemo(() => {
     const query = unitValue.trim().toLowerCase()
-    if (!query) return UNIT_OPTIONS
-    return UNIT_OPTIONS.filter((unit) => unit.toLowerCase().includes(query))
+    if (!query) return [...PROFILE_AD_UNIT_OPTIONS]
+    return PROFILE_AD_UNIT_OPTIONS.filter((unit) => unit.toLowerCase().includes(query))
   }, [unitValue])
 
   const unitRegister = register('unit', { required: 'Birlik tanlang' })
