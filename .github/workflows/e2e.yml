@@ -71,7 +71,12 @@ jobs:
         run: yarn install --frozen-lockfile
 
       - name: Deploy to Vercel production
-        run: yarn vercel deploy --prod --yes
+        run: |
+          if [ -z "${VERCEL_TOKEN:-}" ]; then
+            echo "::error::VERCEL_TOKEN is empty. Add repository secret VERCEL_TOKEN (Vercel → Account Settings → Tokens)."
+            exit 1
+          fi
+          yarn vercel deploy --prod --yes --token "$VERCEL_TOKEN"
         env:
           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
           VERCEL_ORG_ID: team_V5GP2xSnW8OcTpxLuwrBXTDV

@@ -13,6 +13,7 @@
     "dev:site": "vercel pull --yes --environment=development && vite --port 5173",
     "dev:site:vite": "vite --port 5173",
     "dev:e2e": "vite --port 5199 --strictPort --host 127.0.0.1",
+    "dev:e2e-admin": "vite --port 5200 --strictPort --host 127.0.0.1 --mode admin",
     "admin:dev": "vercel pull --yes --environment=development && vite --mode admin --port 5174",
     "admin:dev:vite": "vite --mode admin --port 5174",
     "build": "tsc -b && vite build",
