@@ -9,8 +9,8 @@ import { LOGIN_PATH, loginReturnState } from '../../../utils/appPaths'
 import { useProfileFavoritesPage } from '../model/useProfileFavoritesPage'
 
 export function ProfileFavoritesView() {
-  const { listings, loading, error, reload } = useProfileFavoritesPage()
-  const { favoriteIds, favoritesLoading } = useFavorites()
+  const { hydrateFavoriteIdsFromListings, favoriteIds, favoritesLoading } = useFavorites()
+  const { listings, loading, error, reload } = useProfileFavoritesPage(hydrateFavoriteIdsFromListings)
   const [listingView, setListingView] = useListingViewMode()
   const { user } = useAuth()
   const navigate = useNavigate()

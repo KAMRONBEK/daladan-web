@@ -4,13 +4,15 @@ import { profileService } from '../../../services'
 import { ApiError } from '../../../services/apiClient'
 import type { Listing } from '../../../types/marketplace'
 
+export type HydrateFavoriteIdsFromListings = (listings: Listing[]) => void
+
 type ProfileFavoritesState = {
   listings: Listing[]
   loading: boolean
   error: string
 }
 
-export function useProfileFavoritesPage() {
+export function useProfileFavoritesPage(hydrateFavoriteIdsFromListings?: HydrateFavoriteIdsFromListings) {
   const [state, setState] = useState<ProfileFavoritesState>({
     listings: [],
     loading: true,
@@ -22,6 +24,7 @@ export function useProfileFavoritesPage() {
 
     try {
       const listings = await profileService.getFavorites()
+      hydrateFavoriteIdsFromListings?.(listings)
       setState({ listings, loading: false, error: '' })
     } catch (e) {
       const message =
@@ -30,7 +33,7 @@ export function useProfileFavoritesPage() {
           : "Sevimlilar ro'yxatini yuklab bo'lmadi."
       setState({ listings: [], loading: false, error: message })
     }
-  }, [])
+  }, [hydrateFavoriteIdsFromListings])
 
   useEffect(() => {
     // Initial fetch; same pattern as useProfileAdStatsPage.

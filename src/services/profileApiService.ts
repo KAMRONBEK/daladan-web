@@ -2,7 +2,7 @@ import { requestJson } from './apiClient'
 import { asRecord, getNumber, getString, isNonEmptyRecord } from './apiMappers'
 import type { ProfileService } from './contracts'
 import { mapListingCollection } from './marketplaceApiService'
-import type { Profile, UpdatePasswordPayload, UpdateProfilePayload } from '../types/marketplace'
+import type { Listing, Profile, UpdatePasswordPayload, UpdateProfilePayload } from '../types/marketplace'
 
 const mapProfile = (payload: unknown): Profile => {
   const root = asRecord(payload)
@@ -39,6 +39,21 @@ const fetchProfile = async () => {
   return mapProfile(response)
 }
 
+/** Merges overlapping `GET /profile/favorites` calls (e.g. context + favorites page). */
+let favoritesInflight: Promise<Listing[]> | null = null
+
+const getFavoritesDeduped = async () => {
+  if (!favoritesInflight) {
+    favoritesInflight = (async () => {
+      const response = await requestJson<unknown>('/profile/favorites')
+      return mapListingCollection(response)
+    })().finally(() => {
+      favoritesInflight = null
+    })
+  }
+  return favoritesInflight
+}
+
 export const profileApiService: ProfileService = {
   async getProfile() {
     return fetchProfile()
@@ -70,8 +85,7 @@ export const profileApiService: ProfileService = {
   },
 
   async getFavorites() {
-    const response = await requestJson<unknown>('/profile/favorites')
-    return mapListingCollection(response)
+    return getFavoritesDeduped()
   },
 
   async addFavorite(adId: number) {
