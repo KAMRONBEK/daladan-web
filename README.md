@@ -79,7 +79,7 @@ In local Vite mode, `/api/generate-description` is served by a dev middleware th
 - **`yarn react-doctor`** — [React Doctor](https://www.react.doctor/) against the whole repo (`npx -y react-doctor@latest . -y`).
 - **`yarn check`** — runs `typecheck` then a full `react-doctor` scan.
 
-**Git hooks:** After `yarn install`, Husky runs **`yarn typecheck`** and **`react-doctor`** on changed files (`--diff`) on every commit. To skip hooks for a single commit (e.g. emergency fix), use `HUSKY=0 git commit` (see [Husky docs](https://typicode.github.io/husky/how-to.html)).
+**Git hooks:** After `yarn install`, Husky runs **`yarn typecheck`** and a full **`react-doctor`** scan on **`git push`** (pre-push). To skip hooks once, use `HUSKY=0 git push` (see [Husky docs](https://typicode.github.io/husky/how-to.html)).
 
 ## AI Description Generation
 
