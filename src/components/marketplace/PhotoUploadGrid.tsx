@@ -5,7 +5,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { Camera, GripVertical, RefreshCcw, Trash2 } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
 
-type PhotoUploadSlot = File | null
+export type PhotoUploadSlot = File | { remoteUrl: string } | null
 
 interface PhotoUploadGridProps {
   slots: PhotoUploadSlot[]
@@ -17,14 +17,14 @@ const makeSlotIds = (slotCount: number) => Array.from({ length: slotCount }, (_,
 interface SortablePhotoSlotProps {
   id: string
   index: number
-  file: PhotoUploadSlot
+  slot: PhotoUploadSlot
   previewUrl: string | null
   isCoverSlot: boolean
   onReplace: (nextFile: File) => void
   onDelete: () => void
 }
 
-const SortablePhotoSlot = ({ id, index, file, previewUrl, isCoverSlot, onReplace, onDelete }: SortablePhotoSlotProps) => {
+const SortablePhotoSlot = ({ id, index, slot, previewUrl, isCoverSlot, onReplace, onDelete }: SortablePhotoSlotProps) => {
   const { attributes, listeners, setActivatorNodeRef, setNodeRef, transform, transition, isDragging } = useSortable({ id })
   const { getInputProps, getRootProps, isDragActive, open } = useDropzone({
     accept: { 'image/*': [] },
@@ -68,10 +68,10 @@ const SortablePhotoSlot = ({ id, index, file, previewUrl, isCoverSlot, onReplace
           className: [
             'group relative aspect-[4/3] overflow-hidden rounded-ui border transition',
             'focus-within:ring-2 focus-within:ring-daladan-primary/30',
-            file
+            slot
               ? 'border-slate-200 bg-slate-100 dark:border-slate-600 dark:bg-slate-700'
               : 'border-dashed border-slate-300 bg-slate-50 hover:border-daladan-primary/70 hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:hover:bg-slate-700',
-            isCoverSlot && !file ? 'border-daladan-primary/40 bg-amber-50 dark:bg-amber-500/10' : '',
+            isCoverSlot && !slot ? 'border-daladan-primary/40 bg-amber-50 dark:bg-amber-500/10' : '',
             isDragActive ? 'border-daladan-primary ring-2 ring-daladan-primary/30' : '',
             isDragging ? 'opacity-75 shadow-xl' : '',
           ]
@@ -98,7 +98,7 @@ const SortablePhotoSlot = ({ id, index, file, previewUrl, isCoverSlot, onReplace
           <GripVertical size={14} />
         </button>
 
-        {file && previewUrl ? (
+        {slot && previewUrl ? (
           <>
             <img src={previewUrl} alt={`Yuklangan rasm ${index + 1}`} className="h-full w-full object-cover" />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/20 to-transparent opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100" />
@@ -138,17 +138,25 @@ const SortablePhotoSlot = ({ id, index, file, previewUrl, isCoverSlot, onReplace
 export const PhotoUploadGrid = ({ slots, onChange }: PhotoUploadGridProps) => {
   const slotIds = useMemo(() => makeSlotIds(slots.length), [slots.length])
   const previewUrls = useMemo(
-    () => slots.map((file) => (file ? URL.createObjectURL(file) : null)),
+    () =>
+      slots.map((slot) => {
+        if (!slot) return null
+        if (slot instanceof File) return URL.createObjectURL(slot)
+        return slot.remoteUrl
+      }),
     [slots],
   )
 
   useEffect(() => {
     return () => {
-      previewUrls.forEach((url) => {
-        if (url) URL.revokeObjectURL(url)
+      slots.forEach((slot, i) => {
+        if (slot instanceof File) {
+          const url = previewUrls[i]
+          if (url) URL.revokeObjectURL(url)
+        }
       })
     }
-  }, [previewUrls])
+  }, [slots, previewUrls])
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -191,7 +199,7 @@ export const PhotoUploadGrid = ({ slots, onChange }: PhotoUploadGridProps) => {
               key={slotId}
               id={slotId}
               index={index}
-              file={slots[index] ?? null}
+              slot={slots[index] ?? null}
               previewUrl={previewUrls[index] ?? null}
               isCoverSlot={index === 0}
               onReplace={(nextFile) => replaceFileAt(index, nextFile)}

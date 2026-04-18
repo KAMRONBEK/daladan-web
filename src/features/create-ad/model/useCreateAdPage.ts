@@ -63,7 +63,10 @@ export function useCreateAdPage() {
   const unitValue = watch('unit')
   const deliveryAvailable = watch('deliveryAvailable')
   const hasPriceValue = priceValue.trim().length > 0
-  const files = useMemo(() => photoSlots.filter((slot): slot is File => slot instanceof File), [photoSlots])
+  const files = useMemo(
+    () => photoSlots.filter((slot): slot is File => slot instanceof File),
+    [photoSlots],
+  )
   const isGenerateDescriptionDisabled =
     !selectedCategoryId ||
     !selectedSubcategoryId ||

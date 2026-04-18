@@ -1,9 +1,9 @@
 import type { Dispatch, SetStateAction } from 'react'
-import { PhotoUploadGrid } from '../../../components/marketplace/PhotoUploadGrid'
+import { PhotoUploadGrid, type PhotoUploadSlot } from '../../../components/marketplace/PhotoUploadGrid'
 
 type Props = {
-  photoSlots: (File | null)[]
-  setPhotoSlots: Dispatch<SetStateAction<(File | null)[]>>
+  photoSlots: PhotoUploadSlot[]
+  setPhotoSlots: Dispatch<SetStateAction<PhotoUploadSlot[]>>
   fileCount: number
 }
 

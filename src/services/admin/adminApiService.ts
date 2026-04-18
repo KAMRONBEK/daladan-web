@@ -15,6 +15,8 @@ import {
   canRetryWithJson,
   createMultipartBody,
   toBasePayload,
+  updatePayloadHasRetryMediaUrls,
+  updatePayloadNeedsMultipart,
 } from '../profileAdPayloadBuilders'
 import {
   buildAdminQuery,
@@ -92,10 +94,9 @@ export const adminApiService = {
 
   /** `PATCH /admin/ads/:id/edit` — same payload shape as user `UpdateProfileAdPayload`. */
   async editAd(adId: number, payload: UpdateProfileAdPayload): Promise<AdminUserNestedAd> {
-    const files = payload.files ?? []
     const jsonPayload = toBasePayload(payload)
 
-    if (files.length > 0) {
+    if (updatePayloadNeedsMultipart(payload)) {
       try {
         const body = createMultipartBody(payload)
         body.append('_method', 'PATCH')
@@ -105,7 +106,7 @@ export const adminApiService = {
         })
         return mapAdminNestedAd(unwrapRecord(raw))
       } catch (error) {
-        if (!canRetryWithJson(error) || !Array.isArray(payload.media) || payload.media.length === 0) {
+        if (!canRetryWithJson(error) || !updatePayloadHasRetryMediaUrls(payload)) {
           throw error
         }
       }

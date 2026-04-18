@@ -46,10 +46,10 @@ export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
   const cat = asRecord(item.category)
   const category = isNonEmptyRecord(cat)
     ? {
-        id: getNumber(cat, 'id'),
-        name: getString(cat, 'name'),
-        slug: getString(cat, 'slug'),
-      }
+      id: getNumber(cat, 'id'),
+      name: getString(cat, 'name'),
+      slug: getString(cat, 'slug'),
+    }
     : undefined
 
   return {
@@ -179,6 +179,11 @@ export const mapAdminNestedAd = (row: UnknownRecord): AdminUserNestedAd => {
     title: getString(row, 'title', 'name') || '—',
     description: getString(row, 'description', 'desc') || '',
     district: getString(row, 'district') || '',
+    delivery_available: getBoolean(row, 'delivery_available'),
+    delivery_info: (() => {
+      const s = getString(row, 'delivery_info', 'delivery_info_uz').trim()
+      return s || null
+    })(),
     price: getNullableNumber(row, 'price', 'amount'),
     quantity,
     unit,

@@ -94,6 +94,9 @@ export interface AdminUserNestedAd {
   title: string
   description: string
   district: string
+  /** When API includes delivery flags on the ad. */
+  delivery_available?: boolean
+  delivery_info?: string | null
   price: number | null
   quantity: string | null
   unit: string | null

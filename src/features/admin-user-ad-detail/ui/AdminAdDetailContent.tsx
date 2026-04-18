@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { getAdminAdPromotionsListPath } from '../../ad-promotions'
 import { AdminModal } from '../../../components/admin/AdminModal'
@@ -8,7 +8,13 @@ import type { AdminUserListItem, AdminUserNestedAd } from '../../../types/admin'
 import { getAdminErrorMessage } from '../../../utils/adminApiError'
 import { isPendingModerationStatus } from '../../../utils/adminModeration'
 import { formatUzbekDateTime } from '../../../utils/uzbekDateFormat'
-import { AdminAdEditSection } from './AdminAdEditSection'
+import { formatPriceInput } from '../../../utils/price'
+import { isAdminEditableAdStatus } from '../../../utils/adminModeration'
+import { PhotoUploadGrid } from '../../../components/marketplace/PhotoUploadGrid'
+import { useAdminAdEdit } from '../model/useAdminAdEdit'
+
+const fieldBorder =
+  'rounded-ui border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100'
 
 const fmtBool = (v: boolean) => (v ? 'Ha' : 'Yo‘q')
 
@@ -70,6 +76,9 @@ const statusBadgeClass = (status: string) => {
 const cardClass =
   'rounded-ui border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900'
 
+/** First row of the ad detail grid: stretch to match tallest tile (`md:items-stretch` on parent). */
+const firstRowTileClass = `${cardClass} h-full flex flex-col`
+
 const DetailRow = ({ label, children }: { label: string; children: ReactNode }) => (
   <div className="border-b border-slate-100 py-2 last:border-b-0 last:pb-0 dark:border-slate-800">
     <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -107,29 +116,15 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
   const [moderationError, setModerationError] = useState('')
   const [rejectOpen, setRejectOpen] = useState(false)
   const [rejectReason, setRejectReason] = useState('')
-  const [sellerAvatarBroken, setSellerAvatarBroken] = useState(false)
 
   const pending = isPendingModerationStatus(ad.status)
-
-  const sellerName =
-    [user.fname, user.lname].filter(Boolean).join(' ') || user.phone || `Sotuvchi (ID ${user.id})`
-  const sellerInitials = (() => {
-    const f = user.fname?.trim()?.[0]
-    const l = user.lname?.trim()?.[0]
-    if (f && l) return `${f}${l}`.toUpperCase()
-    if (f) return f.toUpperCase()
-    const digits = user.phone?.replace(/\D/g, '') ?? ''
-    if (digits.length >= 2) return digits.slice(-2)
-    return '?'
-  })()
-
-  useEffect(() => {
-    setSellerAvatarBroken(false)
-  }, [user.id, user.avatar_url])
 
   const runAfterModeration = useCallback(async () => {
     await onModerationComplete?.()
   }, [onModerationComplete])
+
+  const editable = isAdminEditableAdStatus(ad.status)
+  const edit = useAdminAdEdit(ad, runAfterModeration)
 
   const handleApprove = useCallback(async () => {
     setModerationError('')
@@ -208,7 +203,41 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
             </Link>
           </div>
         </div>
-      ) : (
+      ) : !pending && editable ? (
+        <div className="rounded-ui border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/80">
+          {edit.error ? (
+            <div className="mb-3 rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100">
+              {edit.error}
+            </div>
+          ) : null}
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+            <div className="min-w-0 text-sm text-slate-700 dark:text-slate-300">
+              <span className="font-medium">Holat:</span>{' '}
+              <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadgeClass(ad.status)}`}>
+                {ad.status || '—'}
+              </span>
+              {ad.status?.toLowerCase() === 'active' ? (
+                <span className="ml-2 text-slate-600 dark:text-slate-400">E‘lon tasdiqlangan va ko‘rinadi.</span>
+              ) : null}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2 sm:shrink-0">
+              {!edit.isDirty ? (
+                <span className="text-right text-xs text-slate-500 dark:text-slate-400">
+                  O‘zgarishlar yo‘q — tahrirlash uchun maydonlarni yangilang
+                </span>
+              ) : null}
+              <button
+                type="button"
+                disabled={edit.saving || !edit.isDirty}
+                onClick={() => void edit.submit()}
+                className="rounded-ui bg-daladan-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {edit.saving ? 'Saqlanmoqda...' : 'Saqlash'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : !pending ? (
         <div className="rounded-ui border border-slate-200 bg-slate-50/80 px-4 py-3 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-300">
           <span className="font-medium">Holat:</span>{' '}
           <span className={`inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold ${statusBadgeClass(ad.status)}`}>
@@ -218,7 +247,7 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
             <span className="ml-2 text-slate-600 dark:text-slate-400">E‘lon tasdiqlangan va ko‘rinadi.</span>
           ) : null}
         </div>
-      )}
+      ) : null}
 
       {rejectOpen ? (
         <AdminModal
@@ -261,9 +290,42 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
         </AdminModal>
       ) : null}
 
-      <AdminAdEditSection ad={ad} onSaved={runAfterModeration} />
+      {pending && editable ? (
+        <div className="flex flex-col gap-3 rounded-ui border border-slate-200 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-900/80">
+          {edit.error ? (
+            <div className="rounded-ui border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-100">
+              {edit.error}
+            </div>
+          ) : null}
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            {!edit.isDirty ? (
+              <span className="text-right text-xs text-slate-500 dark:text-slate-400">
+                O‘zgarishlar yo‘q — tahrirlash uchun maydonlarni yangilang
+              </span>
+            ) : null}
+            <button
+              type="button"
+              disabled={edit.saving || !edit.isDirty}
+              onClick={() => void edit.submit()}
+              className="rounded-ui bg-daladan-primary px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {edit.saving ? 'Saqlanmoqda...' : 'Saqlash'}
+            </button>
+          </div>
+        </div>
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      {editable ? (
+        <section className="space-y-3">
+          <div className="space-y-1">
+            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Foto</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Birinchi foto muqova bo&apos;ladi. Bosing, faylni tashlang yoki tartibni surib o&apos;zgartiring.
+            </p>
+          </div>
+          <PhotoUploadGrid slots={edit.photoSlots} onChange={edit.setPhotoSlots} />
+        </section>
+      ) : (
         <div className="space-y-3">
           {cover?.url ? (
             <a
@@ -297,62 +359,31 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
             </div>
           ) : null}
         </div>
+      )}
 
-        <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{ad.title}</h1>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            E‘lon ID <span className="font-mono text-slate-800 dark:text-slate-200">{ad.id}</span>
-            {' · '}
-            Ko‘rishlar: <span className="font-medium">{ad.views_count}</span>
-          </p>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-            Sotuvchi:{' '}
-            <Link to={`/users/${user.id}`} className="font-medium text-daladan-primary hover:underline">
-              {[user.fname, user.lname].filter(Boolean).join(' ') || user.phone}
-            </Link>
-            <span className="text-slate-500"> (ID {user.id})</span>
-          </p>
-          <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-            Yaratilgan: {formatUzbekDateTime(ad.created_at)} · Yangilangan:{' '}
-            {formatUzbekDateTime(ad.updated_at)}
-          </p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-10">
-        <section className={`${cardClass} col-span-1 md:col-span-4`}>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-10 md:items-stretch">
+        <section className={`${firstRowTileClass} col-span-1 md:col-span-4`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Asosiy</h2>
           <div className="mt-3 space-y-3">
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Sotuvchi
+            <div className="space-y-1 border-b border-slate-100 pb-3 dark:border-slate-800">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                E‘lon ID <span className="font-mono text-slate-800 dark:text-slate-200">{ad.id}</span>
+                {' · '}
+                Ko‘rishlar: <span className="font-medium">{ad.views_count}</span>
               </p>
-              <div className="mt-1.5 flex items-center gap-2.5">
-                <Link
-                  to={`/users/${user.id}`}
-                  className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-200 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-300 dark:bg-slate-700 dark:text-slate-300 dark:ring-slate-600"
-                >
-                  {user.avatar_url && !sellerAvatarBroken ? (
-                    <img
-                      src={user.avatar_url}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      onError={() => setSellerAvatarBroken(true)}
-                    />
-                  ) : (
-                    sellerInitials
-                  )}
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Sotuvchi:{' '}
+                <Link to={`/users/${user.id}`} className="font-medium text-daladan-primary hover:underline">
+                  {[user.fname, user.lname].filter(Boolean).join(' ') || user.phone}
                 </Link>
-                <div className="min-w-0 flex-1">
-                  <Link
-                    to={`/users/${user.id}`}
-                    className="block truncate text-sm font-medium text-daladan-primary hover:underline"
-                  >
-                    {sellerName}
-                  </Link>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">ID {user.id}</p>
-                </div>
-              </div>
+                <span className="text-slate-500"> (ID {user.id})</span>
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Yaratilgan: {formatUzbekDateTime(ad.created_at)}
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Yangilangan: {formatUzbekDateTime(ad.updated_at)}
+              </p>
             </div>
             <dl className="grid grid-cols-2 gap-x-3 gap-y-2.5 sm:grid-cols-3">
               <DetailGridCell label="Holat">
@@ -362,7 +393,6 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
                   {ad.status || '—'}
                 </span>
               </DetailGridCell>
-              <DetailGridCell label="Ko‘rishlar soni">{ad.views_count}</DetailGridCell>
               <DetailGridCell label="Top sotuv">{fmtBool(ad.is_top_sale)}</DetailGridCell>
               <DetailGridCell label="Boosted">{fmtBool(ad.is_boosted)}</DetailGridCell>
               <DetailGridCell label="Boost tugashi">
@@ -383,54 +413,198 @@ export const AdminAdDetailContent = ({ ad, user, onModerationComplete }: AdminAd
           </div>
         </section>
 
-        <section className={`${cardClass} col-span-1 md:col-span-2`}>
+        <section className={`${firstRowTileClass} col-span-1 md:col-span-2`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Narx va miqdor</h2>
-          <dl className="mt-3 space-y-0">
-            <DetailRow label="Narx">{fmtPrice(ad)}</DetailRow>
-            <DetailRow label="Miqdor">{ad.quantity ?? '—'}</DetailRow>
-            <DetailRow label="O‘lchov birligi">{ad.unit ?? '—'}</DetailRow>
-          </dl>
+          {editable ? (
+            <dl className="mt-3 space-y-0">
+              <DetailRow label="Narx (so'm)">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={edit.form.priceText}
+                  onChange={(e) => edit.setField('priceText', formatPriceInput(e.target.value))}
+                  className={`${fieldBorder} w-full`}
+                />
+              </DetailRow>
+              <DetailRow label="Miqdor">
+                <input
+                  type="text"
+                  value={edit.form.quantityText}
+                  onChange={(e) => edit.setField('quantityText', e.target.value)}
+                  className={`${fieldBorder} w-full`}
+                />
+              </DetailRow>
+              <DetailRow label="O‘lchov birligi">
+                <select
+                  value={edit.form.unit}
+                  onChange={(e) => edit.setField('unit', e.target.value)}
+                  className={`${fieldBorder} w-full`}
+                >
+                  <option value="">Tanlang</option>
+                  {edit.unitOptions.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
+              </DetailRow>
+            </dl>
+          ) : (
+            <dl className="mt-3 space-y-0">
+              <DetailRow label="Narx">{fmtPrice(ad)}</DetailRow>
+              <DetailRow label="Miqdor">{ad.quantity ?? '—'}</DetailRow>
+              <DetailRow label="O‘lchov birligi">{ad.unit ?? '—'}</DetailRow>
+            </dl>
+          )}
         </section>
 
-        <section className={`${cardClass} col-span-1 md:col-span-2`}>
+        <section className={`${firstRowTileClass} col-span-1 md:col-span-2`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Joylashuv</h2>
-          <dl className="mt-3 space-y-0">
-            <DetailRow label="Viloyat">
-              {fmtPlaceWithId(
-                resolveLocationName(
-                  ad.region,
-                  user.region_id != null && user.region_id === ad.region_id,
-                  user.region?.name_uz,
-                ),
-                ad.region_id,
-              )}
-            </DetailRow>
-            <DetailRow label="Shahar">
-              {fmtPlaceWithId(
-                resolveLocationName(
-                  ad.city,
-                  user.city_id != null && user.city_id === ad.city_id,
-                  user.city?.name_uz,
-                ),
-                ad.city_id,
-              )}
-            </DetailRow>
-          </dl>
+          {editable ? (
+            <dl className="mt-3 space-y-0">
+              <DetailRow label="Viloyat">
+                <select
+                  value={edit.form.regionId}
+                  onChange={(e) => {
+                    edit.setField('regionId', e.target.value)
+                    edit.setField('cityId', '')
+                  }}
+                  disabled={edit.loadingRefs}
+                  className={`${fieldBorder} w-full`}
+                >
+                  <option value="">Tanlang</option>
+                  {edit.regions.map((r) => (
+                    <option key={r.id} value={String(r.id)}>
+                      {r.name}
+                    </option>
+                  ))}
+                </select>
+              </DetailRow>
+              <DetailRow label="Shahar">
+                <select
+                  value={edit.form.cityId}
+                  onChange={(e) => edit.setField('cityId', e.target.value)}
+                  disabled={!edit.form.regionId}
+                  className={`${fieldBorder} w-full`}
+                >
+                  <option value="">Tanlang</option>
+                  {edit.cities.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </DetailRow>
+              <DetailRow label="Yetkazib berish">
+                <label className="flex cursor-pointer items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={edit.form.deliveryAvailable}
+                    onChange={(e) => edit.setField('deliveryAvailable', e.target.checked)}
+                    className="rounded border-slate-300 text-daladan-primary focus:ring-daladan-primary"
+                  />
+                  <span className="text-sm text-slate-800 dark:text-slate-200">Mavjud</span>
+                </label>
+              </DetailRow>
+            </dl>
+          ) : (
+            <dl className="mt-3 space-y-0">
+              <DetailRow label="Viloyat">
+                {fmtPlaceWithId(
+                  resolveLocationName(
+                    ad.region,
+                    user.region_id != null && user.region_id === ad.region_id,
+                    user.region?.name_uz,
+                  ),
+                  ad.region_id,
+                )}
+              </DetailRow>
+              <DetailRow label="Shahar">
+                {fmtPlaceWithId(
+                  resolveLocationName(
+                    ad.city,
+                    user.city_id != null && user.city_id === ad.city_id,
+                    user.city?.name_uz,
+                  ),
+                  ad.city_id,
+                )}
+              </DetailRow>
+              <DetailRow label="Yetkazib berish">{fmtBool(ad.delivery_available ?? false)}</DetailRow>
+            </dl>
+          )}
         </section>
 
-        <section className={`${cardClass} col-span-1 md:col-span-2`}>
-          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Kategoriya</h2>
-          <dl className="mt-3 space-y-0">
-            <DetailRow label="Kategoriya">{fmtPlaceWithId(ad.category?.name, ad.category_id)}</DetailRow>
-            <DetailRow label="Subkategoriya">{fmtPlaceWithId(ad.subcategory?.name, ad.subcategory_id)}</DetailRow>
-          </dl>
+        <section className={`${firstRowTileClass} col-span-1 md:col-span-2`}>
+          <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Sarlavha va kategoriya</h2>
+          {editable ? (
+            <dl className="mt-3 space-y-0">
+              <DetailRow label="Sarlavha">
+                <input
+                  type="text"
+                  value={edit.form.title}
+                  onChange={(e) => edit.setField('title', e.target.value)}
+                  className={`${fieldBorder} w-full font-semibold`}
+                />
+              </DetailRow>
+              <DetailRow label="Kategoriya">
+                <select
+                  value={edit.form.categoryId}
+                  onChange={(e) => {
+                    edit.setField('categoryId', e.target.value)
+                    edit.setField('subcategoryId', '')
+                  }}
+                  disabled={edit.loadingRefs}
+                  className={`${fieldBorder} w-full`}
+                >
+                  <option value="">Tanlang</option>
+                  {edit.categories.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </DetailRow>
+              <DetailRow label="Subkategoriya">
+                <select
+                  value={edit.form.subcategoryId}
+                  onChange={(e) => edit.setField('subcategoryId', e.target.value)}
+                  disabled={!edit.form.categoryId}
+                  className={`${fieldBorder} w-full`}
+                >
+                  <option value="">Tanlang</option>
+                  {edit.subcategories.map((s) => (
+                    <option key={s.id} value={String(s.id)}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </DetailRow>
+            </dl>
+          ) : (
+            <dl className="mt-3 space-y-0">
+              <DetailRow label="Sarlavha">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">{ad.title}</span>
+              </DetailRow>
+              <DetailRow label="Kategoriya">{fmtPlaceWithId(ad.category?.name, ad.category_id)}</DetailRow>
+              <DetailRow label="Subkategoriya">{fmtPlaceWithId(ad.subcategory?.name, ad.subcategory_id)}</DetailRow>
+            </dl>
+          )}
         </section>
 
         <section className={`${cardClass} col-span-1 md:col-span-10`}>
           <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100">Tavsif</h2>
-          <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-200">
-            {ad.description || '—'}
-          </p>
+          {editable ? (
+            <textarea
+              value={edit.form.description}
+              onChange={(e) => edit.setField('description', e.target.value)}
+              rows={8}
+              className={`${fieldBorder} mt-2 w-full whitespace-pre-wrap leading-relaxed`}
+            />
+          ) : (
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-slate-800 dark:text-slate-200">
+              {ad.description || '—'}
+            </p>
+          )}
         </section>
 
         <section className={`${cardClass} col-span-1 md:col-span-10`}>

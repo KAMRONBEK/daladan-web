@@ -1,4 +1,16 @@
 import type { CreateProfileAdPayload, UpdateProfileAdPayload } from '../types/marketplace'
+
+/** True when the update must use multipart (new image uploads). */
+export const updatePayloadNeedsMultipart = (payload: UpdateProfileAdPayload): boolean => {
+  if ((payload.files?.length ?? 0) > 0) return true
+  return payload.mediaSequence?.some((x) => x instanceof File) ?? false
+}
+
+/** True when JSON retry after multipart failure can include existing URL media. */
+export const updatePayloadHasRetryMediaUrls = (payload: UpdateProfileAdPayload): boolean => {
+  if (Array.isArray(payload.media) && payload.media.length > 0) return true
+  return payload.mediaSequence?.some((x) => typeof x === 'string') ?? false
+}
 import { ApiError } from './apiClient'
 
 /**
@@ -107,7 +119,10 @@ export const toBasePayload = (payload: CreateProfileAdPayload | UpdateProfileAdP
   }
   assign('delivery_available', payload.delivery_available)
   assign('delivery_info', payload.delivery_info)
-  if (Array.isArray(payload.media)) {
+  if ('mediaSequence' in payload && Array.isArray(payload.mediaSequence) && payload.mediaSequence.length > 0) {
+    const urls = payload.mediaSequence.filter((x): x is string => typeof x === 'string')
+    if (urls.length > 0) next.media = urls
+  } else if (Array.isArray(payload.media)) {
     next.media = payload.media
   }
 
@@ -147,13 +162,22 @@ export const createMultipartBody = (payload: CreateProfileAdPayload | UpdateProf
   appendBool('delivery_available', payload.delivery_available)
   append('delivery_info', payload.delivery_info)
 
-  ;(payload.media ?? []).forEach((url) => {
-    body.append('media[]', url)
-  })
-
-  payload.files?.forEach((file) => {
-    body.append('media[]', file)
-  })
+  if ('mediaSequence' in payload && Array.isArray(payload.mediaSequence) && payload.mediaSequence.length > 0) {
+    for (const item of payload.mediaSequence) {
+      if (typeof item === 'string') {
+        body.append('media[]', item)
+      } else {
+        body.append('media[]', item)
+      }
+    }
+  } else {
+    ;(payload.media ?? []).forEach((url) => {
+      body.append('media[]', url)
+    })
+    payload.files?.forEach((file) => {
+      body.append('media[]', file)
+    })
+  }
 
   return body
 }

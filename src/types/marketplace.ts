@@ -121,6 +121,11 @@ export interface UpdateProfileAdPayload {
   delivery_info?: string
   media?: string[]
   files?: File[]
+  /**
+   * Ordered mix of existing image URLs and new uploads for multipart `media[]`.
+   * When set, `createMultipartBody` appends in this order (overrides separate `media` + `files` for multipart).
+   */
+  mediaSequence?: (string | File)[]
 }
 
 export interface ProfileAd {

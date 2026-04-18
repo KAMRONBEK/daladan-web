@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { PhotoUploadSlot } from '../../../components/marketplace/PhotoUploadGrid'
 import { adminApiService, authService, marketplaceService } from '../../../services'
 import { mapApiUnitToUi, PROFILE_AD_UNIT_OPTIONS } from '../../../services/profileAdPayloadBuilders'
 import type { CityOption, RegionOption } from '../../../services/contracts'
@@ -7,10 +8,30 @@ import type { CategoryOption, SubcategoryOption, UpdateProfileAdPayload } from '
 import { getAdminErrorMessage } from '../../../utils/adminApiError'
 import { formatPriceInput, parsePriceInput } from '../../../utils/price'
 
-const mediaUrlsFromAd = (ad: AdminUserNestedAd) =>
-  ad.media_list
+/** Same as marketplace create-ad grid (`PHOTO_UPLOAD_SLOT_COUNT`). */
+const ADMIN_PHOTO_SLOT_COUNT = 8
+
+const buildPhotoSlotsFromAd = (ad: AdminUserNestedAd): PhotoUploadSlot[] => {
+  const urls = ad.media_list
     .map((m) => m.url?.trim())
     .filter((u): u is string => Boolean(u))
+  return Array.from({ length: ADMIN_PHOTO_SLOT_COUNT }, (_, i) => (urls[i] ? { remoteUrl: urls[i] } : null))
+}
+
+const slotsEqual = (a: PhotoUploadSlot[], b: PhotoUploadSlot[]) => {
+  if (a.length !== b.length) return false
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i]
+    const y = b[i]
+    if (x === null && y === null) continue
+    if (x === null || y === null) return false
+    if (x instanceof File && y instanceof File) return x === y
+    if (x instanceof File || y instanceof File) return false
+    if ('remoteUrl' in x && 'remoteUrl' in y) return x.remoteUrl === y.remoteUrl
+    return false
+  }
+  return true
+}
 
 const parseQuantityField = (value: string): number | undefined => {
   const t = value.trim()
@@ -24,23 +45,33 @@ export type AdminAdEditFormState = {
   subcategoryId: string
   regionId: string
   cityId: string
-  district: string
+  deliveryAvailable: boolean
   title: string
   description: string
   priceText: string
   unit: string
   quantityText: string
-  quantityDescription: string
-  deliveryAvailable: boolean
-  deliveryInfo: string
-  mediaLines: string
+}
+
+const formEqual = (a: AdminAdEditFormState, b: AdminAdEditFormState) => {
+  const keys: (keyof AdminAdEditFormState)[] = [
+    'categoryId',
+    'subcategoryId',
+    'regionId',
+    'cityId',
+    'deliveryAvailable',
+    'title',
+    'description',
+    'priceText',
+    'unit',
+    'quantityText',
+  ]
+  return keys.every((k) => a[k] === b[k])
 }
 
 export function useAdminAdEdit(ad: AdminUserNestedAd, onSaved: () => void | Promise<void>) {
-  const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [newFiles, setNewFiles] = useState<File[]>([])
 
   const [categories, setCategories] = useState<CategoryOption[]>([])
   const [subcategories, setSubcategories] = useState<SubcategoryOption[]>([])
@@ -49,22 +80,17 @@ export function useAdminAdEdit(ad: AdminUserNestedAd, onSaved: () => void | Prom
   const [loadingRefs, setLoadingRefs] = useState(false)
 
   const initialForm = useMemo((): AdminAdEditFormState => {
-    const urls = mediaUrlsFromAd(ad)
     return {
       categoryId: String(ad.category_id),
       subcategoryId: String(ad.subcategory_id),
       regionId: String(ad.region_id),
       cityId: String(ad.city_id),
-      district: ad.district ?? '',
+      deliveryAvailable: Boolean(ad.delivery_available),
       title: ad.title,
       description: ad.description,
       priceText: ad.price != null ? formatPriceInput(String(Math.round(ad.price))) : '',
       unit: ad.unit ? mapApiUnitToUi(ad.unit) : '',
       quantityText: ad.quantity ?? '',
-      quantityDescription: '',
-      deliveryAvailable: false,
-      deliveryInfo: '',
-      mediaLines: urls.join('\n'),
     }
   }, [ad])
 
@@ -72,8 +98,19 @@ export function useAdminAdEdit(ad: AdminUserNestedAd, onSaved: () => void | Prom
 
   useEffect(() => {
     setForm(initialForm)
-    setNewFiles([])
   }, [initialForm])
+
+  const initialPhotoSlots = useMemo(() => buildPhotoSlotsFromAd(ad), [ad])
+  const [photoSlots, setPhotoSlots] = useState<PhotoUploadSlot[]>(() => buildPhotoSlotsFromAd(ad))
+
+  useEffect(() => {
+    setPhotoSlots(initialPhotoSlots)
+  }, [initialPhotoSlots])
+
+  const isDirty = useMemo(
+    () => !formEqual(form, initialForm) || !slotsEqual(photoSlots, initialPhotoSlots),
+    [form, initialForm, photoSlots, initialPhotoSlots],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -154,32 +191,35 @@ export function useAdminAdEdit(ad: AdminUserNestedAd, onSaved: () => void | Prom
       return null
     }
     const price = parsePriceInput(form.priceText)
-    const media = form.mediaLines
-      .split('\n')
-      .map((s) => s.trim())
-      .filter(Boolean)
+    const mediaOrdered = photoSlots
+      .filter((s): s is File | { remoteUrl: string } => s !== null)
+      .map((s) => (s instanceof File ? s : s.remoteUrl))
 
     const payload: UpdateProfileAdPayload = {
       category_id: cat,
       subcategory_id: sub,
       region_id: reg,
       city_id: city,
-      district: form.district.trim() || undefined,
+      district: ad.district?.trim() || undefined,
       title,
       description,
       price,
       unit: form.unit.trim() || undefined,
       delivery_available: form.deliveryAvailable,
-      delivery_info: form.deliveryInfo.trim() || undefined,
-      media,
+      delivery_info: ad.delivery_info?.trim() || undefined,
+    }
+    if (mediaOrdered.some((x) => x instanceof File)) {
+      payload.mediaSequence = mediaOrdered
+    } else if (mediaOrdered.length > 0) {
+      payload.media = mediaOrdered.filter((x): x is string => typeof x === 'string')
+    } else {
+      payload.media = []
     }
     const q = parseQuantityField(form.quantityText)
     if (q !== undefined) payload.quantity = q
-    const qd = form.quantityDescription.trim()
-    if (qd) payload.quantity_description = qd
 
     return payload
-  }, [form])
+  }, [form, ad, photoSlots])
 
   const submit = useCallback(async () => {
     setError('')
@@ -187,12 +227,8 @@ export function useAdminAdEdit(ad: AdminUserNestedAd, onSaved: () => void | Prom
     if (!payload) return
     setSaving(true)
     try {
-      const withFiles: UpdateProfileAdPayload =
-        newFiles.length > 0 ? { ...payload, files: newFiles } : payload
-      await adminApiService.editAd(ad.id, withFiles)
-      setNewFiles([])
+      await adminApiService.editAd(ad.id, payload)
       await onSaved()
-      setOpen(false)
     } catch (e) {
       setError(getAdminErrorMessage(e, 'Saqlashda xatolik'))
     } finally {
@@ -201,20 +237,19 @@ export function useAdminAdEdit(ad: AdminUserNestedAd, onSaved: () => void | Prom
   }, [ad.id, buildPayload, onSaved])
 
   return {
-    open,
-    setOpen,
     form,
     setField,
+    photoSlots,
+    setPhotoSlots,
     saving,
     error,
     submit,
+    isDirty,
     categories,
     subcategories,
     regions,
     cities,
     loadingRefs,
     unitOptions: PROFILE_AD_UNIT_OPTIONS,
-    newFiles,
-    setNewFiles,
   }
 }
