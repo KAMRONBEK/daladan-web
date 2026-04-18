@@ -1,7 +1,7 @@
-/** Ad promotions (profile + admin lists) — public API for pages and cross-feature use. */
-export { ProfileAdPromotionsPage } from './ui/ProfileAdPromotionsPage'
+/** Ad promotions (admin lists) — public API for pages and cross-feature use. */
 export { AdminAdPromotionsPage } from './ui/AdminAdPromotionsPage'
+export { AdminPromotionRequestsPage } from './ui/AdminPromotionRequestsPage'
 export { AdPromotionsTable } from './ui/AdPromotionsTable'
 export type { AdPromotionsTableVariant } from './ui/AdPromotionsTable'
-export { getAdminAdPromotionsListPath } from './model/adminPromotionsRoutes'
+export { getAdminAdDetailPath, getAdminAdPromotionsListPath } from './model/adminPromotionsRoutes'
 export { getPromotionKindLabel } from './model/promotionLabels'

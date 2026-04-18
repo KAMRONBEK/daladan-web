@@ -67,6 +67,7 @@ export function useProfileAdStatsPage(adId: number) {
   }, [adId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- load() updates async fetch state
     void load()
   }, [load])
 

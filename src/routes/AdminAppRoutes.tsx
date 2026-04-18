@@ -6,6 +6,7 @@ import { AdminCategoriesPage } from '../pages/admin/AdminCategoriesPage'
 import { AdminSubcategoriesPage } from '../pages/admin/AdminSubcategoriesPage'
 import { AdminPendingAdsPage } from '../pages/admin/AdminPendingAdsPage'
 import { AdminAdPromotionsPage } from '../pages/admin/AdminAdPromotionsPage'
+import { AdminPromotionRequestsPage } from '../pages/admin/AdminPromotionRequestsPage'
 import { AdminUserAdDetailPage } from '../pages/admin/AdminUserAdDetailPage'
 import { AdminUserDetailPage } from '../pages/admin/AdminUserDetailPage'
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage'
@@ -28,6 +29,7 @@ export const AdminAppRoutes = () => {
         <Route index element={<AdminDashboardPage />} />
         <Route path="categories" element={<AdminCategoriesPage />} />
         <Route path="subcategories" element={<AdminSubcategoriesPage />} />
+        <Route path="promotion-requests" element={<AdminPromotionRequestsPage />} />
         <Route path="moderation/ads/:adId/promotions" element={<AdminAdPromotionsPage />} />
         <Route path="moderation/ads/:adId" element={<AdminUserAdDetailPage />} />
         <Route path="moderation" element={<AdminPendingAdsPage />} />

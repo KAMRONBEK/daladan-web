@@ -1,10 +1,12 @@
+import { Link } from 'react-router-dom'
 import type { AdPromotion } from '../../../types/marketplace'
 import { formatPrice } from '../../../utils/price'
 import { formatUzbekDateTime } from '../../../utils/uzbekDateFormat'
+import { getAdminAdDetailPath } from '../model/adminPromotionsRoutes'
 import { isPromotionConfirmable } from '../model/promotionConfirm'
 import { getPromotionKindLabel } from '../model/promotionLabels'
 
-export type AdPromotionsTableVariant = 'profile' | 'admin'
+export type AdPromotionsTableVariant = 'profile' | 'admin' | 'adminGlobal'
 
 type AdPromotionsTableProps = {
   rows: AdPromotion[]
@@ -21,8 +23,10 @@ export function AdPromotionsTable({
   confirmingPromotionId,
   confirmLabel = 'Tasdiqlash',
 }: AdPromotionsTableProps) {
-  const showId = variant === 'admin'
-  const showActions = variant === 'admin' && typeof onConfirmPromotion === 'function'
+  const showId = variant === 'admin' || variant === 'adminGlobal'
+  const showAdContext = variant === 'adminGlobal'
+  const showActions =
+    (variant === 'admin' || variant === 'adminGlobal') && typeof onConfirmPromotion === 'function'
 
   return (
     <div className="overflow-x-auto rounded-ui border border-slate-200 dark:border-slate-700">
@@ -31,6 +35,9 @@ export function AdPromotionsTable({
           <tr>
             {showId ? (
               <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">ID</th>
+            ) : null}
+            {showAdContext ? (
+              <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">E&apos;lon</th>
             ) : null}
             <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">Turi</th>
             <th className="px-3 py-2 font-semibold text-slate-700 dark:text-slate-200">Holat</th>
@@ -48,6 +55,21 @@ export function AdPromotionsTable({
             <tr key={row.id} className="bg-white dark:bg-slate-900">
               {showId ? (
                 <td className="px-3 py-2.5 tabular-nums text-slate-700 dark:text-slate-300">{row.id}</td>
+              ) : null}
+              {showAdContext ? (
+                <td className="px-3 py-2.5 text-slate-700 dark:text-slate-300">
+                  {row.adId != null && row.adId > 0 ? (
+                    <Link
+                      to={getAdminAdDetailPath(row.adId, row.sellerId)}
+                      title={row.adTitle ?? undefined}
+                      className="font-medium text-daladan-primary hover:underline"
+                    >
+                      {row.adId}
+                    </Link>
+                  ) : (
+                    '—'
+                  )}
+                </td>
               ) : null}
               <td className="px-3 py-2.5 text-slate-900 dark:text-slate-100">
                 {getPromotionKindLabel(row.kind)}

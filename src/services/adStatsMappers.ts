@@ -11,8 +11,16 @@ export const extractStatsRecord = (payload: unknown): UnknownRecord => {
   return root
 }
 
+const viewsFromRecord = (item: UnknownRecord): number => {
+  const viewsBlock = asRecord(item.views)
+  if (isNonEmptyRecord(viewsBlock)) {
+    return getNumber(viewsBlock, 'total', 'views_count', 'viewsCount', 'views', 'count')
+  }
+  return getNumber(item, 'views_count', 'viewsCount', 'views', 'view_count', 'total')
+}
+
 export const mapAdStats = (item: UnknownRecord): AdStats => ({
-  viewsCount: getNumber(item, 'views_count', 'viewsCount', 'views', 'view_count'),
+  viewsCount: viewsFromRecord(item),
   favoritesCount: getNumber(
     item,
     'favorites_count',

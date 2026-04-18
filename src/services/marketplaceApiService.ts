@@ -1,9 +1,9 @@
 import { boostPlans } from '../data/boostPlans'
 import type {
-  AdPromotion,
   AdStats,
   BoostPlan,
   CategoryOption,
+  CreateAdPromotionPayload,
   CreateProfileAdPayload,
   Listing,
   ProfileAd,
@@ -14,6 +14,7 @@ import type {
 } from '../types/marketplace'
 import { requestJson } from './apiClient'
 import {
+  asArray,
   asRecord,
   extractCollection,
   getBoolean,
@@ -24,7 +25,6 @@ import {
   type UnknownRecord,
 } from './apiMappers'
 import type { MarketplaceService } from './contracts'
-import { extractPromotionRows, mapAdPromotion } from './adPromotionMappers'
 import { extractStatsRecord, mapAdStats } from './adStatsMappers'
 import {
   canRetryWithJson,
@@ -56,19 +56,23 @@ const mapPromotionPlanResource = (item: UnknownRecord, index: number): Promotion
   if (!label) return null
   const kindRaw = getString(
     item,
-    'kind',
     'type',
+    'kind',
     'promotion_type',
     'plan_kind',
     'promotion_kind',
     'category',
   )
+  const descriptionRaw = getString(item, 'description_uz', 'description', 'description_oz', 'summary').trim()
+  const sortOrderRaw = getNumber(item, 'sort_order', 'position', 'order')
   return {
     id,
     label,
     durationDays,
     ...(kindRaw ? { kind: kindRaw } : {}),
     price: pickNullablePrice(item),
+    ...(descriptionRaw ? { description: descriptionRaw } : {}),
+    ...(sortOrderRaw > 0 ? { sortOrder: sortOrderRaw } : {}),
   }
 }
 
@@ -180,6 +184,23 @@ const toDisplayQuantity = (value: unknown) => {
   return ''
 }
 
+/** When flat `is_boosted` is absent, detect active boost rows in nested `promotions` lists. */
+const boostFromPromotionRows = (item: UnknownRecord): { isBoosted: boolean; boostExpiresAt?: string } => {
+  const rows = [...asArray(item.promotions), ...asArray(item.ad_promotions)]
+  for (const raw of rows) {
+    const p = asRecord(raw)
+    const status = getString(p, 'status', 'state').toLowerCase()
+    if (status && !['active', 'confirmed'].includes(status)) continue
+    const kind = getString(p, 'kind', 'type', 'promotion_type').toLowerCase()
+    const slug = getString(p, 'slug', 'code').toLowerCase()
+    if (!kind.includes('boost') && !slug.includes('boost')) continue
+    const boostExpiresAt =
+      getString(p, 'ends_at', 'end_at', 'expires_at', 'boost_expires_at', 'endsAt').trim() || undefined
+    return { isBoosted: true, boostExpiresAt }
+  }
+  return { isBoosted: false }
+}
+
 /** Shared by admin user ads list; maps API ad rows to marketplace `Listing`. */
 export const mapListing = (item: UnknownRecord): Listing => {
   const categoryObj = asRecord(item.category)
@@ -229,6 +250,15 @@ export const mapListing = (item: UnknownRecord): Listing => {
     Object.prototype.hasOwnProperty.call(item, 'viewsCount')
   const viewsCount = hasViewsField ? getNumber(item, 'views_count', 'viewsCount') : undefined
 
+  const directBoost = getBoolean(item, 'is_boosted', 'boosted', 'is_boost', 'has_boost')
+  let boostExpiresAt =
+    getString(item, 'boost_expires_at', 'boostExpiresAt', 'boost_ends_at', 'boost_expires').trim() || undefined
+  const inferred = boostFromPromotionRows(item)
+  const isBoosted = directBoost || inferred.isBoosted
+  if (!boostExpiresAt && inferred.boostExpiresAt) {
+    boostExpiresAt = inferred.boostExpiresAt
+  }
+
   return {
     id: getIdString(item) || '0',
     title: getString(item, 'title', 'name') || "Nomsiz e'lon",
@@ -240,7 +270,8 @@ export const mapListing = (item: UnknownRecord): Listing => {
     price: getNumber(item, 'price', 'amount'),
     unit,
     isTopSale: getBoolean(item, 'is_top_sale', 'top_sale', 'is_top'),
-    isBoosted: getBoolean(item, 'is_boosted', 'boosted'),
+    isBoosted,
+    ...(boostExpiresAt ? { boostExpiresAt } : {}),
     isFresh: getBoolean(item, 'is_fresh', 'fresh'),
     phone: getString(item, 'phone') || getString(ownerObj, 'phone'),
     sellerName,
@@ -382,11 +413,6 @@ export const marketplaceApiService: MarketplaceService = {
     return mapAdStats(extractStatsRecord(response))
   },
 
-  async getProfileAdPromotions(adId: number): Promise<AdPromotion[]> {
-    const response = await requestJson<unknown>(`/profile/ads/${adId}/promotions`)
-    return extractPromotionRows(response).map(mapAdPromotion)
-  },
-
   async updateProfileAd(adId: number, payload: UpdateProfileAdPayload) {
     return updateProfileAd(adId, payload)
   },
@@ -440,6 +466,13 @@ export const marketplaceApiService: MarketplaceService = {
       .map(mapSubcategory(categoryId))
       .filter((item) => item.id > 0 && item.categoryId > 0 && Boolean(item.name))
       .filter((item) => item.is_active !== false)
+  },
+
+  async createAdPromotionRequest(adId: number, payload: CreateAdPromotionPayload): Promise<void> {
+    await requestJson<unknown>(`/profile/ads/${adId}/promotions`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   },
 
   createProfileAd,

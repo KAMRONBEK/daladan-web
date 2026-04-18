@@ -1,8 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { SiteLayout } from './components/layout/SiteLayout'
 import { ProtectedRoute } from './components/routing/ProtectedRoute'
+import { RedirectProfilePromotionsToAdBoost } from './components/routing/RedirectProfilePromotionsToAdBoost'
 import { AdBoostPage } from './pages/AdBoostPage'
-import { AdPromotionsPage } from './pages/AdPromotionsPage'
 import { AdStatsPage } from './pages/AdStatsPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { ItemDetailsPage } from './pages/ItemDetailsPage'
@@ -56,9 +56,7 @@ function App() {
         path="/profile/ads/:ad/promotions"
         element={
           <ProtectedRoute>
-            <SiteLayout>
-              <AdPromotionsPage />
-            </SiteLayout>
+            <RedirectProfilePromotionsToAdBoost />
           </ProtectedRoute>
         }
       />

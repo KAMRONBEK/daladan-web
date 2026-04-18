@@ -11,6 +11,8 @@ export interface Listing {
   unit: string
   isTopSale?: boolean
   isBoosted?: boolean
+  /** ISO datetime when API sends `boost_expires_at` (profile / detail). */
+  boostExpiresAt?: string
   isFresh?: boolean
   phone: string
   sellerName?: string
@@ -64,9 +66,12 @@ export interface PromotionPlanResource {
   id: string
   label: string
   durationDays: number
-  /** e.g. top_sale, boosted — when API sends it */
+  /** e.g. boost, top_sale — when API sends `type` / `kind` */
   kind?: string
   price: number | null
+  description?: string
+  /** API `sort_order` for display ordering */
+  sortOrder?: number
 }
 
 export interface SubcategoryOption {
@@ -130,7 +135,7 @@ export interface AdStats {
   phoneRevealsCount: number
 }
 
-/** Row from `GET /profile/ads/{ad}/promotions` (and admin mirror). */
+/** Row from admin promotions list (and compatible payloads). */
 export interface AdPromotion {
   id: number
   kind: string
@@ -140,6 +145,17 @@ export interface AdPromotion {
   endsAt?: string
   createdAt?: string
   price: number | null
+  /** Present on global admin list when API includes ad context. */
+  adId?: number
+  /** Present on global admin list when API includes ad context. */
+  adTitle?: string
+  /** When set, admin links prefer `/users/:sellerId/ads/:adId` (matches user-scoped admin routes). */
+  sellerId?: number
+}
+
+/** `POST /profile/ads/{ad}/promotions` */
+export interface CreateAdPromotionPayload {
+  promotion_plan_id: number
 }
 
 export interface PublicAdsFilters {

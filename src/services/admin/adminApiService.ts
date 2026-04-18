@@ -8,8 +8,7 @@ import type {
   AdminUserUpdatePayload,
   LaravelPaginated,
 } from '../../types/admin'
-import type { UpdateProfileAdPayload } from '../../types/marketplace'
-import type { AdPromotion } from '../../types/marketplace'
+import type { AdPromotion, UpdateProfileAdPayload } from '../../types/marketplace'
 import { extractPromotionRows, mapAdPromotion } from '../adPromotionMappers'
 import { requestJson } from '../apiClient'
 import {
@@ -68,6 +67,16 @@ export const adminApiService = {
   async getAdPromotions(adId: number): Promise<AdPromotion[]> {
     const raw = await requestJson<unknown>(`/admin/ads/${adId}/promotions`)
     return extractPromotionRows(raw).map(mapAdPromotion)
+  },
+
+  /** Global promo orders list (`GET /admin/ad-promotions`). */
+  async listAdPromotionRequests(params?: { per_page?: number; page?: number }): Promise<LaravelPaginated<AdPromotion>> {
+    const query = buildAdminQuery({
+      per_page: params?.per_page,
+      page: params?.page,
+    })
+    const raw = await requestJson<unknown>(`/admin/ad-promotions${query}`)
+    return mapPaginated(raw, mapAdPromotion)
   },
 
   async approveAd(adId: number) {

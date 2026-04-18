@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   ChevronLeft,
   ChevronRight,
@@ -8,8 +8,6 @@ import {
   LogOut,
   MessageSquare,
   Pencil,
-  RefreshCw,
-  Trash2,
   Wallet,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -18,9 +16,35 @@ import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
 import { formatUzPhoneInput } from '../utils/phone'
 import { formatPrice } from '../utils/price'
+import { formatUzbekDateTime } from '../utils/uzbekDateFormat'
 import { ImageLightbox } from '../components/ui/ImageLightbox'
 
 type ProfileTab = 'profile' | 'ads' | 'messages' | 'payments'
+
+/** Blurred preview + “Ish jarayonida” for profile tabs not shipped yet (e.g. Xabarlar, To‘lovlar). */
+function ProfileComingSoonOverlay({ preview }: { preview: ReactNode }) {
+  return (
+    <div className="relative min-h-[240px] overflow-hidden rounded-lg">
+      <div className="pointer-events-none select-none blur-md" aria-hidden>
+        {preview}
+      </div>
+      <div
+        className="absolute inset-0 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[2px] dark:bg-slate-900/55"
+        role="status"
+        aria-live="polite"
+      >
+        <div className="max-w-md rounded-ui border border-daladan-primary/35 bg-white/95 px-6 py-5 text-center shadow-md dark:border-daladan-primary/40 dark:bg-slate-900/95">
+          <p className="text-lg font-bold tracking-tight text-daladan-heading dark:text-slate-100">
+            Ish jarayonida
+          </p>
+          <p className="mt-1.5 text-sm text-daladan-muted dark:text-slate-400">
+            Bu bo&apos;lim tez orada ishga tushadi.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 interface EditableProfile {
   firstName: string
@@ -153,8 +177,6 @@ export const ProfilePage = () => {
     return { label: '—', className: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300' }
   }
 
-  const isActiveAd = (listing: Listing) => (listing.status || '').toLowerCase() === 'active'
-
   const handleLogout = async () => {
     const confirmed = window.confirm('Hisobdan chiqmoqchimisiz?')
     if (!confirmed) return
@@ -206,40 +228,6 @@ export const ProfilePage = () => {
       setProfileError(error instanceof Error ? error.message : "Profilni yangilab bo'lmadi")
     } finally {
       setIsSavingProfile(false)
-    }
-  }
-
-  const handleDeleteAd = async (listing: Listing) => {
-    const adId = Number(listing.id)
-    if (!adId || Number.isNaN(adId)) {
-      setAdsError("E'lon ID noto'g'ri, o'chirib bo'lmadi")
-      return
-    }
-    if (!window.confirm("Ushbu e'lonni o'chirmoqchimisiz?")) return
-    try {
-      setAdsError('')
-      await marketplaceService.deleteProfileAd(adId)
-      await loadProfileAds()
-    } catch (error) {
-      setAdsError(error instanceof Error ? error.message : "E'lonni o'chirib bo'lmadi")
-    }
-  }
-
-  const handleRefreshAd = async (listing: Listing) => {
-    const adId = Number(listing.id)
-    if (!adId || Number.isNaN(adId)) {
-      setAdsError("E'lon ID noto'g'ri, yangilab bo'lmadi")
-      return
-    }
-    try {
-      setAdsError('')
-      await marketplaceService.updateProfileAd(adId, {
-        title: listing.title,
-        description: listing.description,
-      })
-      await loadProfileAds()
-    } catch (error) {
-      setAdsError(error instanceof Error ? error.message : "E'lonni yangilab bo'lmadi")
     }
   }
 
@@ -296,7 +284,6 @@ export const ProfilePage = () => {
             const slideIdx = adGalleryIndex[listing.id] ?? 0
             const safeIdx = slides.length ? slideIdx % slides.length : 0
             const status = adStatusPresentation(listing.status)
-            const active = isActiveAd(listing)
             return (
               <div
                 key={listing.id}
@@ -379,10 +366,33 @@ export const ProfilePage = () => {
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                           Narxi: {formatPrice(listing.price)} {listing.unit} • Joylashuv: {listing.location}
                         </p>
+                        {listing.isBoosted ? (
+                          <p className="mt-1 text-sm font-medium text-amber-800 dark:text-amber-200/90">
+                            Boost aktiv
+                            {listing.boostExpiresAt
+                              ? ` · tugash: ${formatUzbekDateTime(listing.boostExpiresAt)}`
+                              : null}
+                          </p>
+                        ) : null}
                       </div>
-                      <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}>
-                        {status.label}
-                      </span>
+                      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+                        {listing.isBoosted ? (
+                          <span
+                            className="rounded-full bg-amber-500/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-amber-950 dark:text-amber-100"
+                            title="E'lon ko'tarilgan (boost)"
+                          >
+                            Boost
+                          </span>
+                        ) : null}
+                        {listing.isTopSale ? (
+                          <span className="rounded-full bg-violet-500/20 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-violet-900 dark:text-violet-100">
+                            Top
+                          </span>
+                        ) : null}
+                        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.className}`}>
+                          {status.label}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="relative z-20 mt-4 flex flex-wrap gap-2 pointer-events-auto">
@@ -394,52 +404,16 @@ export const ProfilePage = () => {
                         Statistika
                       </Link>
                       <Link
-                        to={`/profile/ads/${listing.id}/promotions?plan=boosted`}
-                        className="rounded-ui bg-daladan-primary px-4 py-2 text-center text-sm font-semibold text-white"
+                        to={`/ad-boost/${listing.id}?plan=boosted`}
+                        className={
+                          listing.isBoosted
+                            ? 'rounded-ui border border-daladan-primary bg-white px-4 py-2 text-center text-sm font-semibold text-daladan-primary hover:bg-daladan-primary/5 dark:border-daladan-primary dark:bg-slate-900 dark:hover:bg-daladan-primary/10'
+                            : 'rounded-ui bg-daladan-primary px-4 py-2 text-center text-sm font-semibold text-white'
+                        }
                         onClick={(e) => e.stopPropagation()}
                       >
-                        E&apos;lonni ko&apos;tarish
+                        {listing.isBoosted ? 'Reklama / yangilash' : "E'lonni ko'tarish"}
                       </Link>
-                      {active ? (
-                        <Link
-                          to={`/profile/ads/${listing.id}/promotions?plan=top-sale`}
-                          className="rounded-ui bg-daladan-accentMuted px-4 py-2 text-center text-sm font-semibold text-daladan-accentDark"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Top Sotuv
-                        </Link>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            void handleRefreshAd(listing)
-                          }}
-                          className="rounded-ui bg-slate-200 px-4 py-2 text-center text-sm font-semibold text-slate-700 dark:bg-slate-700 dark:text-slate-200"
-                        >
-                          Yangilash
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          void handleRefreshAd(listing)
-                        }}
-                        className="rounded-ui bg-slate-100 px-3 py-2 text-slate-500 dark:bg-slate-800 dark:text-slate-300"
-                      >
-                        <RefreshCw size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          void handleDeleteAd(listing)
-                        }}
-                        className="rounded-ui bg-slate-100 px-3 py-2 text-daladan-accentDark dark:bg-slate-800"
-                      >
-                        <Trash2 size={14} />
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -715,11 +689,8 @@ export const ProfilePage = () => {
                 3 yangi
               </span>
             </div>
-            <div className="relative min-h-[240px] overflow-hidden rounded-lg">
-              <div
-                className="pointer-events-none select-none blur-md"
-                aria-hidden
-              >
+            <ProfileComingSoonOverlay
+              preview={
                 <div className="space-y-3">
                   {[
                     { name: 'Jasur', text: "Olmalar hali bormi?", time: '10:21' },
@@ -735,49 +706,39 @@ export const ProfilePage = () => {
                     </div>
                   ))}
                 </div>
-              </div>
-              <div
-                className="absolute inset-0 flex items-center justify-center bg-white/55 p-4 backdrop-blur-[2px] dark:bg-slate-900/55"
-                role="status"
-                aria-live="polite"
-              >
-                <div className="max-w-md rounded-ui border border-daladan-primary/35 bg-white/95 px-6 py-5 text-center shadow-md dark:border-daladan-primary/40 dark:bg-slate-900/95">
-                  <p className="text-lg font-bold tracking-tight text-daladan-heading dark:text-slate-100">
-                    Ish jarayonida
-                  </p>
-                  <p className="mt-1.5 text-sm text-daladan-muted dark:text-slate-400">
-                    Bu bo&apos;lim tez orada ishga tushadi.
-                  </p>
-                </div>
-              </div>
-            </div>
+              }
+            />
           </div>
         )}
 
         {activeTab === 'payments' && (
-          <div className="space-y-3">
-            <div className="rounded-ui border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-6">
+          <div className="rounded-ui border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900 md:p-6">
+            <div className="mb-4">
               <h2 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">To&apos;lovlar</h2>
               <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 E&apos;lonlarni ko&apos;tarish va reklama to&apos;lovlari tarixi.
               </p>
             </div>
-            <div className="rounded-ui border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-slate-100 py-3 text-sm">
-                <p className="font-medium text-slate-900 dark:text-slate-100">Top Sotuv - Sarhil qizil olmalar</p>
-                <p className="font-semibold text-slate-700 dark:text-slate-300">{formatPrice(45000)} so&apos;m</p>
-                <span className="rounded-full bg-daladan-primary/10 px-2 py-1 text-xs font-semibold text-daladan-primary">
-                  To&apos;langan
-                </span>
-              </div>
-              <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-3 text-sm">
-                <p className="font-medium text-slate-900 dark:text-slate-100">Boosted - Issiqxona pomidorlari</p>
-                <p className="font-semibold text-slate-700 dark:text-slate-300">{formatPrice(25000)} so&apos;m</p>
-                <span className="rounded-full bg-daladan-accent px-2 py-1 text-xs font-semibold text-daladan-accentDark">
-                  Jarayonda
-                </span>
-              </div>
-            </div>
+            <ProfileComingSoonOverlay
+              preview={
+                <div className="space-y-0 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 border-b border-slate-100 py-3 pl-3 pr-3 text-sm dark:border-slate-700">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">Top Sotuv - Sarhil qizil olmalar</p>
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">{formatPrice(45000)} so&apos;m</p>
+                    <span className="rounded-full bg-daladan-primary/10 px-2 py-1 text-xs font-semibold text-daladan-primary">
+                      To&apos;langan
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-[1fr_auto_auto] items-center gap-3 py-3 pl-3 pr-3 text-sm">
+                    <p className="font-medium text-slate-900 dark:text-slate-100">Boosted - Issiqxona pomidorlari</p>
+                    <p className="font-semibold text-slate-700 dark:text-slate-300">{formatPrice(25000)} so&apos;m</p>
+                    <span className="rounded-full bg-daladan-accent px-2 py-1 text-xs font-semibold text-daladan-accentDark">
+                      Jarayonda
+                    </span>
+                  </div>
+                </div>
+              }
+            />
           </div>
         )}
       </section>

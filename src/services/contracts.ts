@@ -1,8 +1,8 @@
 import type {
-  AdPromotion,
   AdStats,
   BoostPlan,
   CategoryOption,
+  CreateAdPromotionPayload,
   CreateProfileAdPayload,
   Listing,
   Profile,
@@ -21,7 +21,6 @@ export interface MarketplaceService {
   getProfileAds(perPage?: number, page?: number): Promise<Listing[]>
   getProfileAdById(adId: number): Promise<Listing | undefined>
   getProfileAdStats(adId: number): Promise<AdStats>
-  getProfileAdPromotions(adId: number): Promise<AdPromotion[]>
   updateProfileAd(adId: number, payload: UpdateProfileAdPayload): Promise<ProfileAd>
   deleteProfileAd(adId: number): Promise<void>
   getListings(): Promise<Listing[]>
@@ -31,6 +30,7 @@ export interface MarketplaceService {
   getCategories(): Promise<CategoryOption[]>
   getSubcategories(categoryId: number): Promise<SubcategoryOption[]>
   createProfileAd(payload: CreateProfileAdPayload): Promise<ProfileAd>
+  createAdPromotionRequest(adId: number, payload: CreateAdPromotionPayload): Promise<void>
 }
 
 export interface ProfileService {
