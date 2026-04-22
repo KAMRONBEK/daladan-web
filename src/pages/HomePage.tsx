@@ -145,6 +145,7 @@ export const HomePage = () => {
                   canFavorite={Boolean(user)}
                   onFavoriteBlocked={redirectToLogin}
                   showPostedDate
+                  favoriteButtonShape="square"
                 />
               </div>
             ))}

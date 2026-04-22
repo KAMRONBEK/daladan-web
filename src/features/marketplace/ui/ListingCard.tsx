@@ -13,6 +13,8 @@ const CARD_SHADOW =
 
 const CARD_SHELL = `overflow-hidden rounded-ui border border-daladan-border bg-daladan-surfaceElevated ${CARD_SHADOW} transition-colors hover:border-daladan-primary/40 dark:border-slate-700 dark:bg-slate-900`
 
+type FavoriteButtonShape = 'circle' | 'square'
+
 interface ListingCardProps {
   listing: Listing
   canFavorite: boolean
@@ -20,6 +22,8 @@ interface ListingCardProps {
   variant?: ListingCardVariant
   /** When true, shows relative posted time (home / favorites). Search uses list layout without date. */
   showPostedDate?: boolean
+  /** Home grid uses a square-ish favorite control; search / favorites keep the circular button. */
+  favoriteButtonShape?: FavoriteButtonShape
 }
 
 function PromoBadges({ listing }: { listing: Listing }) {
@@ -163,18 +167,21 @@ function FavoriteIconButton({
   favorite,
   onClick,
   className = '',
+  shape = 'circle',
 }: {
   favorite: boolean
   onClick: (e: MouseEvent<HTMLButtonElement>) => void
   /** e.g. absolute placement straddling image / text */
   className?: string
+  shape?: FavoriteButtonShape
 }) {
+  const radiusClass = shape === 'square' ? 'rounded-md' : 'rounded-full'
   return (
     <button
       type="button"
       aria-label={favorite ? 'Sevimlidan olib tashlash' : "Sevimlilariga qo'shish"}
       onClick={onClick}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-md ${favorite
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center ${radiusClass} shadow-md ${favorite
         ? 'bg-daladan-accent text-daladan-accentDark'
         : 'bg-white text-daladan-muted ring-1 ring-daladan-border/80 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600'
         } ${className}`.trim()}
@@ -190,6 +197,7 @@ export const ListingCard = ({
   onFavoriteBlocked,
   variant = 'grid',
   showPostedDate = false,
+  favoriteButtonShape = 'circle',
 }: ListingCardProps) => {
   const { isFavorite, toggleFavorite } = useFavorites()
   const favorite = isFavorite(listing.id)
@@ -229,6 +237,7 @@ export const ListingCard = ({
             <FavoriteIconButton
               favorite={favorite}
               onClick={onFavoriteClick}
+              shape={favoriteButtonShape}
               className="absolute bottom-0 right-3 z-20 -translate-y-1/2 translate-y-1.5"
             />
           </div>
@@ -264,6 +273,7 @@ export const ListingCard = ({
             <FavoriteIconButton
               favorite={favorite}
               onClick={onFavoriteClick}
+              shape={favoriteButtonShape}
               className="absolute right-0 top-1/2 z-20 -translate-y-1/2 translate-x-1/2"
             />
           </div>
