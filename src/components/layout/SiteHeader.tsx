@@ -155,30 +155,36 @@ export const SiteHeader = () => {
             <>
               <Link
                 to="/profile/ads/new"
-                className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+                className="group flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-slate-300 transition-colors"
               >
                 <CirclePlus size={24} />
-                <span className="hidden text-xs font-medium leading-none lg:block">E'lon</span>
+                <span className="hidden text-xs font-medium leading-none text-white transition-colors group-hover:text-slate-400 lg:block">
+                  E'lon
+                </span>
               </Link>
               <button
                 type="button"
                 onClick={() => navigate('/profile', { state: { tab: 'messages' } })}
-                className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+                className="group flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-slate-300 transition-colors"
                 aria-label="Xabarlar"
               >
                 <MessageSquare size={24} />
-                <span className="hidden text-xs font-medium leading-none lg:block">Xabarlar</span>
+                <span className="hidden text-xs font-medium leading-none text-white transition-colors group-hover:text-slate-400 lg:block">
+                  Xabarlar
+                </span>
               </button>
               <div className="relative" ref={menuRef}>
                 <button
                   type="button"
                   onClick={() => setIsMenuOpen((prev) => !prev)}
-                  className="flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-slate-300 transition-colors hover:bg-slate-700 hover:text-white"
+                  className="group flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-slate-300 transition-colors"
                   aria-label="Menyu"
                   aria-expanded={isMenuOpen}
                 >
                   <Menu size={24} />
-                  <span className="hidden text-xs font-medium leading-none lg:block">Menyu</span>
+                  <span className="hidden text-xs font-medium leading-none text-white transition-colors group-hover:text-slate-400 lg:block">
+                    Menyu
+                  </span>
                 </button>
 
                 {isMenuOpen ? (
