@@ -117,19 +117,19 @@ export const LoginModal = () => {
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
       <button type="button" onClick={closeModal} aria-label="Yopish" className="absolute inset-0" />
-      <div className="relative z-10 w-full max-w-[470px] overflow-hidden rounded-[22px] bg-white shadow-2xl">
-        <div className="flex items-center justify-between px-8 pb-3 pt-8">
+      <div className="relative z-10 w-full max-w-[470px] overflow-visible rounded-[22px] bg-white shadow-2xl">
+        <button
+          type="button"
+          onClick={closeModal}
+          className="ui-close-btn absolute -right-5 -top-2"
+          aria-label="Modalni yopish"
+        >
+          <X size={19} strokeWidth={2.6} />
+        </button>
+        <div className="px-8 pb-3 pt-8">
           <h2 className="text-[42px] font-semibold leading-none text-slate-900">
             {isRegisterTab ? "Ro'yxatdan o'tish" : 'Kirish'}
           </h2>
-          <button
-            type="button"
-            onClick={closeModal}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-100 hover:text-slate-800"
-            aria-label="Modalni yopish"
-          >
-            <X size={17} strokeWidth={2.2} />
-          </button>
         </div>
 
         <form onSubmit={onSubmit} autoComplete="off" className="space-y-3 px-8 pb-8">
