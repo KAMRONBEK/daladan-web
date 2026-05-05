@@ -106,3 +106,44 @@ a:focus-visible {
   outline: none;
   outline-offset: 0;
 }
+
+/* Auth page inputs use custom focus visuals without global green outline. */
+.auth-page input:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
+
+/* Shared close icon button style across modals/sheets/lightbox. */
+.ui-close-btn {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.875rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #64748b;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.14);
+  transition: all 0.18s ease;
+}
+
+.ui-close-btn:hover {
+  transform: translateY(-1px);
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.dark .ui-close-btn {
+  border-color: #334155;
+  background: #0f172a;
+  color: #cbd5e1;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.dark .ui-close-btn:hover {
+  border-color: #475569;
+  background: #1e293b;
+  color: #f1f5f9;
+}

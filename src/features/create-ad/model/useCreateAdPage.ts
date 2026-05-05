@@ -51,7 +51,7 @@ export function useCreateAdPage() {
       description: '',
       price: '',
       unit: '',
-      deliveryAvailable: true,
+      deliveryAvailable: false,
     },
   })
 
@@ -397,6 +397,7 @@ export function useCreateAdPage() {
 
   return {
     register,
+    setValue,
     handleSubmit,
     errors,
     isValid,
