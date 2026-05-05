@@ -94,9 +94,9 @@ export const SiteHeader = () => {
 
   return (
     <header className="sticky top-0 z-20 bg-slate-800 shadow-xl dark:bg-slate-950">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-4 py-1 pl-2 pr-0.5 lg:pl-4 lg:pr-1">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-1 md:px-6 lg:px-6">
 
-        <Link to="/" className="-my-3 -ml-12 mr-3 shrink-0 lg:-ml-10 lg:mr-5">
+        <Link to="/" className="-my-3 mr-2 shrink-0 md:mr-3 lg:mr-4">
           <img
             src="/daladan-icon.png"
             alt="Daladan"
@@ -109,7 +109,7 @@ export const SiteHeader = () => {
           />
         </Link>
 
-        <div className="hidden min-w-0 flex-1 justify-center px-2 md:flex lg:px-4">
+        <div className="hidden min-w-0 flex-1 justify-center md:flex">
           <form
             onSubmit={commitSearch}
             className="flex h-12 w-full max-w-[840px] min-w-0 items-stretch overflow-hidden rounded-xl border border-[#0f4f69] bg-white"
@@ -147,9 +147,9 @@ export const SiteHeader = () => {
           </form>
         </div>
 
-        <div className="-ml-3 mr-[-8px] flex shrink-0 items-center gap-0 lg:-ml-2 lg:mr-[-10px]">
+        <div className="flex shrink-0 items-center gap-0">
           {/* Theme toggle hidden temporarily; spacer preserves header alignment */}
-          <div className="-ml-4 h-[42px] w-[44px] lg:-ml-2" aria-hidden="true" />
+          <div className="h-[42px] w-[44px] shrink-0" aria-hidden="true" />
 
           {user ? (
             <>

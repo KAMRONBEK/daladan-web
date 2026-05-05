@@ -176,12 +176,16 @@ function FavoriteIconButton({
       type="button"
       aria-label={favorite ? 'Sevimlidan olib tashlash' : "Sevimlilariga qo'shish"}
       onClick={onClick}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-md ${favorite
-        ? 'bg-daladan-accent text-daladan-accentDark'
-        : 'bg-white text-daladan-muted ring-1 ring-daladan-border/80 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600'
-        } ${className}`.trim()}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center hover:opacity-90 ${favorite
+        ? 'text-red-500 dark:text-red-500'
+        : 'text-zinc-400 dark:text-zinc-500'
+      } ${className}`.trim()}
     >
-      <Heart size={16} fill={favorite ? 'currentColor' : 'none'} />
+      <Heart
+        size={20}
+        strokeWidth={1.5}
+        className={favorite ? 'fill-red-500 stroke-red-500' : 'fill-none stroke-current'}
+      />
     </button>
   )
 }

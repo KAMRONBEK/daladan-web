@@ -1,7 +1,6 @@
 import { ChevronRight } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { DEFAULT_CATEGORY_TILE_IMAGE, getCategoryTileImage } from '../constants/categoryTileImages'
 import { ListingCard, ListingGridSkeletons } from '../features/marketplace'
 import { fallbackCategoryTree, loadCategoryTree, type CategoryNode } from '../features/marketplace/model/categoryTree'
 import { searchUrlForCategoryLabel } from '../features/marketplace/model/searchUrls'
@@ -9,33 +8,39 @@ import { marketplaceService } from '../services'
 import { useAuth } from '../state/AuthContext'
 import type { Listing } from '../types/marketplace'
 import { LOGIN_PATH, loginReturnState } from '../utils/appPaths'
+import { useState } from 'react'
 
 const FEATURED_LIMIT = 8
 const POPULAR_CATEGORY_LIMIT = 8
 
 const categoryTileKey = (cat: CategoryNode) => (cat.id != null ? `id-${cat.id}` : `lbl-${cat.label}`)
+const CAT_EMOJI: Record<string, string> = {
+  meva: '🍎', sabzavot: '🥦', don: '🌾', chorva: '🐄',
+  parranda: '🐔', yem: '🌿', "o'g'it": '🧪', jihozlar: '🚜',
+  "yem va ozuqa": '🌿', "o'g'it va kimyoviylar": '🧪',
+  "qishloq xo'jaligi jihozlari": '🚜',
+}
+const catEmoji = (label: string) => CAT_EMOJI[label.trim().toLowerCase()] ?? '📦'
 
-function CategoryTileLink({ cat }: { cat: CategoryNode }) {
-  const [imgSrc, setImgSrc] = useState(() => getCategoryTileImage(cat))
-
+function CategoryModernCard({ cat, count }: { cat: CategoryNode; count: number }) {
   return (
     <Link
       to={searchUrlForCategoryLabel(cat.label)}
       aria-label={cat.label}
-      className="group overflow-hidden rounded-ui border border-daladan-border bg-daladan-surfaceElevated shadow-sm dark:border-slate-700 dark:bg-slate-900"
+      className="group flex flex-col justify-between rounded-2xl border border-zinc-200/80 bg-white p-5 transition-shadow hover:shadow-md dark:border-zinc-700/60 dark:bg-zinc-900"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-daladan-soft dark:bg-slate-800">
-        <img
-          src={imgSrc}
-          alt=""
-          loading="lazy"
-          decoding="async"
-          onError={() => setImgSrc(DEFAULT_CATEGORY_TILE_IMAGE)}
-          className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
-        />
+      <div className="flex items-start justify-between">
+        <span className="text-3xl leading-none">{catEmoji(cat.label)}</span>
+        <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-semibold text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
+          {count}+
+        </span>
       </div>
-      <div className="border-t border-daladan-border bg-daladan-surface px-1.5 py-1.5 text-center text-xs font-medium leading-tight text-daladan-heading dark:border-slate-700 dark:bg-slate-800/90 dark:text-slate-100 sm:px-2 sm:py-2">
-        {cat.label}
+      <div className="mt-8">
+        <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{cat.label}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-zinc-400 dark:text-zinc-500">
+          E&apos;lonlar
+          <ChevronRight size={11} className="transition-transform group-hover:translate-x-0.5" />
+        </p>
       </div>
     </Link>
   )
@@ -106,20 +111,35 @@ export const HomePage = () => {
   return (
     <div className="mx-auto w-full max-w-6xl space-y-10">
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold text-daladan-heading dark:text-slate-100 sm:text-2xl">Mashhur kategoriyalar</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-daladan-heading dark:text-slate-100 sm:text-2xl">Kategoriyalar</h2>
+          <Link to="/search" className="inline-flex items-center gap-1 text-sm font-medium text-daladan-primary hover:underline dark:text-emerald-400">
+            Barchasini ko&apos;rish <ChevronRight size={14} />
+          </Link>
+        </div>
         {loadingTree ? (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {Array.from({ length: 8 }, (_, i) => (
-              <div key={i} className="overflow-hidden rounded-ui border border-daladan-border bg-daladan-surfaceElevated shadow-sm dark:border-slate-700 dark:bg-slate-900">
-                <div className="aspect-[4/3] animate-pulse bg-daladan-border dark:bg-slate-800" />
-                <div className="h-9 animate-pulse bg-daladan-soft dark:bg-slate-800/80" />
+              <div key={i} className="flex flex-col justify-between rounded-2xl border border-zinc-200/80 bg-white p-5 dark:border-zinc-700/60 dark:bg-zinc-900" style={{ minHeight: 130 }}>
+                <div className="flex items-start justify-between">
+                  <div className="h-8 w-8 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" />
+                  <div className="h-5 w-8 animate-pulse rounded-full bg-zinc-100 dark:bg-zinc-800" />
+                </div>
+                <div className="mt-8 space-y-1.5">
+                  <div className="h-3 w-2/3 animate-pulse rounded bg-zinc-200 dark:bg-zinc-700" />
+                  <div className="h-2.5 w-1/2 animate-pulse rounded bg-zinc-100 dark:bg-zinc-800" />
+                </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {popularCategories.map((cat) => (
-              <CategoryTileLink key={categoryTileKey(cat)} cat={cat} />
+              <CategoryModernCard
+                key={categoryTileKey(cat)}
+                cat={cat}
+                count={0}
+              />
             ))}
           </div>
         )}
