@@ -17,17 +17,16 @@ test.describe('layout', () => {
     await expect(external).toHaveAttribute('target', '_blank')
   })
 
-  test('theme toggle flips data-theme on html', async ({ page }) => {
+  test('header login button sends guests to login', async ({ page }) => {
     await page.goto('/')
-    const html = page.locator('html')
-    const before = await html.getAttribute('data-theme')
-    await page.getByRole('button', { name: /rejimga o'tish/ }).first().click()
-    await expect.poll(async () => html.getAttribute('data-theme')).not.toBe(before)
+    await page.locator('header').getByRole('button', { name: 'Kirish' }).click()
+    await expectSiteLoginPage(page)
   })
 
-  test('favorites button sends guests to login', async ({ page }) => {
+  test('header register button sends guests to register', async ({ page }) => {
     await page.goto('/')
-    await page.locator('header').getByRole('button').nth(2).click()
-    await expectSiteLoginPage(page)
+    await page.locator('header').getByRole('button', { name: "Ro'yxat" }).click()
+    await expect(page).toHaveURL(/\/register$/)
+    await expect(page.getByRole('heading', { name: "Ro'yxatdan o'tish" })).toBeVisible()
   })
 })

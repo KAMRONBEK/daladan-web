@@ -13,7 +13,7 @@ test.describe('search', () => {
     await page.goto('/')
     const q = 'test-query-from-header'
     await page.locator('#site-search').fill(q)
-    await page.locator('form.site-header-search-form').getByRole('button', { name: 'Qidiruv' }).click()
+    await page.locator('header').getByRole('button', { name: 'Qidiruv' }).click()
     await expect(page).toHaveURL(new RegExp(`/search\\?q=${encodeURIComponent(q)}`))
   })
 

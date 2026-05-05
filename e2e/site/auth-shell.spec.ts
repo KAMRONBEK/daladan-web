@@ -5,7 +5,7 @@ test.describe('auth shell', () => {
     await page.goto('/login')
     await expect(page.getByRole('heading', { name: 'Kirish' })).toBeVisible()
     await expect(page.locator('form input[type="password"]')).toBeVisible()
-    await expect(page.getByPlaceholder('Parol')).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Parolni unutdingizmi?' })).toBeVisible()
   })
 
   test('register page renders without submitting', async ({ page }) => {
