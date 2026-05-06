@@ -4,6 +4,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
 import { LOGIN_PATH, loginReturnState } from '../../utils/appPaths'
 
+const isListingSearchRoute = (pathname: string) => pathname === '/' || pathname === '/search'
+
 export const SiteHeader = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
@@ -11,12 +13,12 @@ export const SiteHeader = () => {
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [inputValue, setInputValue] = useState(() =>
-    location.pathname === '/search' ? new URLSearchParams(location.search).get('q') ?? '' : '',
+    isListingSearchRoute(location.pathname) ? new URLSearchParams(location.search).get('q') ?? '' : '',
   )
   const [locationInput, setLocationInput] = useState('')
 
   useEffect(() => {
-    if (location.pathname === '/search') {
+    if (isListingSearchRoute(location.pathname)) {
       setInputValue(new URLSearchParams(location.search).get('q') ?? '')
     } else {
       setInputValue('')
@@ -82,14 +84,14 @@ export const SiteHeader = () => {
   const commitSearch = (event?: FormEvent) => {
     event?.preventDefault()
     const trimmed = inputValue.trim()
-    const next = new URLSearchParams(location.pathname === '/search' ? location.search : '')
+    const next = new URLSearchParams(isListingSearchRoute(location.pathname) ? location.search : '')
     if (trimmed) {
       next.set('q', trimmed)
     } else {
       next.delete('q')
     }
     const searchStr = next.toString()
-    navigate({ pathname: '/search', search: searchStr ? `?${searchStr}` : '' })
+    navigate({ pathname: '/', search: searchStr ? `?${searchStr}` : '' })
   }
 
   return (

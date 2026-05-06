@@ -37,9 +37,9 @@ export function ListingGridSkeletons({ count }: { count: number }) {
 
 function ListingListSkeletonItem() {
   return (
-    <div className={`relative grid min-h-[9.5rem] grid-cols-[11rem_1fr] items-stretch sm:min-h-[11rem] sm:grid-cols-[14rem_1fr] ${CARD_SHELL}`}>
+    <div className={`relative grid h-[185px] w-[730px] max-w-full grid-cols-[220px_minmax(0,1fr)] items-stretch ${CARD_SHELL}`}>
       <div className={`relative min-h-0 min-w-0 overflow-hidden rounded-l-ui ${pulseBlock}`} />
-      <div className="relative flex min-h-0 min-w-0 flex-col justify-start space-y-1.5 p-3 pr-11 sm:space-y-2 sm:p-4 sm:pr-12">
+      <div className="relative flex min-h-0 min-w-0 flex-col justify-start space-y-1.5 overflow-hidden p-3 pr-11 sm:space-y-2 sm:p-4 sm:pr-12">
         <div className={`h-5 w-[92%] rounded ${pulseBlock}`} />
         <div className={`h-3.5 w-full rounded ${pulseBlock}`} />
         <div className={`h-3.5 w-[80%] rounded ${pulseBlock}`} />
