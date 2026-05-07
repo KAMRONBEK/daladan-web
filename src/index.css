@@ -113,6 +113,15 @@ a:focus-visible {
   outline-offset: 0;
 }
 
+/* Search page: compact inputs — no global green focus ring / min-height */
+.search-page-narx-input {
+  min-height: 0;
+}
+.search-page-narx-input:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
+
 /* Shared close icon button style across modals/sheets/lightbox. */
 .ui-close-btn {
   display: inline-flex;

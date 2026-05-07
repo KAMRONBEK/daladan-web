@@ -176,12 +176,16 @@ function FavoriteIconButton({
       type="button"
       aria-label={favorite ? 'Sevimlidan olib tashlash' : "Sevimlilariga qo'shish"}
       onClick={onClick}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full shadow-md ${favorite
-        ? 'bg-daladan-accent text-daladan-accentDark'
-        : 'bg-white text-daladan-muted ring-1 ring-daladan-border/80 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600'
-        } ${className}`.trim()}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center hover:opacity-90 ${favorite
+        ? 'text-red-500 dark:text-red-500'
+        : 'text-zinc-400 dark:text-zinc-500'
+      } ${className}`.trim()}
     >
-      <Heart size={16} fill={favorite ? 'currentColor' : 'none'} />
+      <Heart
+        size={20}
+        strokeWidth={1.5}
+        className={favorite ? 'fill-red-500 stroke-red-500' : 'fill-none stroke-current'}
+      />
     </button>
   )
 }
@@ -218,7 +222,7 @@ export const ListingCard = ({
     'line-clamp-2 font-semibold text-daladan-heading dark:text-slate-100'
 
   return (
-    <div className={variant === 'grid' ? 'relative w-full' : 'relative h-full'}>
+    <div className={variant === 'grid' ? 'relative w-full' : 'relative h-[185px] w-[730px] max-w-full min-h-0 min-w-0'}>
       {variant === 'grid' ? (
         <div className={`flex min-h-0 w-full flex-col ${CARD_SHELL}`}>
           <div className="relative shrink-0">
@@ -255,11 +259,11 @@ export const ListingCard = ({
           </div>
         </div>
       ) : (
-        <div className={`relative grid min-h-0 grid-cols-[11rem_1fr] items-stretch sm:grid-cols-[14rem_1fr] ${CARD_SHELL}`}>
+        <div className={`relative grid h-full min-h-0 grid-cols-[220px_minmax(0,1fr)] items-stretch ${CARD_SHELL}`}>
           <div className="relative min-h-0 min-w-0">
             <Link
               to={itemPath}
-              className="relative block h-full min-h-[9rem] min-w-0 overflow-hidden rounded-l-ui outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 focus-visible:ring-inset"
+              className="relative block h-full min-h-0 min-w-0 overflow-hidden rounded-l-ui outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 focus-visible:ring-inset"
             >
               <ListingMedia listing={listing} variant="list" onImageError={onImageError} />
             </Link>
@@ -269,7 +273,7 @@ export const ListingCard = ({
             onClick={onFavoriteClick}
             className="absolute right-3 top-3 z-20"
           />
-          <div className="flex min-h-0 min-w-0 flex-col gap-1.5 pl-5 pr-3 pt-3 sm:gap-2 sm:pl-6 sm:pr-4 sm:pt-4">
+          <div className="flex min-h-0 min-w-0 flex-col gap-1.5 overflow-hidden pl-5 pr-3 pt-3 sm:gap-2 sm:pl-6 sm:pr-4 sm:pt-4">
             <Link
               to={itemPath}
               className="block min-w-0 rounded-sm outline-offset-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-daladan-primary/50"
