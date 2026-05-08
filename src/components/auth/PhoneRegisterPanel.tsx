@@ -6,7 +6,7 @@ import { useAuth } from '../../state/AuthContext'
 const OTP_DIGITS = 6
 const RESEND_COOLDOWN_SEC = 30
 
-type PhoneRegStep = 'sendOtp' | 'verifyCode' | 'setPassword'
+type PhoneRegStep = 'credentials' | 'verifyCode'
 
 const inputClsAuthPage = (invalid?: boolean) =>
   `w-full rounded-lg border px-3.5 py-2.5 text-sm text-slate-900 outline-none ring-0 focus:ring-0 dark:bg-slate-800 dark:text-slate-100 ${
@@ -16,7 +16,7 @@ const inputClsAuthPage = (invalid?: boolean) =>
 const modalInput =
   'mx-auto block w-[470px] max-w-full rounded-md border border-[#e6e6e6] bg-[rgb(242,239,233)] px-3 py-2.5 text-sm text-[#3b3b3b] outline-none shadow-none transition placeholder:text-[#7a7a7a] focus:bg-white focus:border-[#78c7f6] focus:!ring-0 focus-visible:!ring-0 focus:!outline-none focus-visible:!outline-none'
 
-/** Phone signup: OTP start → verify 6-digit code → password; used by AuthPage and LoginModal */
+/** Phone signup: password (+ consent) → OTP → verify code and complete; used by AuthPage and LoginModal */
 export type PhoneRegisterPanelVariant = 'authPage' | 'loginModal'
 
 export interface PhoneRegisterPanelProps {
@@ -34,7 +34,7 @@ const SpinnerSm = () => (
 
 export const PhoneRegisterPanel = ({ phone, onSuccess, variant }: PhoneRegisterPanelProps) => {
   const { startPhoneRegistration, verifyPhoneRegistration, completePhoneRegistration } = useAuth()
-  const [step, setStep] = useState<PhoneRegStep>('sendOtp')
+  const [step, setStep] = useState<PhoneRegStep>('credentials')
   const [consent, setConsent] = useState(false)
   const [otpCode, setOtpCode] = useState('')
   const [password, setPassword] = useState('')
@@ -46,7 +46,7 @@ export const PhoneRegisterPanel = ({ phone, onSuccess, variant }: PhoneRegisterP
   const [cooldownLeft, setCooldownLeft] = useState(0)
 
   useEffect(() => {
-    setStep('sendOtp')
+    setStep('credentials')
     setConsent(false)
     setOtpCode('')
     setPassword('')
@@ -74,6 +74,14 @@ export const PhoneRegisterPanel = ({ phone, onSuccess, variant }: PhoneRegisterP
       setError("Ro'yxatdan o'tish uchun rozilik bering")
       return
     }
+    if (!pwdValid) {
+      if (password.trim().length < 6) {
+        setError("Parol kamida 6 ta belgidan iborat bo'lishi kerak")
+      } else {
+        setError('Parollar mos emas')
+      }
+      return
+    }
     setError('')
     setBusy(true)
     try {
@@ -92,13 +100,23 @@ export const PhoneRegisterPanel = ({ phone, onSuccess, variant }: PhoneRegisterP
       setError("6 ta raqamli kodni kiriting")
       return
     }
+    if (!pwdValid) {
+      setStep('credentials')
+      setError("Parol ma'lumotlari yo'qolgan. Qayta kiriting va kod yuboring.")
+      return
+    }
     setError('')
     setBusy(true)
     try {
       await verifyPhoneRegistration(phone, otpCode.trim())
-      setStep('setPassword')
+      await completePhoneRegistration({
+        phone,
+        password: password.trim(),
+        passwordConfirmation: confirmPassword.trim(),
+      })
+      onSuccess()
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Kod noto'g'ri")
+      setError(e instanceof Error ? e.message : "Ro'yxatdan o'tishda xatolik")
     } finally {
       setBusy(false)
     }
@@ -113,31 +131,6 @@ export const PhoneRegisterPanel = ({ phone, onSuccess, variant }: PhoneRegisterP
       setCooldownLeft(RESEND_COOLDOWN_SEC)
     } catch (e) {
       setError(e instanceof Error ? e.message : "SMS yuborib bo'lmadi")
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const onComplete = async () => {
-    if (!pwdValid) {
-      if (password.trim().length < 6) {
-        setError("Parol kamida 6 ta belgidan iborat bo'lishi kerak")
-      } else {
-        setError('Parollar mos emas')
-      }
-      return
-    }
-    setError('')
-    setBusy(true)
-    try {
-      await completePhoneRegistration({
-        phone,
-        password: password.trim(),
-        passwordConfirmation: confirmPassword.trim(),
-      })
-      onSuccess()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Ro'yxatdan o'tishda xatolik")
     } finally {
       setBusy(false)
     }
@@ -163,79 +156,15 @@ export const PhoneRegisterPanel = ({ phone, onSuccess, variant }: PhoneRegisterP
       className="space-y-3.5"
       onSubmit={(e) => {
         e.preventDefault()
-        if (step === 'sendOtp') void onSendOtp()
-        else if (step === 'verifyCode') void onVerifyOtp()
-        else void onComplete()
+        if (step === 'credentials') void onSendOtp()
+        else void onVerifyOtp()
       }}
     >
-      {step === 'sendOtp' && (
+      {step === 'credentials' && (
         <>
-          <p className={hintCls}>Telefon raqamingizga tasdiqlash kodi yuboriladi.</p>
-          <label className="flex items-center gap-2.5 text-[13px] text-slate-500 select-none dark:text-slate-400">
-            <input
-              type="checkbox"
-              checked={consent}
-              onChange={(e) => setConsent(e.target.checked)}
-              className="h-4 w-4 shrink-0 accent-[#2f6d3f]"
-            />
-            <span>
-              <Link to="/terms" className={consentLinkCls}>
-                Foydalanish shartlari
-              </Link>{' '}
-              va{' '}
-              <Link to="/privacy" className={consentLinkCls}>
-                maxfiylik siyosati
-              </Link>{' '}
-              ga roziman
-            </span>
-          </label>
-          <button type="submit" disabled={busy} className={primaryBtn}>
-            {busy ? (
-              <span className="flex items-center justify-center gap-2">
-                <SpinnerSm />
-                Yuklanmoqda...
-              </span>
-            ) : (
-              'Davom etish'
-            )}
-          </button>
-        </>
-      )}
-
-      {step === 'verifyCode' && (
-        <>
-          <p className={hintCls}>SMS kod yuborildi. Kodni kiriting.</p>
-          {wrapModalField(
-            <input
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, OTP_DIGITS))}
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              className={variant === 'authPage' ? inputClsAuthPage() : modalInput}
-              placeholder="6 raqamli kod"
-              aria-label="Tasdiqlash kodi"
-            />,
-          )}
-          <div className="flex flex-wrap items-center gap-2">
-            <button type="submit" disabled={busy || !otpValid} className={primaryBtn}>
-              {busy ? (
-                <span className="flex items-center justify-center gap-2">
-                  <SpinnerSm />
-                  Yuklanmoqda...
-                </span>
-              ) : (
-                'Tasdiqlash'
-              )}
-            </button>
-            <button type="button" disabled={busy || cooldownLeft > 0} onClick={() => void onResend()} className={resendCls}>
-              {cooldownLeft > 0 ? `Kodni qayta yuborish (${cooldownLeft}s)` : 'Kodni qayta yuborish'}
-            </button>
-          </div>
-        </>
-      )}
-
-      {step === 'setPassword' && (
-        <>
+          <p className={hintCls}>
+            Avval parolingizni kiriting, keyin telefon raqamingizga tasdiqlash kodi yuboriladi.
+          </p>
           <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">Parol</label>
             {wrapModalField(
@@ -280,16 +209,66 @@ export const PhoneRegisterPanel = ({ phone, onSuccess, variant }: PhoneRegisterP
               </div>,
             )}
           </div>
-          <button type="submit" disabled={busy || !pwdValid} className={primaryBtn}>
+          <label className="flex items-center gap-2.5 text-[13px] text-slate-500 select-none dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={consent}
+              onChange={(e) => setConsent(e.target.checked)}
+              className="h-4 w-4 shrink-0 accent-[#2f6d3f]"
+            />
+            <span>
+              <Link to="/terms" className={consentLinkCls}>
+                Foydalanish shartlari
+              </Link>{' '}
+              va{' '}
+              <Link to="/privacy" className={consentLinkCls}>
+                maxfiylik siyosati
+              </Link>{' '}
+              ga roziman
+            </span>
+          </label>
+          <button type="submit" disabled={busy || !pwdValid || !consent} className={primaryBtn}>
             {busy ? (
               <span className="flex items-center justify-center gap-2">
                 <SpinnerSm />
                 Yuklanmoqda...
               </span>
             ) : (
-              "Ro'yxatdan o'tish"
+              'Kodni yuborish'
             )}
           </button>
+        </>
+      )}
+
+      {step === 'verifyCode' && (
+        <>
+          <p className={hintCls}>SMS kod yuborildi. Kodni kiriting va ro&apos;yxatdan o&apos;tishni tugating.</p>
+          {wrapModalField(
+            <input
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, OTP_DIGITS))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              className={variant === 'authPage' ? inputClsAuthPage() : modalInput}
+              placeholder="6 raqamli kod"
+              aria-label="Tasdiqlash kodi"
+            />,
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <button type="submit" disabled={busy || !otpValid} className={primaryBtn}>
+              {busy ? (
+                <span className="flex items-center justify-center gap-2">
+                  <SpinnerSm />
+                  Yuklanmoqda...
+                </span>
+              ) : (
+                "Ro'yxatdan o'tish"
+              )}
+            </button>
+            <button type="button" disabled={busy || cooldownLeft > 0} onClick={() => void onResend()} className={resendCls}>
+              {cooldownLeft > 0 ? `Kodni qayta yuborish (${cooldownLeft}s)` : 'Kodni qayta yuborish'}
+            </button>
+          </div>
         </>
       )}
 

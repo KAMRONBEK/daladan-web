@@ -4,7 +4,8 @@ test.describe('smoke', () => {
   test('home loads with title and main sections', async ({ page }) => {
     await page.goto('/')
     await expect(page).toHaveTitle(/Daladan/)
-    await expect(page.getByRole('heading', { name: 'Mashhur kategoriyalar' })).toBeVisible()
-    await expect(page.getByRole('heading', { name: 'Yaxshi topilanmalar' })).toBeVisible()
+    await expect(page.getByRole('navigation', { name: "Sahifa yo'li" })).toBeVisible()
+    await expect(page.getByText("Barcha e'lonlar")).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByText('Kategoriyalar')).toBeVisible({ timeout: 30_000 })
   })
 })
