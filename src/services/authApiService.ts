@@ -12,9 +12,10 @@ import type {
   AuthService,
   AuthUser,
   CityOption,
+  CompletePhoneRegistrationRequest,
+  EmailRegisterRequest,
   LoginRequest,
   RegionOption,
-  RegisterRequest,
 } from './contracts'
 
 const mapRegion = (item: UnknownRecord): RegionOption => ({
@@ -70,20 +71,41 @@ export const authApiService: AuthService = {
     })
 
     return mapAuthResult(response, {
-      phone: payload.phone,
+      phone: payload.identifier,
       fullName: 'Foydalanuvchi',
     })
   },
 
-  async register(payload: RegisterRequest, authType = 'password') {
-    const response = await requestJson<unknown>(`/register?auth_type=${authType}`, {
+  async startPhoneRegistration(phone: string) {
+    await requestJson<unknown>('/auth/phone/start', {
+      method: 'POST',
+      body: JSON.stringify({ phone }),
+    })
+  },
+
+  async verifyPhoneRegistration(phone: string, code: string) {
+    await requestJson<unknown>('/auth/phone/verify', {
+      method: 'POST',
+      body: JSON.stringify({ phone, code }),
+    })
+  },
+
+  async completePhoneRegistration(payload: CompletePhoneRegistrationRequest) {
+    const response = await requestJson<unknown>('/auth/register/complete', {
       method: 'POST',
       body: JSON.stringify(payload),
     })
 
     return mapAuthResult(response, {
       phone: payload.phone,
-      fullName: `${payload.fname} ${payload.lname}`.trim(),
+      fullName: `${payload.fname ?? ''} ${payload.lname ?? ''}`.trim() || 'Foydalanuvchi',
+    })
+  },
+
+  async registerWithEmail(payload: EmailRegisterRequest) {
+    await requestJson<unknown>('/auth/email/register', {
+      method: 'POST',
+      body: JSON.stringify(payload),
     })
   },
 
@@ -120,4 +142,3 @@ export const authApiService: AuthService = {
     await requestJson<unknown>('/logout', { method: 'POST' })
   },
 }
-

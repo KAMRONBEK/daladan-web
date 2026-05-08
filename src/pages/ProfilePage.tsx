@@ -87,19 +87,19 @@ export const ProfilePage = () => {
   const { user, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const navigate = useNavigate()
-  const location = useLocation()
+  const routeLocation = useLocation()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isTabSwitching, setIsTabSwitching] = useState(false)
   const [adGalleryIndex, setAdGalleryIndex] = useState<Record<string, number>>({})
   const [imagePreview, setImagePreview] = useState<{ urls: string[]; index: number } | null>(null)
 
   useEffect(() => {
-    const nextTab = (location.state as { tab?: ProfileTab } | null)?.tab
+    const nextTab = (routeLocation.state as { tab?: ProfileTab } | null)?.tab
     if (nextTab && ['profile', 'ads', 'messages', 'payments'].includes(nextTab)) {
       setActiveTab(nextTab)
-      navigate(location.pathname, { replace: true, state: null })
+      navigate(routeLocation.pathname, { replace: true, state: null })
     }
-  }, [location.pathname, location.state, navigate])
+  }, [routeLocation.pathname, routeLocation.state, navigate])
 
   const loadProfileAds = async () => {
     try {

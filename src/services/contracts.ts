@@ -78,19 +78,24 @@ export interface AuthUser {
 }
 
 export interface LoginRequest {
-  phone: string
+  identifier: string
   password: string
 }
 
-export interface RegisterRequest {
+export interface CompletePhoneRegistrationRequest {
   phone: string
   password: string
-  fname: string
-  lname: string
-  region_id: number
-  city_id: number
-  email?: string
-  telegram?: string
+  password_confirmation: string
+  fname?: string
+  lname?: string
+}
+
+export interface EmailRegisterRequest {
+  email: string
+  password: string
+  password_confirmation: string
+  fname?: string
+  lname?: string
 }
 
 export interface AuthResult {
@@ -100,7 +105,11 @@ export interface AuthResult {
 
 export interface AuthService {
   login(payload: LoginRequest): Promise<AuthResult>
-  register(payload: RegisterRequest, authType?: 'password' | 'telegram'): Promise<AuthResult>
+  startPhoneRegistration(phone: string): Promise<void>
+  verifyPhoneRegistration(phone: string, code: string): Promise<void>
+  completePhoneRegistration(payload: CompletePhoneRegistrationRequest): Promise<AuthResult>
+  /** POST /auth/email/register — sends confirmation email; no JWT. */
+  registerWithEmail(payload: EmailRegisterRequest): Promise<void>
   /** `POST /refresh` — new bearer token; profile sync happens in auth layer after persist. */
   refresh(): Promise<AuthResult>
   getMe(): Promise<AuthUser>

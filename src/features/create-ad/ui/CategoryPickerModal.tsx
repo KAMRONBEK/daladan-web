@@ -74,10 +74,10 @@ export function CategoryPickerModal({
   const searchRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    if (open) {
-      setSearch('')
-      setTimeout(() => searchRef.current?.focus(), 50)
-    }
+    if (!open) return
+    setSearch('')
+    const id = window.setTimeout(() => searchRef.current?.focus(), 50)
+    return () => window.clearTimeout(id)
   }, [open])
 
   useEffect(() => {

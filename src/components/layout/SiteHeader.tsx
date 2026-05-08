@@ -1,29 +1,44 @@
-import { ChevronRight, CirclePlus, MapPin, Menu, MessageSquare, Search, User, UserPlus } from 'lucide-react'
+import {
+  ChevronRight,
+  CirclePlus,
+  MapPin,
+  Menu,
+  MessageSquare,
+  Moon,
+  Search,
+  Sun,
+  User,
+  UserPlus,
+} from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
+import { useTheme } from '../../state/ThemeContext'
 import { LOGIN_PATH, loginReturnState } from '../../utils/appPaths'
 
 const isListingSearchRoute = (pathname: string) => pathname === '/' || pathname === '/search'
 
 export const SiteHeader = () => {
+  const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
+  const routeLocation = useLocation()
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [inputValue, setInputValue] = useState(() =>
-    isListingSearchRoute(location.pathname) ? new URLSearchParams(location.search).get('q') ?? '' : '',
+    isListingSearchRoute(routeLocation.pathname)
+      ? new URLSearchParams(routeLocation.search).get('q') ?? ''
+      : '',
   )
   const [locationInput, setLocationInput] = useState('')
 
   useEffect(() => {
-    if (isListingSearchRoute(location.pathname)) {
-      setInputValue(new URLSearchParams(location.search).get('q') ?? '')
+    if (isListingSearchRoute(routeLocation.pathname)) {
+      setInputValue(new URLSearchParams(routeLocation.search).get('q') ?? '')
     } else {
       setInputValue('')
     }
-  }, [location.pathname, location.search])
+  }, [routeLocation.pathname, routeLocation.search])
 
   useEffect(() => {
     if (!isMenuOpen) return
@@ -41,23 +56,23 @@ export const SiteHeader = () => {
   }, [isMenuOpen])
 
   const toLogin = () => {
-    const returnState = loginReturnState(location)
+    const returnState = loginReturnState(routeLocation)
     navigate(LOGIN_PATH, {
       ...returnState,
       state: {
         ...returnState.state,
-        backgroundLocation: location,
+        backgroundLocation: routeLocation,
       },
     })
   }
 
   const toRegister = () => {
-    const returnState = loginReturnState(location)
+    const returnState = loginReturnState(routeLocation)
     navigate('/register', {
       ...returnState,
       state: {
         ...returnState.state,
-        backgroundLocation: location,
+        backgroundLocation: routeLocation,
       },
     })
   }
@@ -84,7 +99,9 @@ export const SiteHeader = () => {
   const commitSearch = (event?: FormEvent) => {
     event?.preventDefault()
     const trimmed = inputValue.trim()
-    const next = new URLSearchParams(isListingSearchRoute(location.pathname) ? location.search : '')
+    const next = new URLSearchParams(
+      isListingSearchRoute(routeLocation.pathname) ? routeLocation.search : '',
+    )
     if (trimmed) {
       next.set('q', trimmed)
     } else {
@@ -150,8 +167,17 @@ export const SiteHeader = () => {
         </div>
 
         <div className="flex shrink-0 items-center gap-0">
-          {/* Theme toggle hidden temporarily; spacer preserves header alignment */}
-          <div className="h-[42px] w-[44px] shrink-0" aria-hidden="true" />
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="group flex shrink-0 flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-slate-300 transition-colors hover:text-white"
+            aria-label={theme === 'dark' ? "Yorug' rejimga o'tish" : "Qorong'i rejimga o'tish"}
+          >
+            {theme === 'dark' ? <Sun size={24} /> : <Moon size={24} />}
+            <span className="hidden text-xs font-medium leading-none text-white transition-colors group-hover:text-slate-400 lg:block">
+              Mavzu
+            </span>
+          </button>
 
           {user ? (
             <>

@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
 import { useAuth } from '../state/AuthContext'
+import { EmailRegisterBlock } from '../components/auth/EmailRegisterBlock'
+import { PhoneRegisterPanel } from '../components/auth/PhoneRegisterPanel'
 import { formatUzPhoneInput, isUzPhoneComplete, normalizeUzPhone } from '../utils/phone'
 
 const looksLikeEmail = (v: string) => v.includes('@')
@@ -55,129 +56,42 @@ const Spinner = () => (
   </svg>
 )
 
-interface RegisterFormValues {
-  password: string
-  confirmPassword: string
-  consent: boolean
-}
-
 function RegisterForm({ identity }: { identity: ReturnType<typeof useSmartInput> }) {
-  const { register: authRegister } = useAuth()
   const navigate = useNavigate()
-  const [showPass, setShowPass] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [apiError, setApiError] = useState('')
+  const [emailRegistered, setEmailRegistered] = useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors, isValid, isSubmitting },
-  } = useForm<RegisterFormValues>({
-    mode: 'onChange',
-    defaultValues: { password: '', confirmPassword: '', consent: false },
-  })
-
-  const password = watch('password')
-
-  const onSubmit = async (values: RegisterFormValues) => {
-    if (!identity.isValid) return
-    setApiError('')
-    try {
-      await authRegister({
-        phone: identity.mode === 'phone' ? identity.normalized : undefined,
-        email: identity.mode === 'email' ? identity.normalized : undefined,
-        password: values.password.trim(),
-      })
-      navigate('/profile')
-    } catch (e) {
-      setApiError(e instanceof Error ? e.message : "Ro'yxatdan o'tishda xatolik")
+  if (identity.mode === 'phone') {
+    if (!identity.isValid) {
+      return <p className="text-sm text-slate-500 dark:text-slate-400">Telefon raqamni to‘liq kiriting.</p>
     }
+    return (
+      <PhoneRegisterPanel phone={identity.normalized} onSuccess={() => navigate('/profile')} variant="authPage" />
+    )
+  }
+
+  if (!identity.isValid) {
+    return <p className="text-sm text-slate-500 dark:text-slate-400">To‘g‘ri email kiriting.</p>
+  }
+
+  if (emailRegistered) {
+    return (
+      <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
+        <p className="font-medium">Tasdiq havolasi elektron pochtangizga yuborildi.</p>
+        <p className="text-emerald-800/90 dark:text-emerald-200/90">
+          Hisobingizni faollashtirguncha kirish bloklangan bo‘lishi mumkin.
+        </p>
+        <Link
+          to="/login"
+          className="inline-block font-semibold text-[#2f6d3f] underline hover:no-underline dark:text-emerald-400"
+        >
+          Kirish sahifasi
+        </Link>
+      </div>
+    )
   }
 
   return (
-    <form className="space-y-3.5" onSubmit={handleSubmit(onSubmit)}>
-      <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">Parol</label>
-        <div className="relative">
-          <input
-            {...register('password', { required: true })}
-            type={showPass ? 'text' : 'password'}
-            autoComplete="new-password"
-            className={`${inputCls(!!errors.password)} pr-12`}
-          />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowPass((prev) => !prev)}
-            className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-          >
-            {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-      </div>
-
-      <div className="space-y-1.5">
-        <label className="block text-xs font-medium text-slate-600 dark:text-slate-300">
-          Parolni tasdiqlang
-        </label>
-        <div className="relative">
-          <input
-            {...register('confirmPassword', {
-              required: true,
-              validate: (value) => value === password || 'Parollar mos emas',
-            })}
-            type={showConfirm ? 'text' : 'password'}
-            autoComplete="new-password"
-            className={`${inputCls(!!errors.confirmPassword)} pr-12`}
-          />
-          <button
-            type="button"
-            tabIndex={-1}
-            onClick={() => setShowConfirm((prev) => !prev)}
-            className="absolute top-1/2 right-4 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-          >
-            {showConfirm ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
-        </div>
-      </div>
-      {errors.confirmPassword && <p className="text-xs text-red-500">{errors.confirmPassword.message}</p>}
-
-      <label className="flex items-center gap-2.5 text-[13px] text-slate-500 select-none">
-        <input
-          type="checkbox"
-          {...register('consent', { validate: (value) => value || 'Rozilik bering' })}
-          className="h-4 w-4 shrink-0 accent-[#2f6d3f]"
-        />
-        <span>
-          <Link to="/terms" className="text-[#2f6d3f] hover:underline">
-            Foydalanish shartlari
-          </Link>{' '}
-          va{' '}
-          <Link to="/privacy" className="text-[#2f6d3f] hover:underline">
-            maxfiylik siyosati
-          </Link>{' '}
-          ga roziman
-        </span>
-      </label>
-      {errors.consent && <p className="text-xs text-red-500">{errors.consent.message}</p>}
-
-      {apiError && <p className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-600">{apiError}</p>}
-
-      <button
-        disabled={!identity.isValid || !isValid || isSubmitting}
-        className="w-full rounded-lg bg-[#2f6d3f] py-2.5 text-sm font-semibold text-white transition hover:bg-[#285b35] disabled:opacity-40"
-      >
-        {isSubmitting ? (
-          <span className="flex items-center justify-center gap-2">
-            <Spinner />
-            Yuklanmoqda...
-          </span>
-        ) : (
-          "Ro'yxatdan o'tish"
-        )}
-      </button>
-    </form>
+    <EmailRegisterBlock email={identity.normalized} variant="authPage" onRegistered={() => setEmailRegistered(true)} />
   )
 }
 

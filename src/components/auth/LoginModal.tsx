@@ -2,6 +2,8 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
+import { EmailRegisterBlock } from './EmailRegisterBlock'
+import { PhoneRegisterPanel } from './PhoneRegisterPanel'
 import { formatUzPhoneInput, isUzPhoneComplete, normalizeUzPhone } from '../../utils/phone'
 
 const looksLikeEmail = (v: string) => v.includes('@')
@@ -20,20 +22,18 @@ const GoogleIcon = () => (
 )
 
 export const LoginModal = () => {
-  const { loginWithPassword, register } = useAuth()
+  const { loginWithPassword } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const isRegisterTab = location.pathname === '/register'
   const [identity, setIdentity] = useState('')
   const [identityMode, setIdentityMode] = useState<'phone' | 'email'>('phone')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(true)
-  const [consent, setConsent] = useState(false)
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [emailRegisterDone, setEmailRegisterDone] = useState(false)
   const from = (location.state as { from?: string } | null)?.from ?? '/profile'
 
   useEffect(() => {
@@ -45,6 +45,10 @@ export const LoginModal = () => {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [navigate])
+
+  useEffect(() => {
+    setEmailRegisterDone(false)
+  }, [identity, identityMode, isRegisterTab])
 
   const onIdentityChange = (raw: string) => {
     if (looksLikeEmail(raw)) {
@@ -77,38 +81,16 @@ export const LoginModal = () => {
     navigate(nextPath, { replace: true, state: location.state })
   }
 
-  const onSubmit = async (event: FormEvent) => {
+  const onLoginSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (!isIdentityValid || !password.trim()) return
-    if (isRegisterTab) {
-      if (password.trim().length < 6) {
-        setError('Parol kamida 6 ta belgidan iborat bo‘lishi kerak')
-        return
-      }
-      if (password !== confirmPassword) {
-        setError('Parollar mos emas')
-        return
-      }
-      if (!consent) {
-        setError('Ro‘yxatdan o‘tish uchun rozilik bering')
-        return
-      }
-    }
     setError('')
     setIsSubmitting(true)
     try {
-      if (isRegisterTab) {
-        await register({
-          phone: identityMode === 'phone' ? normalizedIdentity : undefined,
-          email: identityMode === 'email' ? normalizedIdentity : undefined,
-          password: password.trim(),
-        })
-      } else {
-        await loginWithPassword(normalizedIdentity, password.trim())
-      }
+      await loginWithPassword(normalizedIdentity, password.trim())
       navigate(from, { replace: true })
     } catch (e) {
-      setError(e instanceof Error ? e.message : isRegisterTab ? "Ro'yxatdan o'tishda xatolik" : 'Kirishda xatolik')
+      setError(e instanceof Error ? e.message : 'Kirishda xatolik')
     } finally {
       setIsSubmitting(false)
     }
@@ -132,69 +114,79 @@ export const LoginModal = () => {
           </h2>
         </div>
 
-        <form onSubmit={onSubmit} autoComplete="off" className="space-y-3 px-8 pb-8">
-          <input
-            name="identity"
-            value={identity}
-            onChange={(event) => onIdentityChange(event.target.value)}
-            inputMode={identityMode === 'phone' ? 'tel' : 'email'}
-            autoComplete="off"
-            className={inputClassName}
-            placeholder="Telefon yoki email"
-          />
-
-          <div className="relative mx-auto w-[470px] max-w-full">
+        {isRegisterTab ? (
+          <div className="space-y-3 px-8 pb-8">
             <input
-              name="login-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              type={showPassword ? 'text' : 'password'}
-              autoComplete="new-password"
-              className={`${inputClassName} pr-10`}
-              placeholder="Parol"
+              name="identity"
+              value={identity}
+              onChange={(event) => onIdentityChange(event.target.value)}
+              inputMode={identityMode === 'phone' ? 'tel' : 'email'}
+              autoComplete="off"
+              className={inputClassName}
+              placeholder="Telefon yoki email"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-              aria-label="Parolni ko'rsatish/yashirish"
-            >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-            </button>
+            {identityMode === 'phone' && isIdentityValid ? (
+              <PhoneRegisterPanel
+                phone={normalizedIdentity}
+                onSuccess={() => navigate(from, { replace: true })}
+                variant="loginModal"
+              />
+            ) : null}
+            {identityMode === 'phone' && !isIdentityValid && identity.length > 6 ? (
+              <p className="text-sm text-red-600">Telefon raqamni toʻliq kiriting.</p>
+            ) : null}
+            {identityMode === 'email' && isIdentityValid ? (
+              emailRegisterDone ? (
+                <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+                  <p className="font-medium">Tasdiq havolasi elektron pochtangizga yuborildi.</p>
+                  <button type="button" className="text-daladan-primary underline" onClick={() => switchTab('login')}>
+                    Kirish sahifasi
+                  </button>
+                </div>
+              ) : (
+                <EmailRegisterBlock
+                  email={normalizedIdentity}
+                  variant="loginModal"
+                  onRegistered={() => setEmailRegisterDone(true)}
+                />
+              )
+            ) : null}
+            {identityMode === 'email' && identity.length > 4 && !isIdentityValid ? (
+              <p className="text-sm text-red-600">Email notoʻgʻri.</p>
+            ) : null}
           </div>
+        ) : (
+          <form onSubmit={onLoginSubmit} autoComplete="off" className="space-y-3 px-8 pb-8">
+            <input
+              name="identity"
+              value={identity}
+              onChange={(event) => onIdentityChange(event.target.value)}
+              inputMode={identityMode === 'phone' ? 'tel' : 'email'}
+              autoComplete="off"
+              className={inputClassName}
+              placeholder="Telefon yoki email"
+            />
 
-          {isRegisterTab ? (
-            <>
-              <div className="relative mx-auto w-[470px] max-w-full">
-                <input
-                  name="register-password-confirmation"
-                  value={confirmPassword}
-                  onChange={(event) => setConfirmPassword(event.target.value)}
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  className={`${inputClassName} pr-10`}
-                  placeholder="Parolni tasdiqlang"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
-                  aria-label="Tasdiq parolni ko'rsatish/yashirish"
-                >
-                  {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              <label className="flex items-center gap-2 text-sm text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={consent}
-                  onChange={(event) => setConsent(event.target.checked)}
-                  className="h-4 w-4 accent-daladan-primary"
-                />
-                Foydalanish shartlariga roziman
-              </label>
-            </>
-          ) : (
+            <div className="relative mx-auto w-[470px] max-w-full">
+              <input
+                name="login-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                type={showPassword ? 'text' : 'password'}
+                autoComplete="current-password"
+                className={`${inputClassName} pr-10`}
+                placeholder="Parol"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
+                aria-label="Parolni ko'rsatish/yashirish"
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+
             <div className="flex items-center justify-between pt-1">
               <label className="flex items-center gap-2 text-sm text-slate-700">
                 <input
@@ -209,18 +201,18 @@ export const LoginModal = () => {
                 Parolni unutdingizmi?
               </Link>
             </div>
-          )}
 
-          {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p> : null}
+            {error ? <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p> : null}
 
-          <button
-            type="submit"
-            disabled={!isIdentityValid || !password.trim() || isSubmitting}
-            className="rounded-lg bg-[#3f8358] px-6 py-2.5 text-base font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-colors hover:bg-[#37754d]"
-          >
-            {isSubmitting ? 'Yuklanmoqda...' : isRegisterTab ? "Ro'yxatdan o'tish" : 'Kirish'}
-          </button>
-        </form>
+            <button
+              type="submit"
+              disabled={!isIdentityValid || !password.trim() || isSubmitting}
+              className="rounded-lg bg-[#3f8358] px-6 py-2.5 text-base font-semibold text-white shadow-[0_1px_2px_rgba(0,0,0,0.08)] transition-colors hover:bg-[#37754d]"
+            >
+              {isSubmitting ? 'Yuklanmoqda...' : 'Kirish'}
+            </button>
+          </form>
+        )}
 
         {!isRegisterTab ? (
           <div className="border-t border-slate-200 bg-[rgb(242,239,233)] px-8 pb-6 pt-7">

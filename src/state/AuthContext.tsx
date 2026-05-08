@@ -4,25 +4,32 @@ import { ApiError, AUTH_STORAGE_KEY, getStoredAuthToken } from '../services/apiC
 import { authService } from '../services'
 import type { AuthResult, AuthUser } from '../services/contracts'
 
-interface RegisterPayload {
-  phone?: string
-  email?: string
-  password: string
-  fname?: string
-  lname?: string
-  regionId?: number
-  cityId?: number
-  telegram?: string
-}
 
 type AuthMethod = 'password' | 'otp'
+
 
 interface AuthContextValue {
   user: AuthUser | null
   isAuthLoading: boolean
   authMethod: AuthMethod
-  loginWithPassword: (phone: string, password: string) => Promise<void>
-  register: (payload: RegisterPayload) => Promise<void>
+  /** `identifier` — phone (+998…) or email. */
+  loginWithPassword: (identifier: string, password: string) => Promise<void>
+  startPhoneRegistration: (phone: string) => Promise<void>
+  verifyPhoneRegistration: (phone: string, code: string) => Promise<void>
+  completePhoneRegistration: (payload: {
+    phone: string
+    password: string
+    passwordConfirmation: string
+    fname?: string
+    lname?: string
+  }) => Promise<void>
+  registerWithEmail: (payload: {
+    email: string
+    password: string
+    passwordConfirmation: string
+    fname?: string
+    lname?: string
+  }) => Promise<void>
   /** Persists new token + user after `authService.refresh()` (see `features/session-refresh`). */
   refreshSession: () => Promise<void>
   logout: () => Promise<void>
@@ -120,28 +127,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     persistSession(nextUser, result.token)
   }
 
-  const loginWithPassword = async (phone: string, password: string) => {
-    const result = await authService.login({ phone, password })
+  const loginWithPassword = async (identifier: string, password: string) => {
+    const result = await authService.login({ identifier, password })
     setAuthMethod('password')
     await syncUserAfterAuth(result)
   }
 
-  const register = async (payload: RegisterPayload) => {
-    const result = await authService.register(
-      {
-        phone: payload.phone,
-        password: payload.password,
-        fname: payload.fname,
-        lname: payload.lname,
-        region_id: payload.regionId,
-        city_id: payload.cityId,
-        email: payload.email,
-        telegram: payload.telegram,
-      } as Parameters<typeof authService.register>[0],
-      'password',
-    )
+  const startPhoneRegistration = async (phone: string) => {
+    await authService.startPhoneRegistration(phone)
+  }
+
+  const verifyPhoneRegistration = async (phone: string, code: string) => {
+    await authService.verifyPhoneRegistration(phone, code)
+  }
+
+  const completePhoneRegistration = async (payload: {
+    phone: string
+    password: string
+    passwordConfirmation: string
+    fname?: string
+    lname?: string
+  }) => {
+    const result = await authService.completePhoneRegistration({
+      phone: payload.phone,
+      password: payload.password,
+      password_confirmation: payload.passwordConfirmation,
+      fname: payload.fname,
+      lname: payload.lname,
+    })
     setAuthMethod('password')
     await syncUserAfterAuth(result)
+  }
+
+  const registerWithEmail = async (payload: {
+    email: string
+    password: string
+    passwordConfirmation: string
+    fname?: string
+    lname?: string
+  }) => {
+    await authService.registerWithEmail({
+      email: payload.email,
+      password: payload.password,
+      password_confirmation: payload.passwordConfirmation,
+      fname: payload.fname,
+      lname: payload.lname,
+    })
   }
 
   const refreshSession = async () => {
@@ -161,7 +192,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthLoading, authMethod, loginWithPassword, register, refreshSession, logout }}
+      value={{
+        user,
+        isAuthLoading,
+        authMethod,
+        loginWithPassword,
+        startPhoneRegistration,
+        verifyPhoneRegistration,
+        completePhoneRegistration,
+        registerWithEmail,
+        refreshSession,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>
