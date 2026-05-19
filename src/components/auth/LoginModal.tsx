@@ -24,7 +24,7 @@ const GoogleIcon = () => (
 export const LoginModal = () => {
   const { loginWithPassword } = useAuth()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, state: locationState } = useLocation()
   const isRegisterTab = pathname === '/register'
   const [identity, setIdentity] = useState('')
   const [identityMode, setIdentityMode] = useState<'phone' | 'email'>('phone')
@@ -34,7 +34,7 @@ export const LoginModal = () => {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailRegisterDone, setEmailRegisterDone] = useState(false)
-  const from = (location.state as { from?: string } | null)?.from ?? '/profile'
+  const from = (locationState as { from?: string } | null)?.from ?? '/profile'
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -87,7 +87,7 @@ export const LoginModal = () => {
   const switchTab = (tab: 'login' | 'register') => {
     setError('')
     const nextPath = tab === 'login' ? '/login' : '/register'
-    navigate(nextPath, { replace: true, state: location.state })
+    navigate(nextPath, { replace: true, state: locationState })
   }
 
   const onLoginSubmit = async (event: FormEvent) => {
@@ -206,7 +206,7 @@ export const LoginModal = () => {
                 />
                 Eslab qolish
               </label>
-              <Link to="/forgot-password" state={location.state} className="text-sm text-daladan-primary hover:underline">
+              <Link to="/forgot-password" state={locationState} className="text-sm text-daladan-primary hover:underline">
                 Parolni unutdingizmi?
               </Link>
             </div>
