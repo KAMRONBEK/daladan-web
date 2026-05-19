@@ -105,6 +105,7 @@ export function CategoryTwoPanelModal({
                   key={cat.id}
                   type="button"
                   onClick={() => onCategoryClick(String(cat.id))}
+                  onMouseEnter={() => onCategoryClick(String(cat.id))}
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
                     isActive ? 'border-l-[3px] border-blue-500 bg-blue-50' : 'border-l-[3px] border-transparent'
                   }`}
