@@ -130,6 +130,7 @@ export function CreateAdView() {
               </div>
               <div className="relative overflow-visible">
                 <label
+                  htmlFor="desc-input"
                   className={`pointer-events-none absolute left-3 z-10 transition-all duration-300 ${
                     descFloating
                       ? '-top-2 bg-white px-1 text-base text-slate-400'
@@ -139,6 +140,7 @@ export function CreateAdView() {
                   Tavsif*
                 </label>
                 <textarea
+                  id="desc-input"
                   {...descRest}
                   rows={5}
                   maxLength={DESC_MAX}
@@ -199,6 +201,7 @@ export function CreateAdView() {
             {/* Narx */}
             <div className="relative w-[400px] max-w-full">
               <label
+                htmlFor="price-input"
                 className={`pointer-events-none absolute left-3 z-10 transition-all duration-300 ${
                   priceFloating
                     ? '-top-2 bg-white px-1 text-base text-slate-400'
@@ -208,9 +211,10 @@ export function CreateAdView() {
                 Narx*
               </label>
               <input
+                id="price-input"
                 {...priceRest}
                 type="text"
-                  inputMode="numeric"
+                inputMode="numeric"
                   autoComplete="off"
                   onFocus={() => setPriceFocused(true)}
                 onBlur={(e) => { setPriceFocused(false); void priceOnBlur(e) }}
@@ -247,7 +251,7 @@ export function CreateAdView() {
                 <span className="relative inline-flex shrink-0 items-center">
                   <input type="checkbox" {...register('deliveryAvailable')} className="peer sr-only" />
                   <span className="h-6 w-11 rounded-full bg-slate-200 transition-colors peer-checked:bg-[#4caf50]" />
-                  <span className="pointer-events-none absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+                  <span className="pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
                 </span>
               </label>
             </div>
@@ -259,7 +263,7 @@ export function CreateAdView() {
               disabled={isSubmitting || !isValid || isLoadingCategories || isLoadingRegions}
               className="h-[38px] w-[400px] max-w-full rounded-lg bg-[#4caf50] px-4 text-sm font-semibold text-white transition-colors enabled:hover:bg-[#43a047] disabled:cursor-not-allowed disabled:opacity-80"
             >
-              {isSubmitting ? 'Yuklanmoqda...' : "E'lon joylash"}
+              {isSubmitting ? 'Yuklanmoqda\u2026' : "E'lon joylash"}
             </button>
           </div>
         </div>
@@ -269,7 +273,7 @@ export function CreateAdView() {
       {/* Clear confirmation modal */}
       {showClearModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="relative w-[420px] max-w-[90vw] rounded-2xl bg-white px-8 py-8">
+          <div className="relative w-[420px] max-w-[90vw] rounded-2xl bg-white p-8">
             <button
               type="button"
               onClick={() => setShowClearModal(false)}
@@ -278,11 +282,11 @@ export function CreateAdView() {
               <X size={20} />
             </button>
             <div className="mb-5 flex justify-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-blue-50">
+              <div className="flex size-24 items-center justify-center rounded-full bg-blue-50">
                 <Trash2 size={44} className="text-slate-400" />
               </div>
             </div>
-            <h2 className="mb-2 text-center text-xl font-bold text-slate-800">
+            <h2 className="mb-2 text-center text-xl font-semibold text-slate-800">
               Barcha maydonlarni tozalashni xohlaysizmi?
             </h2>
             <p className="mb-6 text-center text-sm text-slate-500">

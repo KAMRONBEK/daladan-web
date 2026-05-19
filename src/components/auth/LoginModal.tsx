@@ -146,7 +146,7 @@ export const LoginModal = () => {
             ) : null}
             {identityMode === 'email' && isIdentityValid ? (
               emailRegisterDone ? (
-                <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+                <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
                   <p className="font-medium">Tasdiq havolasi elektron pochtangizga yuborildi.</p>
                   <button type="button" className="text-daladan-primary underline" onClick={() => switchTab('login')}>
                     Kirish sahifasi
@@ -202,7 +202,7 @@ export const LoginModal = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(event) => setRememberMe(event.target.checked)}
-                  className="h-4 w-4 accent-daladan-primary"
+                  className="size-4 accent-daladan-primary"
                 />
                 Eslab qolish
               </label>

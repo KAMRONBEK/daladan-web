@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, use, useCallback, useEffect, useState, type ReactNode } from 'react'
 import { ApiError, AUTH_STORAGE_KEY, getStoredAuthToken } from '../services/apiClient'
 import { authService } from '../services'
 import type { AuthResult, AuthUser } from '../services/contracts'
@@ -211,7 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 }
 
 export const useAuth = () => {
-  const ctx = useContext(AuthContext)
+  const ctx = use(AuthContext)
   if (!ctx) {
     throw new Error('useAuth must be used inside AuthProvider')
   }

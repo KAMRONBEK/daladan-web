@@ -1,8 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -129,7 +129,7 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
 }
 
 export const useFavorites = () => {
-  const ctx = useContext(FavoritesContext)
+  const ctx = use(FavoritesContext)
   if (!ctx) throw new Error('useFavorites must be used inside FavoritesProvider')
   const { ensureFavoriteIdsLoaded, ...rest } = ctx
   const { user } = useAuth()

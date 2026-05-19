@@ -32,6 +32,7 @@ export function CreateAdTitleDescriptionSection({ register, errors, titleValue }
       </div>
       <div className="relative w-[400px] max-w-full overflow-visible">
         <label
+          htmlFor="title-input"
           className={`pointer-events-none absolute left-3 z-10 transition-all duration-300 ${
             isFloating
               ? '-top-2 bg-white px-1 text-base text-slate-400'
@@ -41,6 +42,7 @@ export function CreateAdTitleDescriptionSection({ register, errors, titleValue }
           Sarlavha*
         </label>
         <input
+          id="title-input"
           {...restRegister}
           onFocus={() => setFocused(true)}
           onBlur={(e) => {
@@ -64,7 +66,7 @@ export function CreateAdTitleDescriptionSection({ register, errors, titleValue }
         >
           <div className="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
             <p className="text-xs font-medium text-slate-500">Namuna:</p>
-            <p className="text-xs text-slate-400">iPhone 13 Pro, Divan, Laptop...</p>
+            <p className="text-xs text-slate-400">iPhone 13 Pro, Divan, Laptop…</p>
           </div>
         </div>
       </div>
