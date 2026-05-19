@@ -24,8 +24,8 @@ const GoogleIcon = () => (
 export const LoginModal = () => {
   const { loginWithPassword } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
-  const isRegisterTab = location.pathname === '/register'
+  const { pathname } = useLocation()
+  const isRegisterTab = pathname === '/register'
   const [identity, setIdentity] = useState('')
   const [identityMode, setIdentityMode] = useState<'phone' | 'email'>('phone')
   const [password, setPassword] = useState('')
@@ -51,13 +51,13 @@ export const LoginModal = () => {
   }, [identity, identityMode, isRegisterTab])
 
   useEffect(() => {
-    if (location.pathname === '/login') {
+    if (pathname === '/login') {
       setIdentity('')
       setPassword('')
       setError('')
       setShowPassword(false)
     }
-  }, [location.pathname])
+  }, [pathname])
 
   const onIdentityChange = (raw: string) => {
     if (looksLikeEmail(raw)) {
