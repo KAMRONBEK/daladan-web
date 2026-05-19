@@ -74,7 +74,7 @@ function App() {
           path="/profile/ads/new"
           element={
             <ProtectedRoute>
-              <SiteLayout>
+              <SiteLayout hideFooter>
                 <CreateAdPage />
               </SiteLayout>
             </ProtectedRoute>

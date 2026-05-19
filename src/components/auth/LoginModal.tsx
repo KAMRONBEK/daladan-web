@@ -50,6 +50,15 @@ export const LoginModal = () => {
     setEmailRegisterDone(false)
   }, [identity, identityMode, isRegisterTab])
 
+  useEffect(() => {
+    if (location.pathname === '/login') {
+      setIdentity('')
+      setPassword('')
+      setError('')
+      setShowPassword(false)
+    }
+  }, [location.pathname])
+
   const onIdentityChange = (raw: string) => {
     if (looksLikeEmail(raw)) {
       setIdentityMode('email')
@@ -156,9 +165,9 @@ export const LoginModal = () => {
             ) : null}
           </div>
         ) : (
-          <form onSubmit={onLoginSubmit} autoComplete="off" className="space-y-3 px-8 pb-8">
+          <form key={location.pathname} onSubmit={onLoginSubmit} autoComplete="off" className="space-y-3 px-8 pb-8">
             <input
-              name="identity"
+              name="auth-identifier"
               value={identity}
               onChange={(event) => onIdentityChange(event.target.value)}
               inputMode={identityMode === 'phone' ? 'tel' : 'email'}
@@ -169,11 +178,11 @@ export const LoginModal = () => {
 
             <div className="relative mx-auto w-[470px] max-w-full">
               <input
-                name="login-password"
+                name="auth-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 className={`${inputClassName} pr-10`}
                 placeholder="Parol"
               />
