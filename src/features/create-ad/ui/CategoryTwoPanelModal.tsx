@@ -83,7 +83,7 @@ export function CategoryTwoPanelModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4"
       onClick={onClose}
     >
       <div
@@ -91,7 +91,7 @@ export function CategoryTwoPanelModal({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Left panel — kategoriyalar */}
-        <div className="flex w-[240px] shrink-0 flex-col border-r border-slate-100">
+        <div className="flex w-[240px] shrink-0 flex-col border-r border-slate-100 bg-white">
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
               {leftTitle}
@@ -124,7 +124,7 @@ export function CategoryTwoPanelModal({
         </div>
 
         {/* Right panel — kichik kategoriyalar */}
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col bg-white">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <div className="flex items-center gap-2">
               {showEmojis && selectedCategory && (

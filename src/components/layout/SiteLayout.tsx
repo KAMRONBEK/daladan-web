@@ -12,7 +12,7 @@ export const SiteLayout = ({ children, hideFooter }: { children?: ReactNode; hid
         <SiteHeader />
       </div>
       <SiteTopAdSlot />
-      <main className="mx-auto w-full max-w-7xl px-4 pt-6 pb-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:px-6 md:py-6 lg:px-6">
+      <main className="relative z-0 mx-auto w-full max-w-7xl px-4 pt-6 pb-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:px-6 md:py-6 lg:px-6">
         {children ?? <Outlet />}
       </main>
       {!hideFooter && (

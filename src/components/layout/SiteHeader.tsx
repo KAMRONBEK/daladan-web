@@ -112,7 +112,7 @@ export const SiteHeader = () => {
   }
 
   return (
-    <header className="sticky top-0 z-20 bg-slate-800 shadow-xl dark:bg-slate-950">
+    <header className="sticky top-0 z-50 bg-slate-800 shadow-xl dark:bg-slate-950">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-1 md:px-6 lg:px-6">
 
         <Link to="/" className="-my-3 mr-2 shrink-0 md:mr-3 lg:mr-4">
@@ -216,7 +216,7 @@ export const SiteHeader = () => {
                 </button>
 
                 {isMenuOpen ? (
-                  <div className="absolute right-0 top-[calc(100%+6px)] z-30 w-64 overflow-hidden rounded-lg border border-slate-600 bg-slate-700 py-1.5 text-white shadow-2xl">
+                  <div className="absolute right-0 top-[calc(100%+6px)] z-[60] w-64 overflow-hidden rounded-lg border border-slate-600 bg-slate-800 py-1.5 text-white shadow-2xl">
                     <button
                       type="button"
                       onClick={() => toProfileTab('profile')}
