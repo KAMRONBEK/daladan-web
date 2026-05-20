@@ -54,6 +54,7 @@ export function useCreateAdPage() {
       price: '',
       unit: '',
       deliveryAvailable: false,
+      contactName: '',
     },
   })
 
@@ -353,7 +354,7 @@ export function useCreateAdPage() {
     }
 
     const categoryId = Number(values.categoryId)
-    const subcategoryId = Number(values.subcategoryId)
+    const subcategoryId = Number(values.subcategoryId) || categoryId
     const regionId = Number(values.regionId)
     const cityId = Number(values.cityId)
 
@@ -377,6 +378,7 @@ export function useCreateAdPage() {
         unit,
         delivery_available: values.deliveryAvailable ?? false,
         delivery_info: values.deliveryAvailable ? 'Mavjud' : "Mavjud emas",
+        contact_name: values.contactName.trim(),
         media: [],
         files,
       })
@@ -400,6 +402,7 @@ export function useCreateAdPage() {
     setValue,
     handleSubmit,
     titleValue: watch('title'),
+    contactNameValue: watch('contactName'),
     errors,
     isValid,
     isSubmitting,

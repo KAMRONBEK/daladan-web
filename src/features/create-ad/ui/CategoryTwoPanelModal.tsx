@@ -44,9 +44,11 @@ interface Props {
   categories: PickerItem[]
   subcategories: PickerItem[]
   selectedCategoryId: string
+  activeCategoryId?: string
   selectedSubcategoryId: string
   isLoadingSubcategories: boolean
   onCategoryClick: (categoryId: string) => void
+  onCategoryHover?: (categoryId: string) => void
   onSubcategoryClick: (subcategoryId: string) => void
   onClose: () => void
   leftTitle?: string
@@ -60,9 +62,11 @@ export function CategoryTwoPanelModal({
   categories,
   subcategories,
   selectedCategoryId,
+  activeCategoryId,
   selectedSubcategoryId,
   isLoadingSubcategories,
   onCategoryClick,
+  onCategoryHover,
   onSubcategoryClick,
   onClose,
   leftTitle = 'Kategoriyalar',
@@ -79,7 +83,8 @@ export function CategoryTwoPanelModal({
 
   if (!open) return null
 
-  const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId)
+  const panelCategoryId = activeCategoryId ?? selectedCategoryId
+  const selectedCategory = categories.find((c) => String(c.id) === panelCategoryId)
 
   return (
     <div
@@ -99,13 +104,13 @@ export function CategoryTwoPanelModal({
           </div>
           <div className="flex-1 overflow-y-auto">
             {categories.map((cat) => {
-              const isActive = String(cat.id) === selectedCategoryId
+              const isActive = String(cat.id) === panelCategoryId
               return (
                 <button
                   key={cat.id}
                   type="button"
                   onClick={() => onCategoryClick(String(cat.id))}
-                  onMouseEnter={() => onCategoryClick(String(cat.id))}
+                  onMouseEnter={() => onCategoryHover?.(String(cat.id))}
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
                     isActive ? 'border-l-[3px] border-blue-500 bg-blue-50' : 'border-l-[3px] border-transparent'
                   }`}
@@ -144,7 +149,7 @@ export function CategoryTwoPanelModal({
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {!selectedCategoryId ? (
+            {!panelCategoryId ? (
               <div className="flex h-full items-center justify-center">
                 <p className="text-sm text-slate-400">{rightPlaceholderText}</p>
               </div>

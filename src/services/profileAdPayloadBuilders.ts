@@ -119,6 +119,7 @@ export const toBasePayload = (payload: CreateProfileAdPayload | UpdateProfileAdP
   }
   assign('delivery_available', payload.delivery_available)
   assign('delivery_info', payload.delivery_info)
+  assign('contact_name', payload.contact_name)
   if ('mediaSequence' in payload && Array.isArray(payload.mediaSequence) && payload.mediaSequence.length > 0) {
     const urls = payload.mediaSequence.filter((x): x is string => typeof x === 'string')
     if (urls.length > 0) next.media = urls
@@ -161,6 +162,7 @@ export const createMultipartBody = (payload: CreateProfileAdPayload | UpdateProf
   }
   appendBool('delivery_available', payload.delivery_available)
   append('delivery_info', payload.delivery_info)
+  append('contact_name', payload.contact_name)
 
   if ('mediaSequence' in payload && Array.isArray(payload.mediaSequence) && payload.mediaSequence.length > 0) {
     for (const item of payload.mediaSequence) {

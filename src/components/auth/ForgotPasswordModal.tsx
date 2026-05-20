@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
@@ -27,14 +28,21 @@ export const ForgotPasswordModal = () => {
     navigate(-1)
   }
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
-      <button type="button" onClick={closeModal} aria-label="Yopish" className="absolute inset-0" />
-      <div className="relative z-10 w-full max-w-[470px] overflow-visible rounded-[22px] bg-white shadow-2xl">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      onClick={closeModal}
+    >
+      <div
+        className="relative w-full max-w-[470px] overflow-visible rounded-[22px] bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={closeModal}
-          className="ui-close-btn absolute -right-5 -top-2"
+          className="ui-close-btn absolute -right-5 -top-2 z-20"
           aria-label="Modalni yopish"
         >
           <X size={19} strokeWidth={2.6} />
@@ -60,6 +68,7 @@ export const ForgotPasswordModal = () => {
           </button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

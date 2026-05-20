@@ -101,6 +101,7 @@ export interface CreateProfileAdPayload {
   unit?: string
   delivery_available?: boolean
   delivery_info?: string
+  contact_name?: string
   media: string[]
   files?: File[]
 }
@@ -119,6 +120,7 @@ export interface UpdateProfileAdPayload {
   unit?: string
   delivery_available?: boolean
   delivery_info?: string
+  contact_name?: string
   media?: string[]
   files?: File[]
   /**

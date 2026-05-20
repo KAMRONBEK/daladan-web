@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
@@ -105,20 +106,28 @@ export const LoginModal = () => {
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
-      <button type="button" onClick={closeModal} aria-label="Yopish" className="absolute inset-0" />
-      <div className="relative z-10 w-full max-w-[470px] overflow-visible rounded-[22px] bg-white shadow-2xl">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-modal-title"
+      onClick={closeModal}
+    >
+      <div
+        className="relative w-full max-w-[470px] overflow-visible rounded-[22px] bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={closeModal}
-          className="ui-close-btn absolute -right-5 -top-2"
+          className="ui-close-btn absolute -right-5 -top-2 z-20"
           aria-label="Modalni yopish"
         >
           <X size={19} strokeWidth={2.6} />
         </button>
         <div className="px-8 pb-3 pt-8">
-          <h2 className="text-[42px] font-semibold leading-none text-slate-900">
+          <h2 id="login-modal-title" className="text-[42px] font-semibold leading-none text-slate-900">
             {isRegisterTab ? "Ro'yxatdan o'tish" : 'Kirish'}
           </h2>
         </div>
@@ -250,6 +259,7 @@ export const LoginModal = () => {
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

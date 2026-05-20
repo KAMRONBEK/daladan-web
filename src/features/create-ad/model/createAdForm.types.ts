@@ -8,4 +8,5 @@ export interface CreateAdFormValues {
   price: string
   unit: string
   deliveryAvailable: boolean
+  contactName: string
 }

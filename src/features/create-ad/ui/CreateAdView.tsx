@@ -38,6 +38,7 @@ export function CreateAdView() {
     titleValue,
     handleClearAll,
     deliveryAvailable,
+    contactNameValue,
   } = model
 
   const [showClearModal, setShowClearModal] = useState(false)
@@ -46,9 +47,11 @@ export function CreateAdView() {
   const [descValue, setDescValue] = useState('')
   const [priceFocused, setPriceFocused] = useState(false)
   const [priceDisplay, setPriceDisplay] = useState('')
+  const [contactFocused, setContactFocused] = useState(false)
 
   const descFloating = descFocused || descValue.length > 0
   const priceFloating = priceFocused || priceDisplay.length > 0
+  const contactFloating = contactFocused || contactNameValue.length > 0
 
   const DESC_MAX = 850
 
@@ -64,6 +67,12 @@ export function CreateAdView() {
       const parsed = parsePriceInput(value)
       return (parsed !== undefined && parsed > 0) || "Narxni to'g'ri kiriting"
     },
+  })
+
+  const { onBlur: contactOnBlur, ...contactRest } = register('contactName', {
+    required: "Maydon to'ldirish majburiy",
+    minLength: { value: 2, message: 'Kamida 2 ta belgi kiriting' },
+    maxLength: { value: 80, message: 'Maksimal 80 ta belgi' },
   })
 
   function handleClearConfirm() {
@@ -181,79 +190,117 @@ export function CreateAdView() {
           </div>
         </div>
 
-        {/* Joylashuv, Tavsif, Narx, Delivery card */}
+        {/* Joylashuv, Narx, Delivery card */}
         <div className="rounded-lg bg-white shadow-sm">
-          <div className="mx-auto max-w-[480px] px-4 py-5 space-y-4">
+          <div className="space-y-4 px-4 py-5">
 
-            <CreateAdRegionCitySection
-              register={register}
-              setValue={setValue}
-              errors={errors}
-              regions={regions}
-              cities={cities}
-              selectedRegionId={selectedRegionId}
-              selectedCityId={selectedCityId}
-              isLoadingRegions={isLoadingRegions}
-              isLoadingCities={isLoadingCities}
-              isLocked={!selectedCategoryId}
-            />
+            <div className="mx-auto max-w-[480px]">
+              <CreateAdRegionCitySection
+                register={register}
+                setValue={setValue}
+                errors={errors}
+                regions={regions}
+                cities={cities}
+                selectedRegionId={selectedRegionId}
+                selectedCityId={selectedCityId}
+                isLoadingRegions={isLoadingRegions}
+                isLoadingCities={isLoadingCities}
+                isLocked={!selectedCategoryId}
+              />
+            </div>
 
-            {/* Narx */}
-            <div className="relative w-[400px] max-w-full">
+            {/* Narx va yetkazib berish — faqat shu qator keng */}
+            <div className="mx-auto w-full max-w-[860px]">
+            <div className="flex w-full gap-3">
+              <div className="relative min-w-0 flex-1">
+                <label
+                  htmlFor="price-input"
+                  className={`pointer-events-none absolute left-3 z-10 transition-all duration-300 ${
+                    priceFloating
+                      ? '-top-2 bg-white px-1 text-base text-slate-400'
+                      : 'top-1/2 -translate-y-1/2 text-base text-slate-400'
+                  }`}
+                >
+                  Narx*
+                </label>
+                <input
+                  id="price-input"
+                  {...priceRest}
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="off"
+                  onFocus={() => setPriceFocused(true)}
+                  onBlur={(e) => { setPriceFocused(false); void priceOnBlur(e) }}
+                  onChange={(e) => {
+                    const formatted = formatPriceInput(e.target.value)
+                    e.target.value = formatted
+                    setPriceDisplay(formatted)
+                    void priceOnChange(e)
+                  }}
+                  aria-invalid={Boolean(errors.price)}
+                  className={`h-[55px] w-full rounded-lg border bg-white px-3 pr-16 text-base text-slate-700 outline-none ${
+                    errors.price ? 'border-red-400' : 'border-[#d1d5db]'
+                  }`}
+                />
+                {priceDisplay.length > 0 && (
+                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
+                    so'm
+                  </span>
+                )}
+                {errors.price && (
+                  <p className={`mt-1 ${ERROR_TEXT_CLASS}`}>{errors.price.message}</p>
+                )}
+              </div>
+
+              <div className="flex min-h-[55px] min-w-0 flex-1 items-center rounded-lg border border-[#d1d5db] bg-white px-4">
+                <label className="flex w-full cursor-pointer items-center justify-between gap-3 select-none">
+                  <div className="min-w-0 flex flex-col">
+                    <span className="text-base text-slate-700">Yetkazib berish</span>
+                    <span className="text-sm text-slate-400">
+                      {deliveryAvailable ? 'Mavjud' : "Mavjud emas"}
+                    </span>
+                  </div>
+                  <span className="relative inline-flex shrink-0 items-center">
+                    <input type="checkbox" {...register('deliveryAvailable')} className="peer sr-only" />
+                    <span className="h-6 w-11 rounded-full bg-slate-200 transition-colors peer-checked:bg-[#4caf50]" />
+                    <span className="pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
+                  </span>
+                </label>
+              </div>
+            </div>
+            </div>
+
+            <div className="mx-auto max-w-[480px] space-y-4">
+            {/* Kontakt ismi */}
+            <div className="relative w-full">
               <label
-                htmlFor="price-input"
+                htmlFor="contact-name-input"
                 className={`pointer-events-none absolute left-3 z-10 transition-all duration-300 ${
-                  priceFloating
+                  contactFloating
                     ? '-top-2 bg-white px-1 text-base text-slate-400'
                     : 'top-1/2 -translate-y-1/2 text-base text-slate-400'
                 }`}
               >
-                Narx*
+                Sizga nima deb murojaat qilishsin?*
               </label>
               <input
-                id="price-input"
-                {...priceRest}
+                id="contact-name-input"
+                {...contactRest}
                 type="text"
-                inputMode="numeric"
-                  autoComplete="off"
-                  onFocus={() => setPriceFocused(true)}
-                onBlur={(e) => { setPriceFocused(false); void priceOnBlur(e) }}
-                onChange={(e) => {
-                  const formatted = formatPriceInput(e.target.value)
-                  e.target.value = formatted
-                  setPriceDisplay(formatted)
-                  void priceOnChange(e)
+                autoComplete="name"
+                onFocus={() => setContactFocused(true)}
+                onBlur={(e) => {
+                  setContactFocused(false)
+                  void contactOnBlur(e)
                 }}
-                aria-invalid={Boolean(errors.price)}
-                className={`h-[55px] w-full rounded-lg border bg-white px-3 pr-16 text-base text-slate-700 outline-none ${
-                  errors.price ? 'border-red-400' : 'border-[#d1d5db]'
+                aria-invalid={Boolean(errors.contactName)}
+                className={`h-[55px] w-full rounded-lg border bg-white px-3 text-base text-slate-700 outline-none ${
+                  errors.contactName ? 'border-red-400' : 'border-[#d1d5db]'
                 }`}
               />
-              {priceDisplay.length > 0 && (
-                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">
-                  so'm
-                </span>
+              {errors.contactName && (
+                <p className={`mt-1 ${ERROR_TEXT_CLASS}`}>{errors.contactName.message}</p>
               )}
-              {errors.price && (
-                <p className={`mt-1 ${ERROR_TEXT_CLASS}`}>{errors.price.message}</p>
-              )}
-            </div>
-
-            {/* Yetkazib berish */}
-            <div className="w-[400px] max-w-full rounded border border-[#d1d5db] bg-white px-4 py-3.5">
-              <label className="flex cursor-pointer items-center justify-between gap-4 select-none">
-                <div className="flex flex-col">
-                  <span className="text-base text-slate-700">Yetkazib berish</span>
-                  <span className="text-sm text-slate-400">
-                    {deliveryAvailable ? 'Mavjud' : "Mavjud emas"}
-                  </span>
-                </div>
-                <span className="relative inline-flex shrink-0 items-center">
-                  <input type="checkbox" {...register('deliveryAvailable')} className="peer sr-only" />
-                  <span className="h-6 w-11 rounded-full bg-slate-200 transition-colors peer-checked:bg-[#4caf50]" />
-                  <span className="pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow transition-transform peer-checked:translate-x-5" />
-                </span>
-              </label>
             </div>
 
             {error && <p className={ERROR_TEXT_CLASS}>{error}</p>}
@@ -261,10 +308,11 @@ export function CreateAdView() {
             <button
               type="submit"
               disabled={isSubmitting || !isValid || isLoadingCategories || isLoadingRegions}
-              className="h-[38px] w-[400px] max-w-full rounded-lg bg-[#4caf50] px-4 text-sm font-semibold text-white transition-colors enabled:hover:bg-[#43a047] disabled:cursor-not-allowed disabled:opacity-80"
+              className="h-[38px] w-full max-w-[400px] rounded-lg bg-[#4caf50] px-4 text-sm font-semibold text-white transition-colors enabled:hover:bg-[#43a047] disabled:cursor-not-allowed disabled:opacity-80"
             >
               {isSubmitting ? 'Yuklanmoqda\u2026' : "E'lon joylash"}
             </button>
+            </div>
           </div>
         </div>
 
