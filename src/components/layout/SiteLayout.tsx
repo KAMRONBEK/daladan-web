@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Outlet } from 'react-router-dom'
+import { CreateAdLeaveGuardProvider } from '../../state/CreateAdLeaveGuardContext'
 import { MobileBottomNav } from './MobileBottomNav'
 import { SiteFooter } from './SiteFooter'
 import { SiteHeader } from './SiteHeader'
@@ -7,6 +8,7 @@ import { SiteTopAdSlot } from './SiteTopAdSlot'
 
 export const SiteLayout = ({ children, hideFooter }: { children?: ReactNode; hideFooter?: boolean }) => {
   return (
+    <CreateAdLeaveGuardProvider>
     <div className="min-h-screen bg-[#ebf2f7] dark:bg-slate-950">
       <div className="hidden md:block">
         <SiteHeader />
@@ -22,5 +24,6 @@ export const SiteLayout = ({ children, hideFooter }: { children?: ReactNode; hid
       )}
       <MobileBottomNav />
     </div>
+    </CreateAdLeaveGuardProvider>
   )
 }

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Trash2, X } from 'lucide-react'
 import { formatPriceInput, parsePriceInput } from '../../../utils/price'
 import { ERROR_TEXT_CLASS } from '../model/createAdFieldStyles'
@@ -6,6 +6,7 @@ import { useCreateAdPage } from '../model/useCreateAdPage'
 import { CreateAdLocationSection } from './CreateAdLocationSection'
 import { CreateAdPhotosSection } from './CreateAdPhotosSection'
 import { CreateAdRegionCitySection } from './CreateAdRegionCitySection'
+import { CreateAdPageSpinner } from './CreateAdPageSpinner'
 import { CreateAdTitleDescriptionSection } from './CreateAdTitleDescriptionSection'
 
 /** Route: `/profile/ads/new` */
@@ -48,6 +49,16 @@ export function CreateAdView() {
   const [priceFocused, setPriceFocused] = useState(false)
   const [priceDisplay, setPriceDisplay] = useState('')
   const [contactFocused, setContactFocused] = useState(false)
+  const [minSpinnerDone, setMinSpinnerDone] = useState(false)
+
+  const isInitialLoading = isLoadingCategories || isLoadingRegions
+  const showForm = !isInitialLoading && minSpinnerDone
+
+  useEffect(() => {
+    setMinSpinnerDone(false)
+    const timer = window.setTimeout(() => setMinSpinnerDone(true), 400)
+    return () => window.clearTimeout(timer)
+  }, [])
 
   const descFloating = descFocused || descValue.length > 0
   const priceFloating = priceFocused || priceDisplay.length > 0
@@ -80,6 +91,14 @@ export function CreateAdView() {
     setDescValue('')
     setPriceDisplay('')
     setShowClearModal(false)
+  }
+
+  if (!showForm) {
+    return (
+      <div className="create-ad-page mx-auto -mt-6 w-full max-w-[880px] pt-[30px]">
+        <CreateAdPageSpinner />
+      </div>
+    )
   }
 
   return (

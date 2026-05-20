@@ -11,7 +11,8 @@ import {
   UserPlus,
 } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
+import { useCreateAdLeaveGuardContext } from '../../state/CreateAdLeaveGuardContext'
 import { useAuth } from '../../state/AuthContext'
 import { useTheme } from '../../state/ThemeContext'
 import { LOGIN_PATH, loginReturnState } from '../../utils/appPaths'
@@ -21,7 +22,7 @@ const isListingSearchRoute = (pathname: string) => pathname === '/' || pathname 
 export const SiteHeader = () => {
   const { theme, toggleTheme } = useTheme()
   const { user, logout } = useAuth()
-  const navigate = useNavigate()
+  const { tryNavigate } = useCreateAdLeaveGuardContext()
   const routeLocation = useLocation()
   const menuRef = useRef<HTMLDivElement | null>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -57,7 +58,7 @@ export const SiteHeader = () => {
 
   const toLogin = () => {
     const returnState = loginReturnState(routeLocation)
-    navigate(LOGIN_PATH, {
+    tryNavigate(LOGIN_PATH, {
       ...returnState,
       state: {
         ...returnState.state,
@@ -68,7 +69,7 @@ export const SiteHeader = () => {
 
   const toRegister = () => {
     const returnState = loginReturnState(routeLocation)
-    navigate('/register', {
+    tryNavigate('/register', {
       ...returnState,
       state: {
         ...returnState.state,
@@ -82,18 +83,18 @@ export const SiteHeader = () => {
       toLogin()
       return
     }
-    navigate('/favorites')
+    tryNavigate('/favorites')
   }
 
   const toProfileTab = (tab: 'profile' | 'messages' | 'ads' | 'payments') => {
-    navigate('/profile', { state: { tab } })
+    tryNavigate('/profile', { state: { tab } })
     setIsMenuOpen(false)
   }
 
   const handleLogout = async () => {
     setIsMenuOpen(false)
     await logout()
-    navigate('/', { replace: true })
+    tryNavigate('/', { replace: true })
   }
 
   const commitSearch = (event?: FormEvent) => {
@@ -108,14 +109,22 @@ export const SiteHeader = () => {
       next.delete('q')
     }
     const searchStr = next.toString()
-    navigate({ pathname: '/', search: searchStr ? `?${searchStr}` : '' })
+    tryNavigate({ pathname: '/', search: searchStr ? `?${searchStr}` : '' })
   }
 
   return (
     <header className="sticky top-0 z-50 bg-slate-800 shadow-xl dark:bg-slate-950">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-1 md:px-6 lg:px-6">
 
-        <Link to="/" className="-my-3 mr-2 shrink-0 md:mr-3 lg:mr-4">
+        <Link
+          to="/"
+          onClick={(event) => {
+            if (routeLocation.pathname !== '/profile/ads/new') return
+            event.preventDefault()
+            tryNavigate('/')
+          }}
+          className="-my-3 mr-2 shrink-0 md:mr-3 lg:mr-4"
+        >
           <img
             src="/daladan-icon.png"
             alt="Daladan"
@@ -192,7 +201,7 @@ export const SiteHeader = () => {
               </Link>
               <button
                 type="button"
-                onClick={() => navigate('/profile', { state: { tab: 'messages' } })}
+                onClick={() => tryNavigate('/profile', { state: { tab: 'messages' } })}
                 className="group flex flex-col items-center gap-0.5 rounded-lg px-3 py-1.5 text-slate-300 transition-colors"
                 aria-label="Xabarlar"
               >

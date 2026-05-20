@@ -113,6 +113,24 @@ a:focus-visible {
   outline-offset: 0;
 }
 
+/* Create ad page: Jiji-style loading dots */
+@keyframes create-ad-dot-bounce {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.65);
+    opacity: 0.45;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.create-ad-dot {
+  animation: create-ad-dot-bounce 1s ease-in-out infinite;
+}
+
 /* Create ad page: no green focus outline on any interactive element. */
 .create-ad-page input:focus-visible,
 .create-ad-page select:focus-visible,

@@ -11,6 +11,7 @@ import { LOGIN_PATH } from '../../../utils/appPaths'
 import { parsePriceInput } from '../../../utils/price'
 import { createEmptyPhotoSlots } from './createAdConstants'
 import type { CreateAdFormValues } from './createAdForm.types'
+import { useCreateAdLeaveGuard } from './useCreateAdLeaveGuard'
 
 export function useCreateAdPage() {
   const navigate = useNavigate()
@@ -41,7 +42,7 @@ export function useCreateAdPage() {
     clearErrors,
     reset,
     trigger,
-    formState: { errors, isValid, isSubmitting },
+    formState: { errors, isValid, isSubmitting, isDirty },
   } = useForm<CreateAdFormValues>({
     mode: 'onChange',
     defaultValues: {
@@ -70,6 +71,8 @@ export function useCreateAdPage() {
     () => photoSlots.filter((slot): slot is File => slot instanceof File),
     [photoSlots],
   )
+  const hasUnsavedChanges = isDirty || files.length > 0
+  const { allowNavigationWithoutPrompt } = useCreateAdLeaveGuard(hasUnsavedChanges)
   const isGenerateDescriptionDisabled =
     !selectedCategoryId ||
     !selectedSubcategoryId ||
@@ -382,6 +385,7 @@ export function useCreateAdPage() {
         media: [],
         files,
       })
+      allowNavigationWithoutPrompt()
       navigate('/profile')
     } catch (submissionError) {
       if (submissionError instanceof ApiError && submissionError.status === 401) {

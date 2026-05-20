@@ -1,5 +1,6 @@
 import { CirclePlus, Heart, Home, Search, User } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
+import { useGuardedNavLinkClick } from '../../state/CreateAdLeaveGuardContext'
 import { useAuth } from '../../state/AuthContext'
 import { LOGIN_PATH, loginReturnState } from '../../utils/appPaths'
 import { mobileNavActiveTab, type MobileNavTabId } from './mobileNavActiveTab'
@@ -15,17 +16,20 @@ function TabLink({
   activeId,
   icon: Icon,
   label,
+  onGuardedClick,
 }: {
   to: string
   tabId: MobileNavTabId
   activeId: MobileNavTabId | null
   icon: typeof Home
   label: string
+  onGuardedClick: ReturnType<typeof useGuardedNavLinkClick>
 }) {
   const active = activeId === tabId
   return (
     <Link
       to={to}
+      onClick={onGuardedClick(to)}
       className={`${tabBase} ${active ? tabActive : tabInactive}`}
       aria-current={active ? 'page' : undefined}
     >
@@ -38,6 +42,7 @@ function TabLink({
 export const MobileBottomNav = () => {
   const location = useLocation()
   const { user } = useAuth()
+  const onGuardedClick = useGuardedNavLinkClick()
   const activeId = mobileNavActiveTab(location.pathname)
 
   const loginOpts = loginReturnState(location)
@@ -48,8 +53,8 @@ export const MobileBottomNav = () => {
       aria-label="Asosiy navigatsiya"
     >
       <div className="mx-auto flex max-w-7xl items-stretch justify-between px-1 pt-1">
-        <TabLink to="/" tabId="home" activeId={activeId} icon={Home} label="Bosh" />
-        <TabLink to="/search" tabId="search" activeId={activeId} icon={Search} label="Qidiruv" />
+        <TabLink to="/" tabId="home" activeId={activeId} icon={Home} label="Bosh" onGuardedClick={onGuardedClick} />
+        <TabLink to="/search" tabId="search" activeId={activeId} icon={Search} label="Qidiruv" onGuardedClick={onGuardedClick} />
         {user ? (
           <TabLink
             to="/profile/ads/new"
@@ -57,6 +62,7 @@ export const MobileBottomNav = () => {
             activeId={activeId}
             icon={CirclePlus}
             label="E'lon"
+            onGuardedClick={onGuardedClick}
           />
         ) : (
           <Link
@@ -76,6 +82,7 @@ export const MobileBottomNav = () => {
             activeId={activeId}
             icon={Heart}
             label="Sevimli"
+            onGuardedClick={onGuardedClick}
           />
         ) : (
           <Link
@@ -88,7 +95,7 @@ export const MobileBottomNav = () => {
           </Link>
         )}
         {user ? (
-          <TabLink to="/profile" tabId="profile" activeId={activeId} icon={User} label="Profil" />
+          <TabLink to="/profile" tabId="profile" activeId={activeId} icon={User} label="Profil" onGuardedClick={onGuardedClick} />
         ) : (
           <Link
             to={LOGIN_PATH}
