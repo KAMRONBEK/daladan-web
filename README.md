@@ -123,10 +123,35 @@ Implemented auth/session endpoints:
 - `POST /login`
 - `POST /logout`
 - `GET /profile` (used as canonical current-user profile/me source)
+- `GET /auth/google/redirect` — returns `{ data: { url } }`; open URL in browser for Google sign-in ([Swagger](https://api.daladan.uz/api/v1/documentation#/Auth/2a0cecad0647794c09db2cbe6a8e93f3))
+- `GET /auth/google/callback` — called by Google after OAuth; redirects to `FRONTEND_URL/auth/callback?token=JWT` ([Swagger](https://api.daladan.uz/api/v1/documentation#/Auth/b20322a31f2076e0006659ff138a4dd6))
 
 Not used by design:
 
 - `GET /get-me` (frontend relies on `GET /profile` for current-user data)
+
+### Google sign-in (marketplace only)
+
+1. User clicks **Google orqali kirish** on `/login` or the login modal.
+2. Frontend calls `GET /auth/google/redirect`, then `window.location.href = data.url`.
+3. Before redirect, the intended post-login path is stored in `sessionStorage` (`daladan.auth.returnPath`).
+4. After Google OAuth, the API redirects to `/auth/callback?token=...` on the SPA.
+5. [`AuthCallbackPage`](src/pages/AuthCallbackPage.tsx) persists the token, loads `GET /profile`, then navigates to the stored return path (default `/profile`).
+
+**API server (Laravel `.env`):** set `FRONTEND_URL` to the marketplace origin (no trailing slash). This controls where Google OAuth returns after login (`{FRONTEND_URL}/auth/callback?token=...`):
+
+- Production: `FRONTEND_URL=https://eldan.uz`
+- Local API testing: `FRONTEND_URL=http://localhost:5173`
+
+The frontend cannot override this when using `api.daladan.uz`. Google OAuth redirect URI in Google Cloud Console must be `https://api.daladan.uz/api/v1/auth/google/callback`.
+
+**Smoke test:**
+
+```bash
+curl -s "https://api.daladan.uz/api/v1/auth/google/redirect"
+```
+
+Admin panel does not expose Google sign-in.
 
 ### Admin panel (`admin.eldan.uz` and `admin.daladan.uz`)
 
