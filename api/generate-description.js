@@ -278,7 +278,7 @@ const buildPrompt = ({ categoryName, subcategoryName, title, commercial }) => {
           : "Bu sotuv e'lon — mahsulotning o'ziga xos jihatlari (hayvon/sabzavot/jihoz va hokazo) bo'yicha alohida yozing."
 
   const lines = [
-    "Daladan uchun BO'LSHA E'LON TAVSIFI yozing. Bir nechta band: boshlovchi qator(lar), asosiy matn (batafsil), oxirida aloqa. Har bir generatsiya boshqa e'longa o'xshamasin — takroriy andozalardan qoching.",
+    "Eldan uchun BO'LSHA E'LON TAVSIFI yozing. Bir nechta band: boshlovchi qator(lar), asosiy matn (batafsil), oxirida aloqa. Har bir generatsiya boshqa e'longa o'xshamasin — takroriy andozalardan qoching.",
     `Kategoriya: ${categoryName}`,
     `Subkategoriya: ${subcategoryName}`,
     titleLine,
@@ -328,7 +328,7 @@ export default async function handler(req, res) {
 
   const body = parseRequestBody(req.body)
   const categoryName = toTrimmedString(body.categoryName)
-  const subcategoryName = toTrimmedString(body.subcategoryName)
+  const subcategoryName = toTrimmedString(body.subcategoryName) || categoryName
   const title = toTrimmedString(body.title)
   const commercial = {
     priceText: toTrimmedString(body.priceText),
@@ -338,8 +338,8 @@ export default async function handler(req, res) {
     districtName: toTrimmedString(body.districtName),
   }
 
-  if (!categoryName || !subcategoryName) {
-    return res.status(400).json({ error: 'Kategoriya va subkategoriya nomi majburiy' })
+  if (!categoryName || !title) {
+    return res.status(400).json({ error: 'Kategoriya va sarlavha majburiy' })
   }
 
   const fallbackDescription = createFallbackDescription({ categoryName, subcategoryName, title, commercial })
@@ -367,7 +367,7 @@ export default async function handler(req, res) {
           {
             role: 'system',
             content:
-              "Siz Daladan e'lonlari uchun professional yozuvchisiniz. HECH QACHON bitta uzun paragraf berilmaydi: har doim yangi qatorlar va bo'sh qatorlar bilan blok-blok, o'qish oson. Mos emoji ishlating. Har bir javob boshqacha bo'lsin. Taxminiy tafsilotlar mumkin. Umumiy sukut iboralardan qoching. O'zbek lotin.",
+              "Siz Eldan e'lonlari uchun professional yozuvchisiniz. HECH QACHON bitta uzun paragraf berilmaydi: har doim yangi qatorlar va bo'sh qatorlar bilan blok-blok, o'qish oson. Mos emoji ishlating. Har bir javob boshqacha bo'lsin. Taxminiy tafsilotlar mumkin. Umumiy sukut iboralardan qoching. O'zbek lotin.",
           },
           {
             role: 'user',

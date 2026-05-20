@@ -45,7 +45,7 @@ export interface ProfileService {
 
 export interface GenerateAdDescriptionRequest {
   categoryName: string
-  subcategoryName: string
+  subcategoryName?: string
   title?: string
   /** Formatted as in the input (e.g. "1 500 000") */
   priceText?: string

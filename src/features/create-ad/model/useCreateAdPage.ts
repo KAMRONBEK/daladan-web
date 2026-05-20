@@ -72,11 +72,8 @@ export function useCreateAdPage() {
   )
   const isGenerateDescriptionDisabled =
     !selectedCategoryId ||
-    !selectedSubcategoryId ||
-    !priceValue.trim() ||
-    !unitValue.trim() ||
+    !watch('title').trim() ||
     isLoadingCategories ||
-    isLoadingSubcategories ||
     isGeneratingDescription
 
   const unitSuggestions = useMemo(() => {
@@ -275,30 +272,23 @@ export function useCreateAdPage() {
   const handleGenerateDescription = useCallback(async () => {
     setError('')
 
-    if (!selectedCategoryId || !selectedSubcategoryId) {
-      setError('Avval kategoriya va subkategoriyani tanlang')
+    const title = getValues('title').trim()
+    if (!selectedCategoryId || !title) {
+      setError('AI uchun avval kategoriya va sarlavha kiriting')
       return
     }
 
     const priceText = getValues('price').trim()
     const unit = getValues('unit').trim()
-    if (!priceText) {
-      setError('AI uchun avval narx kiriting')
-      return
-    }
-    if (!unit) {
-      setError('AI uchun avval birlik tanlang')
-      return
-    }
 
-    if (isLoadingCategories || isLoadingSubcategories || isGeneratingDescription) {
+    if (isLoadingCategories || isGeneratingDescription) {
       return
     }
 
     const selectedCategory = categories.find((item) => String(item.id) === selectedCategoryId)
     const selectedSubcategory = subcategories.find((item) => String(item.id) === selectedSubcategoryId)
 
-    if (!selectedCategory || !selectedSubcategory) {
+    if (!selectedCategory) {
       setError("Kategoriya ma'lumotlarini topib bo'lmadi. Qayta urinib ko'ring.")
       return
     }
@@ -309,13 +299,12 @@ export function useCreateAdPage() {
 
     setIsGeneratingDescription(true)
     try {
-      const title = getValues('title').trim()
       const description = await aiService.generateAdDescription({
         categoryName: selectedCategory.name,
-        subcategoryName: selectedSubcategory.name,
+        subcategoryName: selectedSubcategory?.name,
         title: title || undefined,
-        priceText,
-        unit,
+        priceText: priceText || undefined,
+        unit: unit || undefined,
         deliveryAvailable: deliveryAvailableValue,
         regionName: selectedRegion?.name,
         districtName: selectedCity?.name,
@@ -335,7 +324,6 @@ export function useCreateAdPage() {
     getValues,
     isGeneratingDescription,
     isLoadingCategories,
-    isLoadingSubcategories,
     regions,
     selectedCategoryId,
     selectedCityId,
@@ -402,6 +390,7 @@ export function useCreateAdPage() {
     setValue,
     handleSubmit,
     titleValue: watch('title'),
+    descriptionValue: watch('description'),
     contactNameValue: watch('contactName'),
     errors,
     isValid,
