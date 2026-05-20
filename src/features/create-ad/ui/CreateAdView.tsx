@@ -166,14 +166,18 @@ export function CreateAdView() {
 
                 {/* Tavsif tooltip */}
                 <div
-                  className={`pointer-events-none absolute left-full top-6 ml-3 transition-all duration-200 ${
+                  className={`pointer-events-none absolute left-full top-1/2 ml-3 -translate-y-1/2 transition-all duration-200 ${
                     descHovered || descFocused ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-1'
                   }`}
                 >
-                  <div className="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
+                  <div className="flex w-[280px] flex-col rounded-lg border border-slate-200 bg-white p-3 shadow-md">
                     <p className="text-xs font-medium text-slate-500">Namuna:</p>
-                    <p className="text-xs text-slate-400">Mahsulot holati, xususiyatlari,</p>
-                    <p className="text-xs text-slate-400">foydalanish muddati...</p>
+                    <p className="mt-1 text-[11px] leading-snug text-slate-400">
+                      iPhone 17 Pro, 256 GB, A19 Pro chip, 12 GB RAM. 6.3&quot; Super Retina XDR ekran,
+                      120Hz ProMotion. 48 MP uchlik kamera (asosiy + ultra keng + telefoto), 8x optik zoom.
+                      Old kamera 18 MP Center Stage. 4K Dolby Vision video 120 fps. Alyuminiy unibody
+                      korpus, IP68. iOS 26. Holati: yangi, qutisi va aksessuarlari bilan.
+                    </p>
                   </div>
                 </div>
               </div>

@@ -66,7 +66,7 @@ export function CreateAdTitleDescriptionSection({ register, errors, titleValue }
         >
           <div className="whitespace-nowrap rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-md">
             <p className="text-xs font-medium text-slate-500">Namuna:</p>
-            <p className="text-xs text-slate-400">iPhone 13 Pro, Divan, Laptop…</p>
+            <p className="text-xs text-slate-400">iPhone 17 Pro yangi…</p>
           </div>
         </div>
       </div>
