@@ -58,6 +58,10 @@ export interface CategoryOption {
   name: string
   /** API slug for URLs and tile imagery, e.g. fruit / poultry / animal */
   slug?: string
+  /** Primary image/icon when API returns `image_url` */
+  image_url?: string | null
+  /** Resolved gallery URLs when API returns `media` */
+  media?: string[]
 }
 
 /** Row from `GET /resources/promotion-plans` (public tariff catalog). */

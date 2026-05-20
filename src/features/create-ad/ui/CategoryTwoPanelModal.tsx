@@ -1,42 +1,12 @@
 import { useEffect } from 'react'
 import { ChevronRight, X } from 'lucide-react'
-
-const CATEGORY_EMOJIS: Record<string, string> = {
-  meva: '🍎',
-  sabzavot: '🥦',
-  hayvon: '🐄',
-  parranda: '🐔',
-  don: '🌾',
-  go: '🐑',
-  qo: '🐑',
-  baliq: '🐟',
-  chorva: '🐄',
-  dehqon: '🌱',
-  uy: '🏠',
-  texnika: '⚙️',
-  transport: '🚛',
-  elektronika: '📱',
-  kiyim: '👔',
-  oziq: '🥗',
-  qishloq: '🌾',
-  bog: '🌳',
-  mashina: '🚗',
-  mebel: '🛋️',
-  sport: '⚽',
-  kitob: '📚',
-}
-
-function getCategoryEmoji(name: string): string {
-  const lower = name.toLowerCase()
-  for (const [key, emoji] of Object.entries(CATEGORY_EMOJIS)) {
-    if (lower.includes(key)) return emoji
-  }
-  return '🏷️'
-}
+import { CategoryListIcon } from './CategoryListIcon'
 
 interface PickerItem {
   id: number
   name: string
+  imageUrl?: string | null
+  media?: string[] | null
 }
 
 interface Props {
@@ -54,7 +24,7 @@ interface Props {
   leftTitle?: string
   rightEmptyText?: string
   rightPlaceholderText?: string
-  showEmojis?: boolean
+  showIcons?: boolean
 }
 
 export function CategoryTwoPanelModal({
@@ -72,7 +42,7 @@ export function CategoryTwoPanelModal({
   leftTitle = 'Kategoriyalar',
   rightEmptyText = 'Kichik kategoriyalar topilmadi',
   rightPlaceholderText = 'Chap tomondagi elementni tanlang',
-  showEmojis = true,
+  showIcons = true,
 }: Props) {
   useEffect(() => {
     if (!open) return
@@ -95,8 +65,7 @@ export function CategoryTwoPanelModal({
         className="flex h-[70vh] w-full max-w-[620px] overflow-hidden rounded-2xl bg-white shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Left panel — kategoriyalar */}
-        <div className="flex w-[240px] shrink-0 flex-col border-r border-slate-100 bg-white">
+        <div className="flex w-[280px] shrink-0 flex-col border-r border-slate-100 bg-white">
           <div className="border-b border-slate-100 px-4 py-3">
             <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">
               {leftTitle}
@@ -111,11 +80,13 @@ export function CategoryTwoPanelModal({
                   type="button"
                   onClick={() => onCategoryClick(String(cat.id))}
                   onMouseEnter={() => onCategoryHover?.(String(cat.id))}
-                  className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
+                  className={`flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-50 ${
                     isActive ? 'border-l-[3px] border-blue-500 bg-blue-50' : 'border-l-[3px] border-transparent'
                   }`}
                 >
-                  {showEmojis && <span className="text-xl">{getCategoryEmoji(cat.name)}</span>}
+                  {showIcons && (
+                    <CategoryListIcon imageUrl={cat.imageUrl} media={cat.media} />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className={`truncate text-sm font-medium ${isActive ? 'text-blue-600' : 'text-slate-700'}`}>
                       {cat.name}
@@ -128,12 +99,15 @@ export function CategoryTwoPanelModal({
           </div>
         </div>
 
-        {/* Right panel — kichik kategoriyalar */}
         <div className="flex flex-1 flex-col bg-white">
           <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
             <div className="flex items-center gap-2">
-              {showEmojis && selectedCategory && (
-                <span className="text-xl">{getCategoryEmoji(selectedCategory.name)}</span>
+              {showIcons && selectedCategory && (
+                <CategoryListIcon
+                  imageUrl={selectedCategory.imageUrl}
+                  media={selectedCategory.media}
+                  size="sm"
+                />
               )}
               <p className="font-semibold text-slate-800">
                 {selectedCategory ? selectedCategory.name : 'Kategoriya tanlang'}
@@ -169,11 +143,13 @@ export function CategoryTwoPanelModal({
                     key={sub.id}
                     type="button"
                     onClick={() => { onSubcategoryClick(String(sub.id)); onClose() }}
-                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 ${
+                    className={`flex w-full items-center gap-3 border-b border-slate-100 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-slate-50 ${
                       isActive ? 'bg-blue-50' : ''
                     }`}
                   >
-                    {showEmojis && <span className="text-lg">{getCategoryEmoji(sub.name)}</span>}
+                    {showIcons && (
+                      <CategoryListIcon imageUrl={sub.imageUrl} media={sub.media} size="sm" />
+                    )}
                     <div className="min-w-0 flex-1">
                       <p className={`text-sm font-medium ${isActive ? 'text-blue-600' : 'text-slate-700'}`}>
                         {sub.name}

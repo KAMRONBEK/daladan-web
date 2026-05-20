@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { ChevronRight } from 'lucide-react'
 import type { UseFormRegister, FieldErrors, UseFormSetValue } from 'react-hook-form'
@@ -93,6 +93,28 @@ export function CreateAdLocationSection({
     categoryClickedInModalRef.current = false
   }, [isLoadingSubcategories, isModalOpen, selectedCategoryId, setValue, subcategories.length])
 
+  const categoryPickerItems = useMemo(
+    () =>
+      categories.map((category) => ({
+        id: category.id,
+        name: category.name,
+        imageUrl: category.image_url,
+        media: category.media,
+      })),
+    [categories],
+  )
+
+  const modalSubcategoryPickerItems = useMemo(
+    () =>
+      modalSubcategories.map((subcategory) => ({
+        id: subcategory.id,
+        name: subcategory.name,
+        imageUrl: subcategory.image_url,
+        media: subcategory.media,
+      })),
+    [modalSubcategories],
+  )
+
   const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId)
   const selectedSubcategory = subcategories.find((s) => String(s.id) === selectedSubcategoryId)
 
@@ -145,8 +167,8 @@ export function CreateAdLocationSection({
 
       <CategoryTwoPanelModal
         open={isModalOpen}
-        categories={categories}
-        subcategories={modalSubcategories}
+        categories={categoryPickerItems}
+        subcategories={modalSubcategoryPickerItems}
         selectedCategoryId={selectedCategoryId}
         activeCategoryId={activeCategoryId}
         selectedSubcategoryId={selectedSubcategoryId}

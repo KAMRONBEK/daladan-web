@@ -78,12 +78,24 @@ const mapPromotionPlanResource = (item: UnknownRecord, index: number): Promotion
   }
 }
 
+const pickImageUrl = (item: UnknownRecord): string | null => {
+  const raw = item.image_url ?? item.icon_url ?? item.icon ?? item.image
+  if (raw === null || raw === undefined) return null
+  if (typeof raw === 'string' && raw.trim()) return raw.trim()
+  return null
+}
+
 const mapCategory = (item: UnknownRecord): CategoryOption => {
   const slugRaw = getString(item, 'slug', 'slug_en', 'slug_uz')
+  const image_url = pickImageUrl(item)
+  const mediaUrls = getMediaUrls(item.media)
+
   return {
     id: getNumber(item, 'id', 'category_id'),
     name: getString(item, 'name_uz', 'name_oz', 'name', 'title'),
     ...(slugRaw ? { slug: slugRaw } : {}),
+    image_url,
+    ...(mediaUrls.length ? { media: mediaUrls } : {}),
   }
 }
 

@@ -101,11 +101,16 @@ export const loadCategoryTree = (): Promise<CategoryNode[]> => {
 
     return categories
       .filter((category) => Boolean(category.name))
-      .map((category) => ({
-        id: category.id,
-        label: category.name,
-        ...(category.slug ? { slug: category.slug } : {}),
-        children: (subcategoriesByCategoryId.get(category.id) ?? [])
+      .map((category) => {
+        const categoryImageUrl =
+          (category.image_url && category.image_url.trim()) || category.media?.[0]
+
+        return {
+          id: category.id,
+          label: category.name,
+          ...(category.slug ? { slug: category.slug } : {}),
+          ...(categoryImageUrl ? { imageUrl: categoryImageUrl } : {}),
+          children: (subcategoriesByCategoryId.get(category.id) ?? [])
           .filter((subcategory) => Boolean(subcategory.name))
           .map((subcategory) => {
             const imageUrl =
@@ -117,7 +122,8 @@ export const loadCategoryTree = (): Promise<CategoryNode[]> => {
               ...(imageUrl ? { imageUrl } : {}),
             }
           }),
-      }))
+        }
+      })
   })().catch((error) => {
     categoryTreePromise = null
     throw error

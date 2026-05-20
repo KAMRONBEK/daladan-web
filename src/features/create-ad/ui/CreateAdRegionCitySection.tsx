@@ -163,7 +163,7 @@ export function CreateAdRegionCitySection({
         leftTitle="Viloyatlar"
         rightEmptyText="Shahar/tumanlar topilmadi"
         rightPlaceholderText="Chap tomondagi viloyatni tanlang"
-        showEmojis={false}
+        showIcons={false}
       />
     </div>
   )
