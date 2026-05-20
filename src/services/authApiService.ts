@@ -1,4 +1,4 @@
-import { extractAuthToken, requestJson } from './apiClient'
+import { ApiError, extractAuthToken, requestJson } from './apiClient'
 import {
   asRecord,
   extractCollection,
@@ -37,6 +37,7 @@ const mapAuthUser = (payload: unknown, fallback: { phone: string; fullName: stri
   const lname = getString(data, 'lname', 'last_name')
   const fullName = getString(data, 'full_name', 'fullName') || `${fname} ${lname}`.trim() || fallback.fullName
   const phone = getString(data, 'phone') || fallback.phone
+  const email = getString(data, 'email') || undefined
   const regionName =
     getString(regionObj, 'name_uz', 'name_oz', 'name') || getString(data, 'region_name', 'region')
   const cityName = getString(cityObj, 'name_uz', 'name_oz', 'name')
@@ -45,6 +46,7 @@ const mapAuthUser = (payload: unknown, fallback: { phone: string; fullName: stri
   return {
     fullName,
     phone,
+    email,
     region,
     authMethod: 'password',
   }
@@ -112,6 +114,66 @@ export const authApiService: AuthService = {
   async refresh() {
     const response = await requestJson<unknown>('/refresh', { method: 'POST' })
     return mapAuthResult(response, { phone: '', fullName: 'Foydalanuvchi' })
+  },
+
+  async getGoogleOAuthUrl() {
+    const envUrl = import.meta.env.VITE_API_BASE_URL?.trim()
+    const baseUrl = (envUrl || 'https://api.daladan.uz/api/v1').replace(/\/$/, '')
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 12_000)
+    let response: Response
+    try {
+      response = await fetch(`${baseUrl}/auth/google/redirect`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        redirect: 'manual',
+        signal: controller.signal,
+      })
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new ApiError('So\'rov vaqti tugadi. Qayta urinib ko\'ring.', 0)
+      }
+      throw error
+    } finally {
+      clearTimeout(timeoutId)
+    }
+
+    // Backend may return 302 to Google directly (Socialite) instead of JSON.
+    if (response.status >= 300 && response.status < 400) {
+      const location = response.headers.get('Location')
+      if (location) return location
+      throw new ApiError('Google OAuth URL topilmadi', response.status)
+    }
+
+    const text = await response.text()
+    let payload: unknown = null
+    if (text) {
+      try {
+        payload = JSON.parse(text) as unknown
+      } catch {
+        payload = text
+      }
+    }
+
+    if (!response.ok) {
+      const message =
+        payload && typeof payload === 'object' && 'message' in payload
+          ? String((payload as { message?: unknown }).message)
+          : 'Google orqali kirishda xatolik'
+      throw new ApiError(message, response.status, payload)
+    }
+
+    const root = asRecord(payload)
+    const data = asRecord(root.data)
+    const nested = asRecord(data.data)
+    const url = getString(data, 'url') || getString(nested, 'url') || getString(root, 'url')
+    if (!url) {
+      throw new Error('Google OAuth URL topilmadi')
+    }
+    return url
   },
 
   async getMe() {

@@ -7,6 +7,9 @@ import App from './App.tsx'
 import { AuthProvider } from './state/AuthContext.tsx'
 import { FavoritesProvider } from './state/FavoritesContext.tsx'
 import { ThemeProvider } from './state/ThemeContext.tsx'
+import { redirectOAuthCallbackIfNeeded } from './utils/oauthCallbackRedirect.ts'
+
+redirectOAuthCallbackIfNeeded()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

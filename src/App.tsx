@@ -8,6 +8,7 @@ import { AdBoostPage } from './pages/AdBoostPage'
 import { AdStatsPage } from './pages/AdStatsPage'
 import { FavoritesPage } from './pages/FavoritesPage'
 import { ItemDetailsPage } from './pages/ItemDetailsPage'
+import { AuthCallbackPage } from './pages/AuthCallbackPage'
 import { AuthPage } from './pages/AuthPage'
 import { CreateAdPage } from './pages/CreateAdPage'
 import { HomePage } from './pages/HomePage'
@@ -42,6 +43,7 @@ function App() {
         <Route path="/register" element={<AuthPage defaultTab="register" />} />
         <Route path="/forgot-password" element={<AuthPage defaultTab="login" />} />
         <Route path={SESSION_REFRESH_PATH} element={<RefreshPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route
           path="/favorites"
           element={

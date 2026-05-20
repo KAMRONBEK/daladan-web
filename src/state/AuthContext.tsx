@@ -5,7 +5,7 @@ import { authService } from '../services'
 import type { AuthResult, AuthUser } from '../services/contracts'
 
 
-type AuthMethod = 'password' | 'otp'
+type AuthMethod = 'password' | 'otp' | 'google'
 
 
 interface AuthContextValue {
@@ -32,6 +32,8 @@ interface AuthContextValue {
   }) => Promise<void>
   /** Persists new token + user after `authService.refresh()` (see `features/session-refresh`). */
   refreshSession: () => Promise<void>
+  /** Google OAuth or email-verify callback (`/auth/callback?token=...`). */
+  completeSessionFromToken: (token: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -71,6 +73,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [])
 
   useEffect(() => {
+    const pathname = window.location.pathname
+    const urlToken =
+      new URLSearchParams(window.location.search).get('token') ||
+      new URLSearchParams(window.location.search).get('access_token')
+
+    // Let AuthCallbackPage own token exchange; avoid clearing storage on first paint.
+    if (pathname === '/auth/callback') {
+      if (!getStoredAuthToken() && !urlToken) {
+        setIsAuthLoading(false)
+      }
+      return
+    }
+
     const token = getStoredAuthToken()
     if (!token) {
       clearSession()
@@ -181,6 +196,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     await syncUserAfterAuth(result)
   }
 
+  const completeSessionFromToken = useCallback(async (token: string) => {
+    setAuthMethod('google')
+    let nextUser: AuthUser = {
+      fullName: 'Foydalanuvchi',
+      phone: '',
+      region: 'Uzbekistan',
+      authMethod: 'google',
+    }
+    persistSession(nextUser, token)
+    try {
+      nextUser = await authService.getMe()
+      nextUser = { ...nextUser, authMethod: 'google' }
+    } catch {
+      // Keep placeholder user when profile fetch fails.
+    }
+    setUser(nextUser)
+    persistSession(nextUser, token)
+  }, [])
+
   const logout = async () => {
     try {
       await authService.logout()
@@ -202,6 +236,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         completePhoneRegistration,
         registerWithEmail,
         refreshSession,
+        completeSessionFromToken,
         logout,
       }}
     >

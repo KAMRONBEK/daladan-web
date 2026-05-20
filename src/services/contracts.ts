@@ -73,8 +73,9 @@ export interface CityOption {
 export interface AuthUser {
   fullName: string
   phone: string
+  email?: string
   region: string
-  authMethod: 'password' | 'otp'
+  authMethod: 'password' | 'otp' | 'google'
 }
 
 export interface LoginRequest {
@@ -113,6 +114,8 @@ export interface AuthService {
   /** `POST /refresh` — new bearer token; profile sync happens in auth layer after persist. */
   refresh(): Promise<AuthResult>
   getMe(): Promise<AuthUser>
+  /** GET /auth/google/redirect — returns Google OAuth authorize URL. */
+  getGoogleOAuthUrl(): Promise<string>
   getRegions(): Promise<RegionOption[]>
   getCities(regionId?: number): Promise<CityOption[]>
   logout(): Promise<void>
