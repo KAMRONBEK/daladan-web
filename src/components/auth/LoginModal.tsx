@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { Eye, EyeOff, X } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../state/AuthContext'
@@ -24,8 +25,8 @@ const GoogleIcon = () => (
 export const LoginModal = () => {
   const { loginWithPassword } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
-  const isRegisterTab = location.pathname === '/register'
+  const { pathname, state: locationState } = useLocation()
+  const isRegisterTab = pathname === '/register'
   const [identity, setIdentity] = useState('')
   const [identityMode, setIdentityMode] = useState<'phone' | 'email'>('phone')
   const [password, setPassword] = useState('')
@@ -34,7 +35,7 @@ export const LoginModal = () => {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [emailRegisterDone, setEmailRegisterDone] = useState(false)
-  const from = (location.state as { from?: string } | null)?.from ?? '/profile'
+  const from = (locationState as { from?: string } | null)?.from ?? '/profile'
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -49,6 +50,15 @@ export const LoginModal = () => {
   useEffect(() => {
     setEmailRegisterDone(false)
   }, [identity, identityMode, isRegisterTab])
+
+  useEffect(() => {
+    if (pathname === '/login') {
+      setIdentity('')
+      setPassword('')
+      setError('')
+      setShowPassword(false)
+    }
+  }, [pathname])
 
   const onIdentityChange = (raw: string) => {
     if (looksLikeEmail(raw)) {
@@ -78,7 +88,7 @@ export const LoginModal = () => {
   const switchTab = (tab: 'login' | 'register') => {
     setError('')
     const nextPath = tab === 'login' ? '/login' : '/register'
-    navigate(nextPath, { replace: true, state: location.state })
+    navigate(nextPath, { replace: true, state: locationState })
   }
 
   const onLoginSubmit = async (event: FormEvent) => {
@@ -96,20 +106,28 @@ export const LoginModal = () => {
     }
   }
 
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 p-4">
-      <button type="button" onClick={closeModal} aria-label="Yopish" className="absolute inset-0" />
-      <div className="relative z-10 w-full max-w-[470px] overflow-visible rounded-[22px] bg-white shadow-2xl">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-modal-title"
+      onClick={closeModal}
+    >
+      <div
+        className="relative w-full max-w-[470px] overflow-visible rounded-[22px] bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           type="button"
           onClick={closeModal}
-          className="ui-close-btn absolute -right-5 -top-2"
+          className="ui-close-btn absolute -right-5 -top-2 z-20"
           aria-label="Modalni yopish"
         >
           <X size={19} strokeWidth={2.6} />
         </button>
         <div className="px-8 pb-3 pt-8">
-          <h2 className="text-[42px] font-semibold leading-none text-slate-900">
+          <h2 id="login-modal-title" className="text-[42px] font-semibold leading-none text-slate-900">
             {isRegisterTab ? "Ro'yxatdan o'tish" : 'Kirish'}
           </h2>
         </div>
@@ -137,7 +155,7 @@ export const LoginModal = () => {
             ) : null}
             {identityMode === 'email' && isIdentityValid ? (
               emailRegisterDone ? (
-                <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm text-emerald-900">
+                <div className="space-y-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
                   <p className="font-medium">Tasdiq havolasi elektron pochtangizga yuborildi.</p>
                   <button type="button" className="text-daladan-primary underline" onClick={() => switchTab('login')}>
                     Kirish sahifasi
@@ -156,9 +174,9 @@ export const LoginModal = () => {
             ) : null}
           </div>
         ) : (
-          <form onSubmit={onLoginSubmit} autoComplete="off" className="space-y-3 px-8 pb-8">
+          <form key={location.pathname} onSubmit={onLoginSubmit} autoComplete="off" className="space-y-3 px-8 pb-8">
             <input
-              name="identity"
+              name="auth-identifier"
               value={identity}
               onChange={(event) => onIdentityChange(event.target.value)}
               inputMode={identityMode === 'phone' ? 'tel' : 'email'}
@@ -169,11 +187,11 @@ export const LoginModal = () => {
 
             <div className="relative mx-auto w-[470px] max-w-full">
               <input
-                name="login-password"
+                name="auth-password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
+                autoComplete="new-password"
                 className={`${inputClassName} pr-10`}
                 placeholder="Parol"
               />
@@ -193,11 +211,11 @@ export const LoginModal = () => {
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(event) => setRememberMe(event.target.checked)}
-                  className="h-4 w-4 accent-daladan-primary"
+                  className="size-4 accent-daladan-primary"
                 />
                 Eslab qolish
               </label>
-              <Link to="/forgot-password" state={location.state} className="text-sm text-daladan-primary hover:underline">
+              <Link to="/forgot-password" state={locationState} className="text-sm text-daladan-primary hover:underline">
                 Parolni unutdingizmi?
               </Link>
             </div>
@@ -241,6 +259,7 @@ export const LoginModal = () => {
           </div>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

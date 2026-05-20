@@ -39,6 +39,8 @@ export function useCreateAdPage() {
     setValue,
     getValues,
     clearErrors,
+    reset,
+    trigger,
     formState: { errors, isValid, isSubmitting },
   } = useForm<CreateAdFormValues>({
     mode: 'onChange',
@@ -52,6 +54,7 @@ export function useCreateAdPage() {
       price: '',
       unit: '',
       deliveryAvailable: false,
+      contactName: '',
     },
   })
 
@@ -82,7 +85,7 @@ export function useCreateAdPage() {
     return PROFILE_AD_UNIT_OPTIONS.filter((unit) => unit.toLowerCase().includes(query))
   }, [unitValue])
 
-  const unitRegister = register('unit', { required: 'Birlik tanlang' })
+  const unitRegister = register('unit')
 
   const selectUnitSuggestion = (unit: string) => {
     setValue('unit', unit, { shouldValidate: true, shouldDirty: true, shouldTouch: true })
@@ -351,17 +354,15 @@ export function useCreateAdPage() {
     }
 
     const categoryId = Number(values.categoryId)
-    const subcategoryId = Number(values.subcategoryId)
+    const subcategoryId = Number(values.subcategoryId) || categoryId
     const regionId = Number(values.regionId)
     const cityId = Number(values.cityId)
 
-    const parsedPrice = parsePriceInput(values.price)
-    if (!values.price.trim() || parsedPrice === undefined || parsedPrice <= 0) {
-      setError("Narx kiriting (to'g'ri raqam)")
-      return
-    }
+    const parsedPrice = parsePriceInput(values.price) ?? 1
 
     const selectedCity = cities.find((city) => String(city.id) === values.cityId)
+    const description = values.description.trim() || values.title.trim()
+    const unit = values.unit.trim() || 'dona'
 
     try {
       await marketplaceService.createProfileAd({
@@ -371,12 +372,13 @@ export function useCreateAdPage() {
         city_id: cityId || undefined,
         district: selectedCity?.name || undefined,
         title: values.title.trim(),
-        description: values.description.trim(),
+        description,
         price: parsedPrice,
         quantity: 1,
-        unit: values.unit.trim(),
-        delivery_available: values.deliveryAvailable,
+        unit,
+        delivery_available: values.deliveryAvailable ?? false,
         delivery_info: values.deliveryAvailable ? 'Mavjud' : "Mavjud emas",
+        contact_name: values.contactName.trim(),
         media: [],
         files,
       })
@@ -399,6 +401,8 @@ export function useCreateAdPage() {
     register,
     setValue,
     handleSubmit,
+    titleValue: watch('title'),
+    contactNameValue: watch('contactName'),
     errors,
     isValid,
     isSubmitting,
@@ -432,8 +436,14 @@ export function useCreateAdPage() {
     setUnitHighlightedIndex,
     unitFieldWrapperRef,
     unitInputRef,
+    trigger,
     selectUnitSuggestion,
     handleGenerateDescription,
     onSubmit,
+    reset,
+    handleClearAll: () => {
+      reset()
+      setPhotoSlots(createEmptyPhotoSlots())
+    },
   }
 }

@@ -113,6 +113,30 @@ a:focus-visible {
   outline-offset: 0;
 }
 
+/* Create ad page: no green focus outline on any interactive element. */
+.create-ad-page input:focus-visible,
+.create-ad-page select:focus-visible,
+.create-ad-page textarea:focus-visible,
+.create-ad-page button:focus-visible {
+  outline: none;
+  outline-offset: 0;
+}
+
+/* Global autofill override: prevent browser from changing input background color. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+textarea:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #334155 !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 /* Search page: compact inputs — no global green focus ring / min-height */
 .search-page-narx-input {
   min-height: 0;

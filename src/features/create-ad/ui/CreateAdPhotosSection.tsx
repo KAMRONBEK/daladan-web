@@ -9,17 +9,17 @@ type Props = {
 
 export function CreateAdPhotosSection({ photoSlots, setPhotoSlots, fileCount }: Props) {
   return (
-    <section className="space-y-3">
-      <div className="space-y-1">
-        <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Foto</p>
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          Birinchi foto muqova bo&apos;ladi. Bosing, faylni tashlang yoki tartibni surib o&apos;zgartiring.
-        </p>
-      </div>
+    <div className="mb-4">
+      <p className="mb-1 text-base font-medium text-slate-700">Rasm qo'shish</p>
+      <p className="mb-3 text-sm text-slate-400">
+        <span className="font-medium text-[#4caf50]">Birinchi rasm asosiy rasm hisoblanadi.</span>{' '}
+        Rasmlar tartibini o'zgartirish mumkin: rasmni ushlab sudrab olib boring
+      </p>
       <PhotoUploadGrid slots={photoSlots} onChange={setPhotoSlots} />
+      <p className="mt-2 mb-4 text-sm text-slate-400">Qo'llab-quvvatlanadigan formatlar: *.jpg va *.png</p>
       {fileCount > 0 ? (
-        <p className="text-xs text-slate-500 dark:text-slate-400">Yuklanadigan media: {fileCount} ta fayl</p>
+        <p className="mt-1 text-sm text-slate-400">{fileCount} ta fayl tanlandi</p>
       ) : null}
-    </section>
+    </div>
   )
 }

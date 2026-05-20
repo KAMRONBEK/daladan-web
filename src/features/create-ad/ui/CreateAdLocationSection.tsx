@@ -1,10 +1,12 @@
-import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router-dom'
+import { ChevronRight } from 'lucide-react'
 import type { UseFormRegister, FieldErrors, UseFormSetValue } from 'react-hook-form'
+import { marketplaceService } from '../../../services'
 import type { CategoryOption, SubcategoryOption } from '../../../types/marketplace'
 import { ERROR_TEXT_CLASS } from '../model/createAdFieldStyles'
 import type { CreateAdFormValues } from '../model/createAdForm.types'
-import { CategoryPickerModal } from './CategoryPickerModal'
+import { CategoryTwoPanelModal } from './CategoryTwoPanelModal'
 
 type Props = {
   register: UseFormRegister<CreateAdFormValues>
@@ -16,6 +18,7 @@ type Props = {
   selectedSubcategoryId: string
   isLoadingCategories: boolean
   isLoadingSubcategories: boolean
+  isTitleEmpty?: boolean
 }
 
 export function CreateAdLocationSection({
@@ -29,100 +32,138 @@ export function CreateAdLocationSection({
   isLoadingCategories,
   isLoadingSubcategories,
 }: Props) {
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
-  const [isSubcategoryModalOpen, setIsSubcategoryModalOpen] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [hoveredCategoryId, setHoveredCategoryId] = useState('')
+  const [previewSubcategories, setPreviewSubcategories] = useState<SubcategoryOption[]>([])
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false)
+  const categoryClickedInModalRef = useRef(false)
+  const { pathname } = useLocation()
+
+  const activeCategoryId = hoveredCategoryId || selectedCategoryId
+  const usePreviewList = Boolean(hoveredCategoryId) && hoveredCategoryId !== selectedCategoryId
+  const modalSubcategories = usePreviewList ? previewSubcategories : subcategories
+  const modalLoadingSubcategories = usePreviewList ? isLoadingPreview : isLoadingSubcategories
+
+  useEffect(() => {
+    setIsModalOpen(false)
+  }, [pathname])
+
+  useEffect(() => {
+    if (!isModalOpen) {
+      categoryClickedInModalRef.current = false
+      setHoveredCategoryId('')
+      setPreviewSubcategories([])
+    }
+  }, [isModalOpen])
+
+  useEffect(() => {
+    if (!hoveredCategoryId || hoveredCategoryId === selectedCategoryId) {
+      setPreviewSubcategories([])
+      return
+    }
+
+    let cancelled = false
+
+    const loadPreview = async () => {
+      setIsLoadingPreview(true)
+      try {
+        const items = await marketplaceService.getSubcategories(Number(hoveredCategoryId))
+        if (!cancelled) setPreviewSubcategories(items)
+      } catch {
+        if (!cancelled) setPreviewSubcategories([])
+      } finally {
+        if (!cancelled) setIsLoadingPreview(false)
+      }
+    }
+
+    void loadPreview()
+    return () => {
+      cancelled = true
+    }
+  }, [hoveredCategoryId, selectedCategoryId])
+
+  useEffect(() => {
+    if (!isModalOpen || !categoryClickedInModalRef.current || !selectedCategoryId || isLoadingSubcategories) {
+      return
+    }
+    if (subcategories.length > 0) return
+
+    setValue('subcategoryId', selectedCategoryId, { shouldValidate: true, shouldDirty: true })
+    setIsModalOpen(false)
+    categoryClickedInModalRef.current = false
+  }, [isLoadingSubcategories, isModalOpen, selectedCategoryId, setValue, subcategories.length])
 
   const selectedCategory = categories.find((c) => String(c.id) === selectedCategoryId)
   const selectedSubcategory = subcategories.find((s) => String(s.id) === selectedSubcategoryId)
 
+  const categoryFloating = Boolean(selectedCategory) || isModalOpen
+  const displayLabel = selectedSubcategory
+    ? `${selectedCategory?.name ?? ''} & ${selectedSubcategory.name}`
+    : selectedCategory?.name ?? ''
+
   return (
-    <section className="space-y-3">
-      <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">Joylashuv va toifa</p>
-      <div className="grid gap-3 md:grid-cols-2">
+    <div className="space-y-3">
+      <input type="hidden" {...register('categoryId', { required: 'Kategoriya majburiy' })} />
+      <input
+        type="hidden"
+        {...register('subcategoryId', {
+          validate: (value) =>
+            subcategories.length === 0 || Boolean(value) || 'Kichik kategoriya majburiy',
+        })}
+      />
 
-        {/* Category picker button */}
-        <div className="relative">
-          <input
-            type="hidden"
-            {...register('categoryId', { required: 'Kategoriya tanlang' })}
-          />
-          <button
-            type="button"
-            disabled={isLoadingCategories}
-            onClick={() => setIsCategoryModalOpen(true)}
-            aria-invalid={Boolean(errors.categoryId)}
-            className={`flex w-full appearance-none items-center justify-between rounded-ui border px-3 py-2 pr-10 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-daladan-primary/40 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-slate-800 dark:text-slate-100 ${
-              errors.categoryId
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-slate-200 dark:border-slate-600'
-            }`}
-          >
-            <span className={selectedCategory ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}>
-              {isLoadingCategories
-                ? 'Yuklanmoqda...'
-                : selectedCategory?.name ?? "Bo'limni tanlang"}
-            </span>
-            <ChevronDown size={16} className="shrink-0 text-slate-400 dark:text-slate-500" />
-          </button>
-        </div>
-
-        {/* Subcategory picker button */}
-        <div className="relative">
-          <input
-            type="hidden"
-            {...register('subcategoryId', { required: 'Subkategoriya tanlang' })}
-          />
-          <button
-            type="button"
-            disabled={!selectedCategoryId || isLoadingSubcategories}
-            onClick={() => setIsSubcategoryModalOpen(true)}
-            aria-invalid={Boolean(errors.subcategoryId)}
-            className={`flex w-full appearance-none items-center justify-between rounded-ui border px-3 py-2 pr-10 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-daladan-primary/40 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-slate-800 dark:text-slate-100 ${
-              errors.subcategoryId
-                ? 'border-red-500 dark:border-red-400'
-                : 'border-slate-200 dark:border-slate-600'
-            }`}
-          >
-            <span className={selectedSubcategory ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-500'}>
-              {isLoadingSubcategories
-                ? 'Yuklanmoqda...'
-                : selectedSubcategory?.name ?? "Mahsulot turini tanlang"}
-            </span>
-            <ChevronDown size={16} className="shrink-0 text-slate-400 dark:text-slate-500" />
-          </button>
-        </div>
-
+      <div className="relative w-[400px] max-w-full">
+        <label
+          className={`pointer-events-none absolute left-3 z-10 transition-all duration-300 ${
+            categoryFloating
+              ? '-top-2 bg-white px-1 text-base text-slate-400'
+              : 'top-1/2 -translate-y-1/2 text-base text-slate-400'
+          }`}
+        >
+          Kategoriya*
+        </label>
+        <button
+          type="button"
+          disabled={isLoadingCategories}
+          onClick={() => setIsModalOpen(true)}
+          className={`flex h-[55px] w-full items-center justify-between rounded-lg border px-3 text-base outline-none transition-colors disabled:opacity-60 ${
+            errors.categoryId ? 'border-red-400 bg-white' : 'border-[#d1d5db] bg-white'
+          }`}
+        >
+          <span className={selectedCategory ? 'truncate text-slate-700' : 'text-transparent'}>
+            {isLoadingCategories ? '' : displayLabel}
+          </span>
+          <ChevronRight size={16} className="shrink-0 text-slate-400" />
+        </button>
       </div>
 
       {errors.categoryId || errors.subcategoryId ? (
         <p className={ERROR_TEXT_CLASS}>
-          {errors.categoryId?.message ||
-            errors.subcategoryId?.message}
+          {errors.categoryId ? 'Kategoriya majburiy' : 'Kichik kategoriya majburiy'}
         </p>
       ) : null}
 
-      <CategoryPickerModal
-        open={isCategoryModalOpen}
+      <CategoryTwoPanelModal
+        open={isModalOpen}
         categories={categories}
-        selectedId={selectedCategoryId}
-        title="Bo'limni tanlang"
-        onSelect={(category) => {
-          setValue('categoryId', String(category.id), { shouldValidate: true, shouldDirty: true })
+        subcategories={modalSubcategories}
+        selectedCategoryId={selectedCategoryId}
+        activeCategoryId={activeCategoryId}
+        selectedSubcategoryId={selectedSubcategoryId}
+        isLoadingSubcategories={modalLoadingSubcategories}
+        onCategoryHover={setHoveredCategoryId}
+        onCategoryClick={(catId) => {
+          categoryClickedInModalRef.current = true
+          setHoveredCategoryId(catId)
+          setValue('categoryId', catId, { shouldValidate: true, shouldDirty: true })
           setValue('subcategoryId', '', { shouldValidate: false })
         }}
-        onClose={() => setIsCategoryModalOpen(false)}
-      />
-      <CategoryPickerModal
-        open={isSubcategoryModalOpen}
-        categories={subcategories}
-        selectedId={selectedSubcategoryId}
-        title="Mahsulot turini tanlang"
-        emptyStateText="Mahsulot turi topilmadi"
-        onSelect={(subcategory) => {
-          setValue('subcategoryId', String(subcategory.id), { shouldValidate: true, shouldDirty: true })
+        onSubcategoryClick={(subId) => {
+          setValue('subcategoryId', subId, { shouldValidate: true, shouldDirty: true })
+          setIsModalOpen(false)
         }}
-        onClose={() => setIsSubcategoryModalOpen(false)}
+        onClose={() => setIsModalOpen(false)}
       />
-    </section>
+    </div>
   )
 }

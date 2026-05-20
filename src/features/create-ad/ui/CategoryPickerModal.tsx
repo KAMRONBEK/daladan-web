@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
-import { Search, X } from 'lucide-react'
+import { useEffect } from 'react'
+import { X } from 'lucide-react'
 import type { CategoryOption, SubcategoryOption } from '../../../types/marketplace'
 
 const CATEGORY_COLORS: string[] = [
@@ -70,16 +70,6 @@ export function CategoryPickerModal({
   title = 'Kategoriya tanlang',
   emptyStateText = 'Topilmadi',
 }: CategoryPickerModalProps) {
-  const [search, setSearch] = useState('')
-  const searchRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    setSearch('')
-    const id = window.setTimeout(() => searchRef.current?.focus(), 50)
-    return () => window.clearTimeout(id)
-  }, [open])
-
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => {
@@ -90,10 +80,6 @@ export function CategoryPickerModal({
   }, [open, onClose])
 
   if (!open) return null
-
-  const filtered = search.trim()
-    ? categories.filter((c) => c.name.toLowerCase().includes(search.toLowerCase()))
-    : categories
 
   return (
     <div
@@ -116,26 +102,12 @@ export function CategoryPickerModal({
           </button>
         </div>
 
-        <div className="px-5 pt-4">
-          <div className="relative">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input
-              ref={searchRef}
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Qidirish..."
-              className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm outline-none focus:border-daladan-primary dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-            />
-          </div>
-        </div>
-
         <div className="max-h-[60vh] overflow-y-auto px-5 py-4">
-          {filtered.length === 0 ? (
+          {categories.length === 0 ? (
             <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">{emptyStateText}</p>
           ) : (
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {filtered.map((category, index) => {
+              {categories.map((category, index) => {
                 const colorClass = getCategoryColor(index)
                 const emoji = getCategoryEmoji(category.name)
                 const isSelected = String(category.id) === selectedId

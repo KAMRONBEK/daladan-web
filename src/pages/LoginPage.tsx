@@ -11,7 +11,7 @@ type LoginPageProps = {
 
 export const LoginPage = ({ variant = 'site' }: LoginPageProps) => {
   const { theme, toggleTheme } = useTheme()
-  const [phone, setPhone] = useState(formatUzPhoneInput(''))
+  const [phone, setPhone] = useState(() => formatUzPhoneInput(''))
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)

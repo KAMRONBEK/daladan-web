@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, use, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 type ThemeMode = 'light' | 'dark'
 
@@ -71,7 +71,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 }
 
 export const useTheme = () => {
-  const ctx = useContext(ThemeContext)
+  const ctx = use(ThemeContext)
   if (!ctx) {
     throw new Error('useTheme must be used inside ThemeProvider')
   }
