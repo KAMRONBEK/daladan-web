@@ -1,5 +1,4 @@
-# E2E on every push/PR. Production deploy (Vercel CLI) only after E2E passes on main/master.
-# Git-triggered production builds for main/master are disabled in vercel.json (git.deploymentEnabled).
+# E2E on every push/PR. Temporarily skipped; Vercel Git integration deploys pushes.
 name: E2E
 
 on:
@@ -18,33 +17,3 @@ jobs:
     steps:
       - name: Skip E2E temporarily
         run: echo "E2E is temporarily skipped."
-
-  deploy-production:
-    name: Deploy production (Vercel)
-    needs: playwright
-    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: yarn
-          cache-dependency-path: yarn.lock
-
-      - name: Install dependencies
-        run: yarn install --frozen-lockfile
-
-      - name: Deploy to Vercel production
-        run: |
-          if [ -z "${VERCEL_TOKEN:-}" ]; then
-            echo "::error::VERCEL_TOKEN is empty. Add repository secret VERCEL_TOKEN (Vercel → Account Settings → Tokens)."
-            exit 1
-          fi
-          yarn vercel deploy --prod --yes --token "$VERCEL_TOKEN"
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_ORG_ID: team_V5GP2xSnW8OcTpxLuwrBXTDV
-          VERCEL_PROJECT_ID: prj_FFcj2UvIKGnSPDyD6tHNcUgwiy5z
