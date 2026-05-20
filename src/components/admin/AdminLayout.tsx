@@ -12,8 +12,10 @@ import {
   X,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { BRAND_NAME } from '../../constants/brand'
 import { useAuth } from '../../state/AuthContext'
 import { useTheme } from '../../state/ThemeContext'
+import { BrandLogoMark } from '../layout/BrandLogoMark'
 
 const navClass = ({ isActive }: { isActive: boolean }) =>
   [
@@ -34,7 +36,7 @@ export const AdminLayout = ({ children }: { children?: ReactNode }) => {
   const adsNavActive = isAdminAdsSectionPath(pathname)
 
   useEffect(() => {
-    document.title = 'Daladan Admin'
+    document.title = `${BRAND_NAME} Admin`
   }, [])
 
   const closeMobile = () => setMobileOpen(false)
@@ -43,7 +45,7 @@ export const AdminLayout = ({ children }: { children?: ReactNode }) => {
     <>
       <div className="border-b border-slate-200 px-4 py-5 dark:border-slate-700">
         <NavLink to="/" className="flex items-center gap-2" onClick={closeMobile}>
-          <img src="/daladan-logo-full-transparent.png" alt="Daladan" className="h-9 object-contain" />
+          <BrandLogoMark className="h-9 w-9 text-slate-900 dark:text-white" />
         </NavLink>
         <p className="mt-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
           Admin panel

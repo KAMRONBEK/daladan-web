@@ -12,9 +12,11 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { BRAND_NAME } from '../../constants/brand'
 import { useAuth } from '../../state/AuthContext'
 import { useTheme } from '../../state/ThemeContext'
 import { LOGIN_PATH, loginReturnState } from '../../utils/appPaths'
+import { BrandLogoMark } from './BrandLogoMark'
 
 const isListingSearchRoute = (pathname: string) => pathname === '/' || pathname === '/search'
 
@@ -115,17 +117,9 @@ export const SiteHeader = () => {
     <header className="sticky top-0 z-50 bg-slate-800 shadow-xl dark:bg-slate-950">
       <div className="mx-auto flex w-full max-w-7xl items-center gap-4 px-4 py-1 md:px-6 lg:px-6">
 
-        <Link to="/" className="-my-3 mr-2 shrink-0 md:mr-3 lg:mr-4">
-          <img
-            src="/daladan-icon.png"
-            alt="Daladan"
-            className="h-16 w-16 rounded-lg object-contain sm:hidden"
-          />
-          <img
-            src="/daladan-logo-full-transparent.png"
-            alt="Daladan"
-            className="hidden h-20 object-contain sm:block"
-          />
+        <Link to="/" className="-my-1 mr-2 flex shrink-0 items-center gap-1.5 py-1 md:mr-3 lg:mr-4">
+          <BrandLogoMark className="h-14 w-14 text-white sm:h-16 sm:w-16" maskSize="170%" />
+          <span className="text-lg font-medium tracking-wide text-white sm:text-xl">{BRAND_NAME}</span>
         </Link>
 
         <div className="hidden min-w-0 flex-1 justify-center md:flex">
@@ -141,7 +135,7 @@ export const SiteHeader = () => {
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}
                 className="min-w-0 flex-1 border-0 bg-transparent py-3 text-[15px] text-slate-800 placeholder:font-medium placeholder:tracking-[0.01em] placeholder:text-slate-400 placeholder:transition-all focus:placeholder:text-slate-300 focus:outline-none"
-                placeholder="Daladan izlang..."
+                placeholder={`${BRAND_NAME} izlang...`}
                 autoComplete="off"
               />
             </div>

@@ -1,4 +1,5 @@
 import { boostPlans } from '../data/boostPlans'
+import { BRAND_LOGO_SRC } from '../constants/brand'
 import type {
   AdStats,
   BoostPlan,
@@ -281,7 +282,7 @@ export const mapListing = (item: UnknownRecord): Listing => {
     description: getString(item, 'description', 'desc') || "Tavsif ko'rsatilmagan",
     quantity: quantity || undefined,
     deliveryInfo: deliveryInfo || undefined,
-    image: imageUrl || '/daladan-logo-full-transparent.png',
+    image: imageUrl || BRAND_LOGO_SRC,
     images: mergedImages.length > 0 ? mergedImages : undefined,
     status: getString(item, 'status') || undefined,
     createdAt: getString(item, 'created_at', 'createdAt') || undefined,

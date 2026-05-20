@@ -1,6 +1,6 @@
-# Daladan Web
+# Eldan Web
 
-Daladan frontend built with React, TypeScript, and Vite.
+Eldan frontend built with React, TypeScript, and Vite.
 
 ## Setup
 
@@ -15,7 +15,7 @@ npm install
 ```bash
 VITE_API_BASE_URL=https://api.daladan.uz/api/v1
 # Optional — enable admin UI when opened on these hostnames (comma-separated):
-# VITE_ADMIN_APP_HOSTS=admin.daladan.uz,localhost
+# VITE_ADMIN_APP_HOSTS=admin.eldan.uz,admin.daladan.uz,localhost
 ```
 
 For AI description generation on Vercel, add a server-side API key in the Vercel project settings (Preview + Production). Prefer `DEEPSEEK_API_SECRET`; `API_SECRET` still works as a fallback:
@@ -128,26 +128,26 @@ Not used by design:
 
 - `GET /get-me` (frontend relies on `GET /profile` for current-user data)
 
-### Admin panel (`admin.daladan.uz`)
+### Admin panel (`admin.eldan.uz` and `admin.daladan.uz`)
 
-The same SPA switches to the admin UI when the browser hostname matches the built-in production admin host `admin.daladan.uz`, or any extra hostname listed in `VITE_ADMIN_APP_HOSTS` (comma-separated, for example `localhost,admin.local`). Admin screens call the same API base URL with Bearer auth on `/admin/categories`, `/admin/subcategories`, and `/admin/users`.
+The same SPA switches to the admin UI when the browser hostname matches a built-in production admin host (`admin.eldan.uz` or legacy `admin.daladan.uz`), or any extra hostname listed in `VITE_ADMIN_APP_HOSTS` (comma-separated, for example `localhost,admin.local`). Admin screens call the same API base URL with Bearer auth on `/admin/categories`, `/admin/subcategories`, and `/admin/users`.
 
 **Session:** The auth token is stored in `localStorage`, which is **not** shared between the main site and the admin subdomain. Admins must **log in on the admin host** so the token is stored for that origin.
 
 **Local development:** With `yarn dev`, open the marketplace at `http://localhost:5173` and the admin app at `http://localhost:5174`. For admin alone, run `yarn admin:dev` (or `yarn admin:dev:vite`) and open `http://localhost:5174`. The committed [`.env.admin`](.env.admin) sets `VITE_ADMIN_APP_HOSTS=localhost` only when Vite runs with `--mode admin`. Override locally with `.env.admin.local` if needed (gitignored).
 
-**CORS:** The API must allow the origin `https://admin.daladan.uz`.
+**CORS:** The API must allow the origins `https://admin.eldan.uz` and `https://admin.daladan.uz`.
 
-#### Vercel: one project, two domains (recommended)
+#### Vercel: one project, multiple domains (recommended)
 
 Use a **single** Vercel project and **one** production build (`yarn build`). The same static files are served for both the marketplace and the admin UI; the app chooses which shell to show from `window.location.hostname`.
 
-1. **Vercel** → your project → **Settings** → **Domains** → **Add** → enter `admin.daladan.uz`.
+1. **Vercel** → your project → **Settings** → **Domains** → **Add** → enter `eldan.uz`, `www.eldan.uz`, `admin.eldan.uz`, and keep the legacy `daladan.uz` / `admin.daladan.uz` domains attached.
 2. At your DNS provider, add the record Vercel shows (usually **CNAME** `admin` → `cname.vercel-dns.com` or an **A** record as instructed). Wait for DNS to verify.
 3. **Build command:** `yarn build` (default). Output directory: `dist` (Vite default).
-4. Environment variables are baked at build time. The repo includes [`.env.production`](.env.production) with `VITE_ADMIN_APP_HOSTS=admin.daladan.uz`. You can override values in **Vercel** → **Settings** → **Environment Variables** (Production / Preview) if needed. The code also has `admin.daladan.uz` as a built-in production host so the admin shell still renders if that env is missing from a deploy.
+4. Environment variables are baked at build time. The repo includes [`.env.production`](.env.production) with `VITE_ADMIN_APP_HOSTS=admin.eldan.uz,admin.daladan.uz`. You can override values in **Vercel** → **Settings** → **Environment Variables** (Production / Preview) if needed. The code also has both production admin hosts built in so the admin shell still renders if that env is missing from a deploy.
 
-**If `admin.daladan.uz` shows the marketplace (not a redirect):** Vite embeds `VITE_ADMIN_APP_HOSTS` at **build** time. If the Vercel build ran without that value (e.g. an empty override in the dashboard, or a deploy from a branch without [`.env.production`](.env.production)), the bundle can miss extra admin hosts like `localhost`. The canonical production host `admin.daladan.uz` is now detected in code, but you should still set **Production** env `VITE_ADMIN_APP_HOSTS=admin.daladan.uz` and **redeploy** so your bundle configuration matches the deployment setup.
+**If `admin.eldan.uz` or `admin.daladan.uz` shows the marketplace (not a redirect):** Vite embeds `VITE_ADMIN_APP_HOSTS` at **build** time. If the Vercel build ran without that value (e.g. an empty override in the dashboard, or a deploy from a branch without [`.env.production`](.env.production)), the bundle can miss extra admin hosts like `localhost`. The canonical production hosts are detected in code, but you should still set **Production** env `VITE_ADMIN_APP_HOSTS=admin.eldan.uz,admin.daladan.uz` and **redeploy** so your bundle configuration matches the deployment setup.
 
 You do **not** need a separate Vercel project for admin unless you want split pipelines (see below).
 
@@ -155,8 +155,8 @@ You do **not** need a separate Vercel project for admin unless you want split pi
 
 | Command | When to use |
 |--------|----------------|
-| `yarn build` | **Default.** Loads [`.env.production`](.env.production): API URL + `admin.daladan.uz` in `VITE_ADMIN_APP_HOSTS`. Use for the usual single deployment (main + admin subdomain). |
-| `yarn build:admin` | Loads [`.env.admin-production`](.env.admin-production). Same typical values as production; use if you prefer a dedicated CI job name or a **second** Vercel project that only serves `admin.daladan.uz`. |
+| `yarn build` | **Default.** Loads [`.env.production`](.env.production): API URL + `admin.eldan.uz,admin.daladan.uz` in `VITE_ADMIN_APP_HOSTS`. Use for the usual single deployment (main + admin subdomain). |
+| `yarn build:admin` | Loads [`.env.admin-production`](.env.admin-production). Same typical values as production; use if you prefer a dedicated CI job name or a **second** Vercel project that only serves admin domains. |
 | `yarn build:site` | Loads [`.env.site`](.env.site): marketplace only (no `VITE_ADMIN_APP_HOSTS`). Use only if you deploy the main site **without** admin in the bundle and host admin on **another** project that runs `yarn build:admin`. |
 
 For most setups, **`yarn build` once** and two domains on the same project is enough.

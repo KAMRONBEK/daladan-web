@@ -22,6 +22,7 @@ import {
 } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { ImageLightbox } from '../components/ui/ImageLightbox'
+import { BRAND_LOGO_SRC } from '../constants/brand'
 import { ItemDetailsPageSkeleton, RelatedListingCardsSkeleton } from '../features/marketplace'
 import { formatListingCreatedAt, shuffleInPlace } from '../features/marketplace/model/listingHelpers'
 import { searchUrlForCategoryLabel } from '../features/marketplace/model/searchUrls'
@@ -381,7 +382,7 @@ export const ItemDetailsPage = () => {
     const target = event.currentTarget
     if (target.dataset.fallbackApplied === '1') return
     target.dataset.fallbackApplied = '1'
-    target.src = '/daladan-logo-full-transparent.png'
+    target.src = BRAND_LOGO_SRC
   }
 
   useEffect(() => {
