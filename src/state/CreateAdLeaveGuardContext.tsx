@@ -1,7 +1,7 @@
 import {
   createContext,
+  use,
   useCallback,
-  useContext,
   useEffect,
   useRef,
   useState,
@@ -31,26 +31,24 @@ type CreateAdLeaveGuardContextValue = {
 const CreateAdLeaveGuardContext = createContext<CreateAdLeaveGuardContextValue | null>(null)
 
 export function CreateAdLeaveGuardProvider({ children }: { children: ReactNode }) {
-  const location = useLocation()
+  const { pathname } = useLocation()
   const navigate = useNavigate()
+  const isOnCreateAdPage = pathname === CREATE_AD_PATH
   const hasUnsavedRef = useRef(false)
-  const [hasUnsaved, setHasUnsaved] = useState(false)
+  const [unsavedVersion, setUnsavedVersion] = useState(0)
   const [dialogOpen, setDialogOpen] = useState(false)
   const pendingRef = useRef<PendingNav | null>(null)
   const allowLeaveRef = useRef(false)
 
   const registerUnsaved = useCallback((nextHasUnsaved: boolean) => {
+    if (hasUnsavedRef.current === nextHasUnsaved) return
     hasUnsavedRef.current = nextHasUnsaved
-    setHasUnsaved(nextHasUnsaved)
+    setUnsavedVersion((version) => version + 1)
   }, [])
 
   const shouldGuard = useCallback(() => {
-    return (
-      !allowLeaveRef.current &&
-      hasUnsavedRef.current &&
-      location.pathname === CREATE_AD_PATH
-    )
-  }, [location.pathname])
+    return !allowLeaveRef.current && hasUnsavedRef.current && isOnCreateAdPage
+  }, [isOnCreateAdPage])
 
   const tryNavigate = useCallback(
     (to: To | number, options?: NavigateOptions) => {
@@ -98,7 +96,7 @@ export function CreateAdLeaveGuardProvider({ children }: { children: ReactNode }
   }, [])
 
   useEffect(() => {
-    if (!hasUnsaved || location.pathname !== CREATE_AD_PATH) return
+    if (!hasUnsavedRef.current || !isOnCreateAdPage) return
 
     const onBeforeUnload = (event: BeforeUnloadEvent) => {
       if (allowLeaveRef.current) return
@@ -107,10 +105,10 @@ export function CreateAdLeaveGuardProvider({ children }: { children: ReactNode }
 
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [hasUnsaved, location.pathname])
+  }, [unsavedVersion, isOnCreateAdPage])
 
   useEffect(() => {
-    if (!hasUnsaved || location.pathname !== CREATE_AD_PATH) return
+    if (!hasUnsavedRef.current || !isOnCreateAdPage) return
 
     window.history.pushState(null, '', window.location.href)
 
@@ -123,15 +121,14 @@ export function CreateAdLeaveGuardProvider({ children }: { children: ReactNode }
 
     window.addEventListener('popstate', onPopState)
     return () => window.removeEventListener('popstate', onPopState)
-  }, [hasUnsaved, location.pathname, shouldGuard])
+  }, [unsavedVersion, isOnCreateAdPage, shouldGuard])
 
   useEffect(() => {
-    if (location.pathname !== CREATE_AD_PATH) {
-      allowLeaveRef.current = false
-      setDialogOpen(false)
-      pendingRef.current = null
-    }
-  }, [location.pathname])
+    if (isOnCreateAdPage) return
+    allowLeaveRef.current = false
+    setDialogOpen(false)
+    pendingRef.current = null
+  }, [isOnCreateAdPage])
 
   const value: CreateAdLeaveGuardContextValue = {
     registerUnsaved,
@@ -148,7 +145,7 @@ export function CreateAdLeaveGuardProvider({ children }: { children: ReactNode }
 }
 
 export function useCreateAdLeaveGuardContext() {
-  const context = useContext(CreateAdLeaveGuardContext)
+  const context = use(CreateAdLeaveGuardContext)
   if (!context) {
     throw new Error('useCreateAdLeaveGuardContext must be used within CreateAdLeaveGuardProvider')
   }
@@ -157,11 +154,12 @@ export function useCreateAdLeaveGuardContext() {
 
 /** Intercept in-app links from create-ad when the form has unsaved changes. */
 export function useGuardedNavLinkClick() {
-  const location = useLocation()
+  const { pathname } = useLocation()
   const { tryNavigate } = useCreateAdLeaveGuardContext()
+  const isOnCreateAdPage = pathname === CREATE_AD_PATH
 
   return (to: To) => (event: MouseEvent<HTMLAnchorElement>) => {
-    if (location.pathname !== CREATE_AD_PATH) return
+    if (!isOnCreateAdPage) return
     event.preventDefault()
     tryNavigate(to)
   }

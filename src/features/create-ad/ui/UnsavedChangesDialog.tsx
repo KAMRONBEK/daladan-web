@@ -15,10 +15,7 @@ export function UnsavedChangesDialog({ open, onConfirm, onCancel }: Props) {
       aria-modal="true"
       aria-labelledby="unsaved-changes-title"
     >
-      <div
-        className="w-full max-w-[440px] rounded-xl bg-[#2f2f2f] p-6 text-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="w-full max-w-[440px] rounded-xl bg-[#2f2f2f] p-6 text-white shadow-2xl">
         <p id="unsaved-changes-title" className="text-lg font-medium">
           Daladan
         </p>
