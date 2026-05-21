@@ -1,7 +1,11 @@
 import type { AdminSubcategory, AdminSubcategoryPayload } from '../../../types/admin'
 
+export type AdminSubcategoryLevel = 'root' | 'child'
+
 export type AdminSubcategoryFormValues = {
   category_id: string
+  level: AdminSubcategoryLevel
+  parent_id: string
   name: string
   slug: string
   sort_order: string
@@ -11,6 +15,8 @@ export type AdminSubcategoryFormValues = {
 
 export const emptySubcategoryForm: AdminSubcategoryFormValues = {
   category_id: '',
+  level: 'root',
+  parent_id: '',
   name: '',
   slug: '',
   sort_order: '',
@@ -22,7 +28,10 @@ export const subcategoryToPayload = (values: AdminSubcategoryFormValues): AdminS
   const sortRaw = values.sort_order.trim()
   const sortNum = sortRaw === '' ? null : Number(sortRaw)
   const img = values.image_url.trim()
-  return {
+  const parentRaw = values.parent_id.trim()
+  const parentNum = parentRaw === '' ? null : Number(parentRaw)
+
+  const payload: AdminSubcategoryPayload = {
     category_id: Number(values.category_id),
     name: values.name.trim(),
     slug: values.slug.trim(),
@@ -30,10 +39,18 @@ export const subcategoryToPayload = (values: AdminSubcategoryFormValues): AdminS
     is_active: values.is_active,
     image_url: img === '' ? null : img,
   }
+
+  if (values.level === 'child' && parentNum !== null && !Number.isNaN(parentNum) && parentNum > 0) {
+    payload.parent_id = parentNum
+  }
+
+  return payload
 }
 
 export const subcategoryToForm = (s: AdminSubcategory): AdminSubcategoryFormValues => ({
   category_id: String(s.category_id),
+  level: s.parent_id !== null && s.parent_id > 0 ? 'child' : 'root',
+  parent_id: s.parent_id !== null && s.parent_id > 0 ? String(s.parent_id) : '',
   name: s.name,
   slug: s.slug,
   sort_order: s.sort_order === null ? '' : String(s.sort_order),

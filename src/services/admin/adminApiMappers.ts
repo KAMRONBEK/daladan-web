@@ -42,6 +42,9 @@ export const mapCategory = (item: UnknownRecord): AdminCategory => ({
   updated_at: getString(item, 'updated_at'),
 })
 
+export const isRootSubcategory = (row: AdminSubcategory): boolean =>
+  row.parent_id === null || row.parent_id <= 0
+
 export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
   const cat = asRecord(item.category)
   const category = isNonEmptyRecord(cat)
@@ -52,9 +55,23 @@ export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
     }
     : undefined
 
+  const par = asRecord(item.parent)
+  const parent = isNonEmptyRecord(par)
+    ? {
+      id: getNumber(par, 'id'),
+      name: getString(par, 'name'),
+      slug: getString(par, 'slug'),
+    }
+    : undefined
+
+  const parentIdRaw = getNullableNumber(item, 'parent_id')
+  const childrenCount = getNumber(item, 'children_count')
+  const parent_id = parentIdRaw !== null && parentIdRaw > 0 ? parentIdRaw : null
+
   return {
     id: getNumber(item, 'id'),
     category_id: getNumber(item, 'category_id'),
+    parent_id,
     name: getString(item, 'name'),
     slug: getString(item, 'slug'),
     sort_order: getNullableNumber(item, 'sort_order'),
@@ -63,7 +80,9 @@ export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
     updated_at: getString(item, 'updated_at'),
     image_url: nullableStringField(item.image_url),
     media: Array.isArray(item.media) ? item.media : [],
+    ...(childrenCount > 0 ? { children_count: childrenCount } : {}),
     category,
+    parent,
   }
 }
 
@@ -378,11 +397,16 @@ export const unwrapRecord = (raw: unknown): UnknownRecord => {
   return root
 }
 
+const queryParamValue = (value: string | number | boolean): string => {
+  if (typeof value === 'boolean') return value ? '1' : '0'
+  return String(value)
+}
+
 export const buildAdminQuery = (params: Record<string, string | number | boolean | undefined | null>) => {
   const qs = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null || value === '') continue
-    qs.set(key, String(value))
+    qs.set(key, queryParamValue(value))
   }
   const s = qs.toString()
   return s ? `?${s}` : ''

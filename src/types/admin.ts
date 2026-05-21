@@ -29,9 +29,16 @@ export interface AdminSubcategoryNestedCategory {
   slug: string
 }
 
+export interface AdminSubcategoryNestedParent {
+  id: number
+  name: string
+  slug: string
+}
+
 export interface AdminSubcategory {
   id: number
   category_id: number
+  parent_id: number | null
   name: string
   slug: string
   sort_order: number | null
@@ -40,11 +47,15 @@ export interface AdminSubcategory {
   updated_at: string
   image_url: string | null
   media: readonly unknown[]
+  children_count?: number
   category?: AdminSubcategoryNestedCategory
+  parent?: AdminSubcategoryNestedParent
 }
 
 export interface AdminSubcategoryPayload {
   category_id: number
+  /** Set for 3rd level; omit or `null` for 2nd-level root */
+  parent_id?: number | null
   name: string
   slug: string
   sort_order?: number | null
