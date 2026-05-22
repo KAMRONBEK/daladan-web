@@ -1,13 +1,11 @@
 import { ChevronRight } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { DEFAULT_CATEGORY_TILE_IMAGE, getCategoryTileImage } from '../../../constants/categoryTileImages'
 import { findLabelPath, nodesFromLabelPath } from '../model/categoryCascade'
 import type { CategoryNode } from '../model/categoryTree'
 
-const COLUMN_WIDTH = 'min-w-[220px] max-w-[260px] flex-1'
-/** Kategoriya yozuvlari — rgb(65, 86, 97) */
+const COLUMN_WIDTH = 'w-[min(100%,260px)] min-w-[220px] max-w-[260px] shrink-0'
 const CASCADE_LABEL_TEXT = 'text-[rgb(65,86,97)]'
-
 type Props = {
   categoryTree: CategoryNode[]
   selectedCategory: string
@@ -35,13 +33,15 @@ function CategoryCascadeRow({
       type="button"
       onMouseEnter={onMouseEnter}
       onClick={onClick}
-      className={`flex w-full min-h-[48px] items-center gap-2.5 rounded-xl px-3 py-2 text-left antialiased transition-colors ${
-        isActive
-          ? 'bg-sky-50/80 dark:bg-sky-950/25'
-          : 'hover:bg-slate-50/80 dark:hover:bg-zinc-900/50'
+      className={`group box-border flex min-h-[52px] w-full shrink-0 items-start gap-2.5 px-3 py-2.5 text-left antialiased transition-colors ${
+        isActive ? 'bg-sky-50' : 'hover:bg-sky-50/60'
       }`}
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-sky-100/90 dark:bg-sky-900/50">
+      <span
+        className={`flex h-9 w-9 shrink-0 self-center items-center justify-center overflow-hidden rounded-lg transition-colors ${
+          isActive ? 'bg-sky-50' : 'bg-sky-100/55 group-hover:bg-sky-50/60'
+        }`}
+      >
         <img
           src={imageSrc}
           alt=""
@@ -54,31 +54,35 @@ function CategoryCascadeRow({
           }}
         />
       </span>
-      <span className="min-w-0 flex-1">
+      <span className="min-w-0 flex-1 py-0.5">
         <span
-          className={`block truncate text-[15px] font-medium leading-snug tracking-tight ${CASCADE_LABEL_TEXT}`}
+          className={`block break-words text-[15px] font-medium leading-snug ${CASCADE_LABEL_TEXT}`}
         >
           {node.label}
         </span>
       </span>
       {hasChildren ? (
-        <ChevronRight className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-500" aria-hidden />
+        <ChevronRight
+          className="h-5 w-5 shrink-0 self-center text-slate-400"
+          strokeWidth={2.5}
+          aria-hidden
+        />
       ) : (
-        <span className="h-4 w-4 shrink-0" aria-hidden />
+        <span className="h-5 w-5 shrink-0 self-center" aria-hidden />
       )}
     </button>
   )
 }
 
 function CascadeColumn({
-  title,
+  ariaLabel,
   nodes,
   activeLabel,
   selectedCategory,
   onHoverNode,
   onSelectNode,
 }: {
-  title: string
+  ariaLabel?: string
   nodes: CategoryNode[]
   activeLabel: string | null
   selectedCategory: string
@@ -89,29 +93,28 @@ function CascadeColumn({
 
   return (
     <div
-      className={`${COLUMN_WIDTH} flex shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/40 shadow-[0_4px_20px_rgba(15,23,42,0.04)] dark:border-zinc-700/70 dark:bg-zinc-950/90 dark:shadow-black/25`}
+      aria-label={ariaLabel}
+      className={`${COLUMN_WIDTH} flex flex-col self-stretch overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-[0_4px_20px_rgba(15,23,42,0.06)]`}
     >
-      <div className="border-b border-slate-100/80 bg-white/60 px-3 py-2 dark:border-zinc-800/80 dark:bg-zinc-900/40">
-        <p className="truncate text-xs font-medium uppercase tracking-wide text-slate-500/90 dark:text-zinc-500">
-          {title}
-        </p>
-      </div>
-      <div className="max-h-[min(420px,55vh)] overflow-y-auto overscroll-contain bg-white/70 p-1.5 dark:bg-zinc-950/50">
-        {nodes.map((node) => {
-          const hasChildren = Boolean(node.children?.length)
-          const isActive = activeLabel === node.label
-          const isSelected = selectedCategory === node.label
-          return (
-            <CategoryCascadeRow
-              key={node.label}
-              node={node}
-              isActive={isActive || isSelected}
-              hasChildren={hasChildren}
-              onMouseEnter={() => onHoverNode(node)}
-              onClick={() => onSelectNode(node)}
-            />
-          )
-        })}
+      <div className="flex min-h-0 flex-1 flex-col bg-white">
+        <div className="shrink-0 divide-y divide-slate-100 py-1">
+          {nodes.map((node) => {
+            const hasChildren = Boolean(node.children?.length)
+            const isActive = activeLabel === node.label
+            const isSelected = selectedCategory === node.label
+            return (
+              <CategoryCascadeRow
+                key={node.label}
+                node={node}
+                isActive={isActive || isSelected}
+                hasChildren={hasChildren}
+                onMouseEnter={() => onHoverNode(node)}
+                onClick={() => onSelectNode(node)}
+              />
+            )
+          })}
+        </div>
+        <div className="flex-1 bg-white" aria-hidden />
       </div>
     </div>
   )
@@ -119,18 +122,16 @@ function CascadeColumn({
 
 function CascadeSkeleton() {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1">
+    <div className="flex gap-1 overflow-x-auto pb-1">
       {Array.from({ length: 3 }, (_, col) => (
         <div
           key={col}
-          className={`${COLUMN_WIDTH} shrink-0 rounded-2xl border border-slate-200/80 bg-slate-50/40 p-3 dark:border-zinc-700/70 dark:bg-zinc-950/90`}
+          className={`${COLUMN_WIDTH} divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200/90 bg-white py-1`}
         >
           {Array.from({ length: 6 }, (_, row) => (
-            <div key={row} className="mb-2 flex items-center gap-3 px-1 py-2">
-              <div className="h-9 w-9 animate-pulse rounded-lg bg-slate-200 dark:bg-zinc-800" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <div className="h-3.5 w-3/4 animate-pulse rounded bg-slate-200 dark:bg-zinc-800" />
-              </div>
+            <div key={row} className="flex h-[52px] items-center gap-3 px-3">
+              <div className="h-9 w-9 animate-pulse rounded-lg bg-slate-200" />
+              <div className="h-3.5 min-w-0 flex-1 animate-pulse rounded bg-slate-200" />
             </div>
           ))}
         </div>
@@ -169,12 +170,6 @@ export function CategoryCascadePanel({
   const col1Active = hoveredPath[0]?.label ?? null
   const col2Active = hoveredPath[1]?.label ?? null
 
-  const visibleColumnCount = useMemo(() => {
-    if (col3Nodes.length > 0) return 3
-    if (col2Nodes.length > 0) return 2
-    return 1
-  }, [col2Nodes.length, col3Nodes.length])
-
   const handleHover = (depth: number, node: CategoryNode) => {
     setHoveredPath((prev) => {
       const next = prev.slice(0, depth)
@@ -197,39 +192,34 @@ export function CategoryCascadePanel({
   }
 
   return (
-    <section
-      aria-label="Kategoriyalar"
-      className="w-full"
-    >
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 className={`text-base font-semibold ${CASCADE_LABEL_TEXT}`}>Kategoriyalar</h2>
-        {selectedCategory !== 'Barchasi' ? (
+    <section aria-label="Kategoriyalar" className="w-full">
+      {selectedCategory !== 'Barchasi' ? (
+        <div className="mb-3 flex justify-end">
           <button
             type="button"
             onClick={() => onSelectCategory('Barchasi')}
-            className="text-sm font-medium text-sky-600/90 hover:text-sky-700 hover:underline dark:text-sky-400/90 dark:hover:text-sky-300"
+            className="text-sm font-medium text-sky-600/90 hover:text-sky-700 hover:underline"
           >
-            Barcha e&apos;lonlar
+            Barcha e&apos;ilonlar
           </button>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {isLoading ? (
         <CascadeSkeleton />
       ) : categoryTree.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-slate-200 px-4 py-8 text-center text-sm text-slate-500 dark:border-zinc-700 dark:text-zinc-400">
+        <p className="rounded-2xl border border-dashed border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
           Kategoriyalar yuklanmadi
         </p>
       ) : (
         <div
-          className="flex gap-3 overflow-x-auto pb-1"
-          style={{ minHeight: visibleColumnCount > 1 ? 'min(420px, 55vh)' : undefined }}
+          className="flex items-stretch gap-1 overflow-x-auto pb-1"
           onMouseLeave={() => {
             if (selectedCategory === 'Barchasi') setHoveredPath([])
           }}
         >
           <CascadeColumn
-            title="Bo'limlar"
+            ariaLabel="Bo'limlar"
             nodes={col1Nodes}
             activeLabel={col1Active}
             selectedCategory={selectedCategory}
@@ -237,7 +227,7 @@ export function CategoryCascadePanel({
             onSelectNode={handleSelect}
           />
           <CascadeColumn
-            title={hoveredPath[0]?.label ?? 'Subkategoriya'}
+            ariaLabel={hoveredPath[0]?.label}
             nodes={col2Nodes}
             activeLabel={col2Active}
             selectedCategory={selectedCategory}
@@ -245,7 +235,7 @@ export function CategoryCascadePanel({
             onSelectNode={handleSelect}
           />
           <CascadeColumn
-            title={hoveredPath[1]?.label ?? 'Ichki'}
+            ariaLabel={hoveredPath[1]?.label}
             nodes={col3Nodes}
             activeLabel={null}
             selectedCategory={selectedCategory}
