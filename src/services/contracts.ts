@@ -29,6 +29,7 @@ export interface MarketplaceService {
   getPromotionPlans(): Promise<PromotionPlanResource[]>
   getCategories(): Promise<CategoryOption[]>
   getSubcategories(categoryId: number): Promise<SubcategoryOption[]>
+  getSubcategoryChildren(parentId: number, categoryId?: number): Promise<SubcategoryOption[]>
   createProfileAd(payload: CreateProfileAdPayload): Promise<ProfileAd>
   createAdPromotionRequest(adId: number, payload: CreateAdPromotionPayload): Promise<void>
 }

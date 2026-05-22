@@ -6,7 +6,9 @@ import { useAdminSubcategoriesPage } from '../../features/admin-subcategories'
 export const AdminSubcategoriesPage = () => {
   const {
     rows,
+    rowDepths,
     categories,
+    parentOptions,
     page,
     setPage,
     perPage,
@@ -14,6 +16,8 @@ export const AdminSubcategoriesPage = () => {
     total,
     filterCategoryId,
     setFilterCategoryId,
+    filterRootsOnly,
+    setFilterRootsOnly,
     filterActive,
     setFilterActive,
     loading,
@@ -28,6 +32,7 @@ export const AdminSubcategoriesPage = () => {
     watch,
     slugRegister,
     openCreate,
+    openCreateChild,
     openEdit,
     closeModal,
     onSubmit,
@@ -59,11 +64,13 @@ export const AdminSubcategoriesPage = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Subkategoriyalar</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Kategoriyaga bog‘langan subkategoriyalar</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              Ichki (nested) subkategoriyalar — ota tanlash va darajalar
+            </p>
           </div>
           <button
             type="button"
-            onClick={openCreate}
+            onClick={() => openCreate()}
             className="rounded-ui bg-daladan-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95"
           >
             Yangi subkategoriya
@@ -100,6 +107,19 @@ export const AdminSubcategoriesPage = () => {
               ))}
             </select>
           </label>
+          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+            <input
+              type="checkbox"
+              checked={filterRootsOnly}
+              disabled={filterCategoryId === 'all'}
+              onChange={(e) => {
+                setFilterRootsOnly(e.target.checked)
+                setPage(1)
+              }}
+              className="h-4 w-4 rounded border-slate-300"
+            />
+            Faqat ildiz (root)
+          </label>
           <label className="text-sm text-slate-600 dark:text-slate-400">
             Holat:
             <select
@@ -122,10 +142,12 @@ export const AdminSubcategoriesPage = () => {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">ID</th>
-                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Rasm</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Icon</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Kategoriya</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Ota</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Nomi</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Slug</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Ichki</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Faol</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200" />
               </tr>
@@ -133,56 +155,76 @@ export const AdminSubcategoriesPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
                     Yuklanmoqda...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
                     Ma&apos;lumot yo‘q
                   </td>
                 </tr>
               ) : (
-                rows.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-100 dark:border-slate-800">
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.id}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {row.image_url ? (
-                        <img
-                          src={row.image_url}
-                          alt=""
-                          className="h-10 w-10 rounded object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        '—'
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {row.category?.name ?? `ID ${row.category_id}`}
-                    </td>
-                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{row.name}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.slug}</td>
-                    <td className="px-4 py-3">{row.is_active ? 'Ha' : 'Yo‘q'}</td>
-                    <td className="px-4 py-3 text-right">
-                      <button
-                        type="button"
-                        onClick={() => void openEdit(row.id)}
-                        className="mr-2 text-sm font-medium text-daladan-primary hover:underline"
-                      >
-                        Tahrirlash
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => onDelete(row.id)}
-                        className="text-sm font-medium text-red-600 hover:underline dark:text-red-400"
-                      >
-                        O‘chirish
-                      </button>
-                    </td>
-                  </tr>
-                ))
+                rows.map((row) => {
+                  const depth = rowDepths.get(row.id) ?? 0
+                  return (
+                    <tr key={row.id} className="border-b border-slate-100 dark:border-slate-800">
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.id}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        {row.image_url ? (
+                          <img
+                            src={row.image_url}
+                            alt=""
+                            className="h-10 w-10 rounded object-cover"
+                            loading="lazy"
+                          />
+                        ) : (
+                          '—'
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        {row.category?.name ?? `ID ${row.category_id}`}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        {row.parent?.name ?? (row.parent_id ? `ID ${row.parent_id}` : '— (ildiz)')}
+                      </td>
+                      <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">
+                        <span style={{ paddingLeft: `${depth * 12}px` }}>{row.name}</span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.slug}</td>
+                      <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                        {row.has_children ? 'Ha' : 'Yo‘q'}
+                      </td>
+                      <td className="px-4 py-3">{row.is_active ? 'Ha' : 'Yo‘q'}</td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        {row.has_children ? (
+                          <button
+                            type="button"
+                            onClick={() => openCreateChild(row)}
+                            className="mr-2 text-sm font-medium text-slate-600 hover:underline dark:text-slate-300"
+                          >
+                            Ichki qo‘shish
+                          </button>
+                        ) : null}
+                        <button
+                          type="button"
+                          onClick={() => void openEdit(row.id)}
+                          className="mr-2 text-sm font-medium text-daladan-primary hover:underline"
+                        >
+                          Tahrirlash
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => onDelete(row.id)}
+                          className="text-sm font-medium text-red-600 hover:underline dark:text-red-400"
+                        >
+                          O‘chirish
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })
               )}
             </tbody>
           </table>
@@ -242,6 +284,27 @@ export const AdminSubcategoriesPage = () => {
               </select>
             </div>
             <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Ota subkategoriya (ixtiyoriy)
+              </label>
+              <select
+                {...register('parent_id')}
+                disabled={!watch('category_id')}
+                className="mt-1 w-full rounded-ui border border-slate-300 px-3 py-2 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              >
+                <option value="">Ildiz (root) — parent_id bo‘sh</option>
+                {parentOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                    {p.has_children ? ' ›' : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                Swagger: root uchun <code>parent_id=null</code>, ichki daraja uchun ota subkategoriya ID.
+              </p>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Nomi</label>
               <input
                 {...register('name', { required: true })}
@@ -260,7 +323,7 @@ export const AdminSubcategoriesPage = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Rasm (URL)</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Icon (URL)</label>
               <input
                 type="url"
                 {...register('image_url')}
@@ -269,11 +332,11 @@ export const AdminSubcategoriesPage = () => {
                 className="mt-1 w-full rounded-ui border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                To‘g‘ridan-to‘g‘ri rasm havolasi yoki pastdan fayl yuklang. Bo‘sh qoldirsangiz, saqlashda rasm olib tashlanadi.
+                API maydoni: <code>icon_url</code>. Fayl yuklash ham qo‘llab-quvvatlanadi.
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Rasm fayl</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Icon fayl</label>
               <input
                 ref={imageFileInputRef}
                 type="file"

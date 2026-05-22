@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { adminApiService } from '../../../services'
 import type { AdminCategory } from '../../../types/admin'
@@ -25,6 +25,8 @@ export const useAdminCategoriesPage = () => {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [slugManual, setSlugManual] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  const imageFileInputRef = useRef<HTMLInputElement | null>(null)
 
   const { register, handleSubmit, reset, watch, setValue } = useForm<AdminCategoryFormValues>({
     defaultValues: emptyCategoryForm,
@@ -66,6 +68,8 @@ export const useAdminCategoriesPage = () => {
   const openCreate = () => {
     setEditingId(null)
     setSlugManual(false)
+    setImageFile(null)
+    if (imageFileInputRef.current) imageFileInputRef.current.value = ''
     reset(emptyCategoryForm)
     setModalOpen(true)
   }
@@ -74,6 +78,8 @@ export const useAdminCategoriesPage = () => {
     setSlugManual(true)
     setEditingId(id)
     setError('')
+    setImageFile(null)
+    if (imageFileInputRef.current) imageFileInputRef.current.value = ''
     try {
       const c = await adminApiService.getCategory(id)
       reset(categoryToForm(c))
@@ -86,6 +92,8 @@ export const useAdminCategoriesPage = () => {
   const closeModal = () => {
     setModalOpen(false)
     setEditingId(null)
+    setImageFile(null)
+    if (imageFileInputRef.current) imageFileInputRef.current.value = ''
   }
 
   const onSubmit = async (values: AdminCategoryFormValues) => {
@@ -94,9 +102,9 @@ export const useAdminCategoriesPage = () => {
     try {
       const payload = categoryToPayload(values)
       if (editingId === null) {
-        await adminApiService.createCategory(payload)
+        await adminApiService.createCategory(payload, imageFile)
       } else {
-        await adminApiService.updateCategory(editingId, payload)
+        await adminApiService.updateCategory(editingId, payload, imageFile)
       }
       closeModal()
       await load()
@@ -145,7 +153,7 @@ export const useAdminCategoriesPage = () => {
     saving,
     register,
     handleSubmit,
-    reset,
+    watch,
     slugRegister,
     openCreate,
     openEdit,
@@ -153,5 +161,8 @@ export const useAdminCategoriesPage = () => {
     onSubmit,
     onDelete,
     onPerPageChange,
+    imageFile,
+    setImageFile,
+    imageFileInputRef,
   }
 }

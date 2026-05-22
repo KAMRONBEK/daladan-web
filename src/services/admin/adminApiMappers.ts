@@ -40,6 +40,7 @@ export const mapCategory = (item: UnknownRecord): AdminCategory => ({
   is_active: getBoolean(item, 'is_active'),
   created_at: getString(item, 'created_at'),
   updated_at: getString(item, 'updated_at'),
+  icon_url: nullableStringField(item.icon_url) ?? nullableStringField(item.image_url),
 })
 
 export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
@@ -52,18 +53,33 @@ export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
     }
     : undefined
 
+  const parent = asRecord(item.parent)
+  const parentRef = isNonEmptyRecord(parent)
+    ? {
+      id: getNumber(parent, 'id'),
+      name: getString(parent, 'name'),
+      slug: getString(parent, 'slug'),
+    }
+    : undefined
+
+  const parentIdRaw = getNullableNumber(item, 'parent_id')
+  const iconUrl = nullableStringField(item.icon_url) ?? nullableStringField(item.image_url)
+
   return {
     id: getNumber(item, 'id'),
     category_id: getNumber(item, 'category_id'),
+    parent_id: parentIdRaw,
     name: getString(item, 'name'),
     slug: getString(item, 'slug'),
     sort_order: getNullableNumber(item, 'sort_order'),
     is_active: getBoolean(item, 'is_active'),
+    has_children: item.has_children === true || getNumber(item, 'children_count') > 0,
     created_at: getString(item, 'created_at'),
     updated_at: getString(item, 'updated_at'),
-    image_url: nullableStringField(item.image_url),
+    image_url: iconUrl,
     media: Array.isArray(item.media) ? item.media : [],
     category,
+    parent: parentRef,
   }
 }
 
@@ -306,8 +322,30 @@ const findPaginatorRecord = (value: unknown, depth = 0): UnknownRecord | undefin
   return undefined
 }
 
+const mapPlainArrayPage = <T>(rows: unknown[], mapItem: (row: UnknownRecord) => T): LaravelPaginated<T> => {
+  const items = rows
+    .filter((item): item is UnknownRecord => !!item && typeof item === 'object')
+    .map(mapItem)
+  return {
+    items,
+    currentPage: 1,
+    perPage: Math.max(items.length, 1),
+    total: items.length,
+    lastPage: 1,
+  }
+}
+
 export const mapPaginated = <T>(raw: unknown, mapItem: (row: UnknownRecord) => T): LaravelPaginated<T> => {
-  const root = asRecord(normalizeAdminEnvelope(raw))
+  if (Array.isArray(raw)) {
+    return mapPlainArrayPage(raw, mapItem)
+  }
+
+  const normalized = normalizeAdminEnvelope(raw)
+  if (Array.isArray(normalized)) {
+    return mapPlainArrayPage(normalized, mapItem)
+  }
+
+  const root = asRecord(normalized)
   const meta = asRecord(root.meta)
   const inner = root.data
 

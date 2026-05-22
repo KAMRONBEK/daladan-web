@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { AdminModal } from '../../components/admin/AdminModal'
 import { AdminPagination } from '../../components/admin/AdminPagination'
 import { useAdminCategoriesPage } from '../../features/admin-categories'
@@ -21,6 +22,7 @@ export const AdminCategoriesPage = () => {
     saving,
     register,
     handleSubmit,
+    watch,
     slugRegister,
     openCreate,
     openEdit,
@@ -28,7 +30,25 @@ export const AdminCategoriesPage = () => {
     onSubmit,
     onDelete,
     onPerPageChange,
+    imageFile,
+    setImageFile,
+    imageFileInputRef,
   } = useAdminCategoriesPage()
+
+  const iconUrlField = watch('icon_url')
+  const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!imageFile) {
+      setFilePreviewUrl(null)
+      return
+    }
+    const url = URL.createObjectURL(imageFile)
+    setFilePreviewUrl(url)
+    return () => URL.revokeObjectURL(url)
+  }, [imageFile])
+
+  const previewSrc = filePreviewUrl ?? (iconUrlField.trim() ? iconUrlField.trim() : null)
 
   return (
     <>
@@ -81,6 +101,7 @@ export const AdminCategoriesPage = () => {
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">ID</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Icon</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Nomi</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Slug</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Tartib</th>
@@ -91,13 +112,13 @@ export const AdminCategoriesPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
                     Yuklanmoqda...
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
                     Ma&apos;lumot yo‘q
                   </td>
                 </tr>
@@ -105,6 +126,18 @@ export const AdminCategoriesPage = () => {
                 rows.map((row) => (
                   <tr key={row.id} className="border-b border-slate-100 dark:border-slate-800">
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.id}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      {row.icon_url ? (
+                        <img
+                          src={row.icon_url}
+                          alt=""
+                          className="h-10 w-10 rounded object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        '—'
+                      )}
+                    </td>
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{row.name}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.slug}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
@@ -191,6 +224,53 @@ export const AdminCategoriesPage = () => {
                 className="mt-1 w-full rounded-ui border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Icon (URL)</label>
+              <input
+                type="url"
+                {...register('icon_url')}
+                placeholder="https://..."
+                autoComplete="off"
+                className="mt-1 w-full rounded-ui border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              />
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                To‘g‘ridan-to‘g‘ri havola yoki pastdan fayl yuklang.
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Icon fayl</label>
+              <input
+                ref={imageFileInputRef}
+                type="file"
+                accept="image/*"
+                className="mt-1 w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-sm file:font-medium dark:text-slate-300 dark:file:bg-slate-700 dark:file:text-slate-100"
+                onChange={(e) => {
+                  const f = e.target.files?.[0] ?? null
+                  setImageFile(f)
+                }}
+              />
+            </div>
+            {previewSrc ? (
+              <div className="flex items-start gap-3">
+                <img
+                  src={previewSrc}
+                  alt=""
+                  className="h-24 w-24 rounded-lg border border-slate-200 object-cover dark:border-slate-600"
+                />
+                {imageFile ? (
+                  <button
+                    type="button"
+                    className="text-sm text-red-600 hover:underline dark:text-red-400"
+                    onClick={() => {
+                      setImageFile(null)
+                      if (imageFileInputRef.current) imageFileInputRef.current.value = ''
+                    }}
+                  >
+                    Yangi faylni bekor qilish
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Tartib (ixtiyoriy)</label>
               <input

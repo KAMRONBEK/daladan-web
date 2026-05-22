@@ -1,7 +1,7 @@
 import { ChevronDown, ChevronRight, Loader2, SlidersHorizontal, X } from 'lucide-react'
 import { Fragment, type FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { ListingCard, ListingListSkeletons } from '../features/marketplace'
+import { CategoryCascadePanel, ListingCard, ListingListSkeletons } from '../features/marketplace'
 import {
   collectLabelsInTree,
   fallbackCategoryTree,
@@ -261,17 +261,11 @@ export const SearchPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
+  const isHomePage = location.pathname === '/'
+  const showCategoryCascade = isHomePage && selectedCategory === 'Barchasi'
+  const showPriceFilter = !isHomePage && selectedCategory !== 'Barchasi'
   const searchQuery = (searchParams.get('q') ?? '').trim().toLowerCase()
   const catParam = searchParams.get('cat')
-
-  const homeCrumbTo = useMemo(() => {
-    const qRaw = searchParams.get('q')?.trim()
-    if (!qRaw) return { pathname: '/' as const }
-    return {
-      pathname: '/' as const,
-      search: `?${new URLSearchParams({ q: qRaw }).toString()}`,
-    }
-  }, [searchParams])
 
   const categoryBreadcrumbLabels = useMemo((): string[] => {
     if (selectedCategory === 'Barchasi') return ["Barcha e'lonlar"]
@@ -327,7 +321,19 @@ export const SearchPage = () => {
   }, [categoryTree, selectedCategory])
 
   useEffect(() => {
+    if (!isHomePage) return
+    setSelectedCategory('Barchasi')
+    setCurrentPage(1)
+    if (!catParam) return
+    const next = new URLSearchParams(searchParams)
+    next.delete('cat')
+    const search = next.toString()
+    navigate({ pathname: '/', search: search ? `?${search}` : '' }, { replace: true })
+  }, [isHomePage])
+
+  useEffect(() => {
     if (isLoadingCategoryTree) return
+    if (isHomePage) return
     const raw = catParam?.trim()
     if (!raw) return
     try {
@@ -408,13 +414,25 @@ export const SearchPage = () => {
 
   const selectCategory = (label: string) => {
     setCategorySwitchOverlay(true)
-    setSelectedCategory((prev) => {
-      if (label !== 'Barchasi' && prev === label) {
-        return 'Barchasi'
-      }
-      return label
-    })
+    const nextLabel =
+      label !== 'Barchasi' && selectedCategory === label ? 'Barchasi' : label
+    setSelectedCategory(nextLabel)
     setCurrentPage(1)
+
+    const params = new URLSearchParams(searchParams)
+    const q = params.get('q')?.trim()
+    const nextParams = new URLSearchParams()
+    if (q) nextParams.set('q', q)
+    if (nextLabel !== 'Barchasi') nextParams.set('cat', nextLabel)
+
+    const search = nextParams.toString()
+    if (isHomePage) {
+      navigate({ pathname: '/search', search: search ? `?${search}` : '' })
+      return
+    }
+    if (location.pathname === '/search') {
+      navigate({ pathname: '/search', search: search ? `?${search}` : '' }, { replace: true })
+    }
   }
 
   useEffect(() => {
@@ -462,6 +480,10 @@ export const SearchPage = () => {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [priceMenuOpen])
+
+  useEffect(() => {
+    if (!showPriceFilter) setPriceMenuOpen(false)
+  }, [showPriceFilter])
 
   useEffect(() => {
     if (!priceMenuOpen) return
@@ -540,139 +562,150 @@ export const SearchPage = () => {
         </div>
       ) : null}
       <div className="mx-auto w-full space-y-2 xl:max-w-[90rem]">
-        <nav aria-label="Sahifa yo'li">
-          <ol className="flex flex-wrap items-center gap-x-1 text-[0.9375rem] leading-snug text-zinc-600 sm:text-base dark:text-zinc-400">
-            <li className="font-normal">
-              <Link
-                to={homeCrumbTo}
-                onClick={() => {
-                  setCategorySwitchOverlay(true)
-                  setSelectedCategory('Barchasi')
-                  setCurrentPage(1)
-                }}
-                className="transition hover:text-zinc-900 dark:hover:text-zinc-200"
-              >
-                Asosiy
-              </Link>
-            </li>
-            {categoryBreadcrumbLabels.map((crumbLabel, idx) => {
-              const isLast = idx === categoryBreadcrumbLabels.length - 1
-              return (
-                <Fragment key={`${idx}-${crumbLabel}`}>
-                  <li className="px-0.5 font-normal text-zinc-500 select-none dark:text-zinc-500" aria-hidden>
-                    /
-                  </li>
-                  <li className={isLast ? 'min-w-0' : ''}>
-                    {isLast ? (
-                      <span
-                        className="break-words font-bold text-zinc-950 dark:text-zinc-50"
-                        aria-current="location"
-                      >
-                        {crumbLabel}
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="max-w-full break-words text-left font-normal text-zinc-600 underline-offset-4 transition hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
-                        onClick={() => {
-                          setCategorySwitchOverlay(true)
-                          setSelectedCategory(crumbLabel)
-                          setCurrentPage(1)
-                        }}
-                      >
-                        {crumbLabel}
-                      </button>
-                    )}
-                  </li>
-                </Fragment>
-              )
-            })}
-          </ol>
-        </nav>
-
-        <div className="relative z-30 flex w-full max-w-[1024px] items-center rounded-lg bg-slate-200/90 py-2 pl-1 pr-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] dark:border dark:border-zinc-600 dark:bg-zinc-800/95 sm:pl-1.5 sm:pr-3">
-          <div ref={priceMenuRef} className="relative inline-flex text-left">
-            <button
-              type="button"
-              id="search-price-trigger"
-              aria-haspopup="dialog"
-              aria-expanded={priceMenuOpen}
-              aria-controls="search-price-popover"
-              onClick={() => setPriceMenuOpen((o) => !o)}
-              className={`inline-flex min-h-[2.25rem] items-center gap-1.5 rounded-md border border-transparent py-1.5 pl-1.5 pr-2 text-[0.9375rem] font-bold leading-tight text-daladan-heading shadow-none outline-none ring-0 transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/35 dark:text-zinc-100 sm:text-base ${
-                priceMenuOpen
-                  ? 'bg-white shadow-sm dark:bg-zinc-950'
-                  : 'bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-zinc-950 dark:hover:shadow-black/25'
-              }`}
-            >
-              Narx
-              <ChevronDown
-                className={`h-3.5 w-3.5 shrink-0 opacity-90 transition-transform duration-200 sm:h-4 sm:w-4 ${priceMenuOpen ? 'rotate-180' : ''}`}
-                aria-hidden
-                strokeWidth={2.25}
-              />
-            </button>
-            {priceMenuOpen ? (
-              <form
-                id="search-price-popover"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="search-price-heading"
-                onSubmit={applyPriceFilter}
-                className="absolute left-0 top-full z-30 mt-2 w-[min(calc(100vw-2rem),20rem)] rounded-xl border border-zinc-200/90 bg-white p-4 shadow-xl dark:border-zinc-600 dark:bg-zinc-900"
-              >
-                <span id="search-price-heading" className="sr-only">
-                  Narx oralig‘i bo‘yicha qidiruv
-                </span>
-                <div className="flex items-end gap-2">
-                  <label className="min-w-0 flex-1">
-                    <span className="mb-1 block text-xs font-semibold text-daladan-heading dark:text-zinc-200">
-                      Minimal
-                    </span>
-                    <input
-                      inputMode="numeric"
-                      autoComplete="off"
-                      name="priceMin"
-                      aria-label="Minimal narx"
-                      className="search-page-narx-input w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-daladan-heading shadow-inner dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
-                      value={priceMinDraft}
-                      onChange={(event) => setPriceMinDraft(formatPriceInput(event.target.value))}
-                      placeholder="0"
-                    />
-                  </label>
-                  <span
-                    className="pb-2.5 shrink-0 text-xs font-medium text-zinc-500 dark:text-zinc-400"
-                    aria-hidden
-                  >
-                    —
-                  </span>
-                  <label className="min-w-0 flex-1">
-                    <span className="mb-1 block text-xs font-semibold text-daladan-heading dark:text-zinc-200">
-                      Maksimal
-                    </span>
-                    <input
-                      inputMode="numeric"
-                      autoComplete="off"
-                      name="priceMax"
-                      aria-label="Maksimal narx"
-                      className="search-page-narx-input w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-daladan-heading shadow-inner dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
-                      value={priceMaxDraft}
-                      onChange={(event) => setPriceMaxDraft(formatPriceInput(event.target.value))}
-                      placeholder="0"
-                    />
-                  </label>
-                </div>
-                <button
-                  type="submit"
-                  className="mt-4 w-full rounded-lg bg-lime-400 py-2.5 text-sm font-bold text-daladan-heading shadow-sm transition hover:bg-lime-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 dark:bg-lime-500 dark:text-zinc-950 dark:hover:bg-lime-400"
+        {!isHomePage ? (
+          <nav aria-label="Sahifa yo'li">
+            <ol className="flex flex-wrap items-center gap-x-1 text-[0.9375rem] leading-snug text-zinc-600 sm:text-base dark:text-zinc-400">
+              <li className="font-normal">
+                <Link
+                  to="/"
+                  onClick={() => {
+                    setCategorySwitchOverlay(true)
+                    setSelectedCategory('Barchasi')
+                    setCurrentPage(1)
+                  }}
+                  className="transition hover:text-zinc-900 dark:hover:text-zinc-200"
                 >
-                  Qidirish
-                </button>
-              </form>
-            ) : null}
+                  Asosiy
+                </Link>
+              </li>
+              {categoryBreadcrumbLabels.map((crumbLabel, idx) => {
+                const isLast = idx === categoryBreadcrumbLabels.length - 1
+                return (
+                  <Fragment key={`${idx}-${crumbLabel}`}>
+                    <li className="px-0.5 font-normal text-zinc-500 select-none dark:text-zinc-500" aria-hidden>
+                      /
+                    </li>
+                    <li className={isLast ? 'min-w-0' : ''}>
+                      {isLast ? (
+                        <span
+                          className="break-words font-bold text-zinc-950 dark:text-zinc-50"
+                          aria-current="location"
+                        >
+                          {crumbLabel}
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          className="max-w-full break-words text-left font-normal text-zinc-600 underline-offset-4 transition hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+                          onClick={() => selectCategory(crumbLabel)}
+                        >
+                          {crumbLabel}
+                        </button>
+                      )}
+                    </li>
+                  </Fragment>
+                )
+              })}
+            </ol>
+          </nav>
+        ) : null}
+
+        {showPriceFilter ? (
+          <div className="relative z-30 flex w-full max-w-[1024px] items-center rounded-lg bg-slate-200/90 py-2 pl-1 pr-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.35)] dark:border dark:border-zinc-600 dark:bg-zinc-800/95 sm:pl-1.5 sm:pr-3">
+            <div ref={priceMenuRef} className="relative inline-flex text-left">
+              <button
+                type="button"
+                id="search-price-trigger"
+                aria-haspopup="dialog"
+                aria-expanded={priceMenuOpen}
+                aria-controls="search-price-popover"
+                onClick={() => setPriceMenuOpen((o) => !o)}
+                className={`inline-flex min-h-[2.25rem] items-center gap-1.5 rounded-md border border-transparent py-1.5 pl-1.5 pr-2 text-[0.9375rem] font-bold leading-tight text-daladan-heading shadow-none outline-none ring-0 transition-colors focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/35 dark:text-zinc-100 sm:text-base ${
+                  priceMenuOpen
+                    ? 'bg-white shadow-sm dark:bg-zinc-950'
+                    : 'bg-transparent hover:bg-white hover:shadow-sm dark:hover:bg-zinc-950 dark:hover:shadow-black/25'
+                }`}
+              >
+                Narx
+                <ChevronDown
+                  className={`h-3.5 w-3.5 shrink-0 opacity-90 transition-transform duration-200 sm:h-4 sm:w-4 ${priceMenuOpen ? 'rotate-180' : ''}`}
+                  aria-hidden
+                  strokeWidth={2.25}
+                />
+              </button>
+              {priceMenuOpen ? (
+                <form
+                  id="search-price-popover"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="search-price-heading"
+                  onSubmit={applyPriceFilter}
+                  className="absolute left-0 top-full z-30 mt-2 w-[min(calc(100vw-2rem),20rem)] rounded-xl border border-zinc-200/90 bg-white p-4 shadow-xl dark:border-zinc-600 dark:bg-zinc-900"
+                >
+                  <span id="search-price-heading" className="sr-only">
+                    Narx oralig‘i bo‘yicha qidiruv
+                  </span>
+                  <div className="flex items-end gap-2">
+                    <label className="min-w-0 flex-1">
+                      <span className="mb-1 block text-xs font-semibold text-daladan-heading dark:text-zinc-200">
+                        Minimal
+                      </span>
+                      <input
+                        inputMode="numeric"
+                        autoComplete="off"
+                        name="priceMin"
+                        aria-label="Minimal narx"
+                        className="search-page-narx-input w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-daladan-heading shadow-inner dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+                        value={priceMinDraft}
+                        onChange={(event) => setPriceMinDraft(formatPriceInput(event.target.value))}
+                        placeholder="0"
+                      />
+                    </label>
+                    <span
+                      className="pb-2.5 shrink-0 text-xs font-medium text-zinc-500 dark:text-zinc-400"
+                      aria-hidden
+                    >
+                      —
+                    </span>
+                    <label className="min-w-0 flex-1">
+                      <span className="mb-1 block text-xs font-semibold text-daladan-heading dark:text-zinc-200">
+                        Maksimal
+                      </span>
+                      <input
+                        inputMode="numeric"
+                        autoComplete="off"
+                        name="priceMax"
+                        aria-label="Maksimal narx"
+                        className="search-page-narx-input w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-daladan-heading shadow-inner dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-100"
+                        value={priceMaxDraft}
+                        onChange={(event) => setPriceMaxDraft(formatPriceInput(event.target.value))}
+                        placeholder="0"
+                      />
+                    </label>
+                  </div>
+                  <button
+                    type="submit"
+                    className="mt-4 w-full rounded-lg bg-lime-400 py-2.5 text-sm font-bold text-daladan-heading shadow-sm transition hover:bg-lime-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-daladan-primary/40 dark:bg-lime-500 dark:text-zinc-950 dark:hover:bg-lime-400"
+                  >
+                    Qidirish
+                  </button>
+                </form>
+              ) : null}
+            </div>
           </div>
-        </div>
+        ) : null}
       </div>
+
+      {showCategoryCascade ? (
+        <div className="mx-auto hidden w-full xl:max-w-[90rem] xl:block">
+          <CategoryCascadePanel
+            categoryTree={categoryTree}
+            selectedCategory={selectedCategory}
+            onSelectCategory={selectCategory}
+            isLoading={isLoadingCategoryTree}
+          />
+        </div>
+      ) : null}
 
       <div className="mx-auto flex w-full flex-col gap-6 xl:max-w-[90rem] xl:flex-row xl:items-start xl:gap-4">
         {mobileFiltersOpen ? (
@@ -713,11 +746,7 @@ export const SearchPage = () => {
           </div>
         ) : null}
 
-        <aside className="hidden shrink-0 xl:mt-3 xl:block xl:w-[280px]">
-          <SearchFiltersCard {...filtersCardProps} />
-        </aside>
-
-        <div className="relative min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1 xl:mt-3">
           <section className="relative min-w-0 space-y-4">
           <div className="flex items-center gap-2 xl:hidden">
             <button

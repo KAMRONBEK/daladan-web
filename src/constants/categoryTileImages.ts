@@ -42,11 +42,43 @@ export const CATEGORY_TILE_IMAGE_BY_ID: Partial<Record<number, string>> = {
   3: UNSPLASH_POULTRY,
 }
 
+const UNSPLASH_CAR =
+  'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=256&h=256&q=80'
+const UNSPLASH_PHONE =
+  'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=256&h=256&q=80'
+const UNSPLASH_ELECTRONICS =
+  'https://images.unsplash.com/photo-1498049794561-7780e7231661?auto=format&fit=crop&w=256&h=256&q=80'
+const UNSPLASH_HOME =
+  'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?auto=format&fit=crop&w=256&h=256&q=80'
+const UNSPLASH_FASHION =
+  'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=256&h=256&q=80'
+const UNSPLASH_FOOD =
+  'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=256&h=256&q=80'
+const UNSPLASH_PETS =
+  'https://images.unsplash.com/photo-1450778868558-7d0616a4deb3?auto=format&fit=crop&w=256&h=256&q=80'
+const UNSPLASH_TOOLS =
+  'https://images.unsplash.com/photo-1504148455328-59ba4bc165f9?auto=format&fit=crop&w=256&h=256&q=80'
+
 /** API slug → image URL */
 export const CATEGORY_TILE_IMAGE_BY_SLUG: Record<string, string> = {
   fruit: UNSPLASH_FRUIT,
   poultry: UNSPLASH_POULTRY,
   animal: UNSPLASH_ANIMAL,
+  vehicles: UNSPLASH_CAR,
+  'phones & tablets': UNSPLASH_PHONE,
+  'phones-tablets': UNSPLASH_PHONE,
+  electronics: UNSPLASH_ELECTRONICS,
+  'home, furniture & appliances': UNSPLASH_HOME,
+  'home-furniture-appliances': UNSPLASH_HOME,
+  fashion: UNSPLASH_FASHION,
+  services: UNSPLASH_SERVICES,
+  'repair & construction': UNSPLASH_TOOLS,
+  'repair-construction': UNSPLASH_TOOLS,
+  'food, agriculture & farming': UNSPLASH_FOOD,
+  'food-agriculture-farming': UNSPLASH_FOOD,
+  'animals & pets': UNSPLASH_PETS,
+  'animals-pets': UNSPLASH_PETS,
+  'free stuff': UNSPLASH_HONEY,
 }
 
 /** Normalized label → URL (search filter + home tiles when API has no image) */
@@ -119,6 +151,9 @@ export function getCategoryTileImage(
     const key = category.slug.trim().toLowerCase()
     const bySlug = CATEGORY_TILE_IMAGE_BY_SLUG[key]
     if (bySlug) return bySlug
+    const compact = key.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const byCompact = CATEGORY_TILE_IMAGE_BY_SLUG[compact]
+    if (byCompact) return byCompact
   }
 
   const labelKey = normalizeCategoryLabel(category.label)
