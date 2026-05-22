@@ -198,8 +198,14 @@ export const useAdminSubcategoriesPage = () => {
     setSlugManual(false)
     setImageFile(null)
     if (imageFileInputRef.current) imageFileInputRef.current.value = ''
-    prevCategoryIdRef.current = ''
-    reset(emptySubcategoryForm)
+    const level: AdminSubcategoryLevel = preset?.parentId ? 'child' : 'root'
+    prevCategoryIdRef.current = preset?.categoryId ?? ''
+    reset({
+      ...emptySubcategoryForm,
+      category_id: preset?.categoryId ?? (filterCategoryId !== 'all' ? filterCategoryId : ''),
+      parent_id: preset?.parentId ?? '',
+      level,
+    })
     setParentOptions([])
     setModalOpen(true)
   }

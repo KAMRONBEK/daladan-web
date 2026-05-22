@@ -6,7 +6,6 @@ import { useAdminSubcategoriesPage } from '../../features/admin-subcategories'
 export const AdminSubcategoriesPage = () => {
   const {
     rows,
-    rowDepths,
     categories,
     parentOptions,
     filterParentOptions,
@@ -118,19 +117,6 @@ export const AdminSubcategoriesPage = () => {
               ))}
             </select>
           </label>
-          <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
-            <input
-              type="checkbox"
-              checked={filterRootsOnly}
-              disabled={filterCategoryId === 'all'}
-              onChange={(e) => {
-                setFilterRootsOnly(e.target.checked)
-                setPage(1)
-              }}
-              className="h-4 w-4 rounded border-slate-300"
-            />
-            Faqat ildiz (root)
-          </label>
           <label className="text-sm text-slate-600 dark:text-slate-400">
             Daraja:
             <select
@@ -212,19 +198,19 @@ export const AdminSubcategoriesPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                     Yuklanmoqda...
                   </td>
                 </tr>
               ) : childFilterNeedsParent ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                     Ota subkategoriyani tanlang
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                     Ma&apos;lumot yo‘q
                   </td>
                 </tr>
@@ -255,8 +241,20 @@ export const AdminSubcategoriesPage = () => {
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{row.name}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.slug}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      {row.has_children ? 'Ha' : 'Yo‘q'}
+                    </td>
                     <td className="px-4 py-3">{row.is_active ? 'Ha' : 'Yo‘q'}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {row.has_children ? (
+                        <button
+                          type="button"
+                          onClick={() => openCreateChild(row)}
+                          className="mr-2 text-sm font-medium text-slate-600 hover:underline dark:text-slate-300"
+                        >
+                          Ichki qo‘shish
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => void openEdit(row.id)}
@@ -384,27 +382,6 @@ export const AdminSubcategoriesPage = () => {
                 ) : null}
               </div>
             ) : null}
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Ota subkategoriya (ixtiyoriy)
-              </label>
-              <select
-                {...register('parent_id')}
-                disabled={!watch('category_id')}
-                className="mt-1 w-full rounded-ui border border-slate-300 px-3 py-2 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-              >
-                <option value="">Ildiz (root) — parent_id bo‘sh</option>
-                {parentOptions.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                    {p.has_children ? ' ›' : ''}
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                Swagger: root uchun <code>parent_id=null</code>, ichki daraja uchun ota subkategoriya ID.
-              </p>
-            </div>
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Nomi</label>
               <input

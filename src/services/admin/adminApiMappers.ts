@@ -68,6 +68,7 @@ export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
   const parentIdRaw = getNullableNumber(item, 'parent_id')
   const childrenCount = getNumber(item, 'children_count')
   const parent_id = parentIdRaw !== null && parentIdRaw > 0 ? parentIdRaw : null
+  const iconUrl = nullableStringField(item.icon_url) ?? nullableStringField(item.image_url)
 
   return {
     id: getNumber(item, 'id'),

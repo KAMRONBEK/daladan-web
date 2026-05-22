@@ -41,10 +41,7 @@ export interface AdminSubcategoryNestedParent {
 export interface AdminSubcategory {
   id: number
   category_id: number
-<<<<<<< HEAD
-  /** `null` — root subcategory (Swagger: `parent_id=null`). */
-=======
->>>>>>> fb8f8d6e005b9e2e93e3a8254bf328cf31252dbf
+
   parent_id: number | null
   name: string
   slug: string
