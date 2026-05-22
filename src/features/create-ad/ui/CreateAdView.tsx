@@ -3,7 +3,7 @@ import { Loader2, Sparkles, Trash2, X } from 'lucide-react'
 import { formatPriceInput, parsePriceInput } from '../../../utils/price'
 import { ERROR_TEXT_CLASS } from '../model/createAdFieldStyles'
 import { useCreateAdPage } from '../model/useCreateAdPage'
-import { CreateAdLocationSection } from './CreateAdLocationSection'
+import { CreateAdCategorySection } from './CreateAdCategorySection'
 import { CreateAdPhotosSection } from './CreateAdPhotosSection'
 import { CreateAdRegionCitySection } from './CreateAdRegionCitySection'
 import { CreateAdTitleDescriptionSection } from './CreateAdTitleDescriptionSection'
@@ -98,17 +98,12 @@ export function CreateAdView() {
         {/* Kategoriya card */}
         <div className="mb-4 rounded-lg bg-white px-4 py-5 shadow-sm">
           <div className="mx-auto max-w-[480px]">
-            <CreateAdLocationSection
+            <CreateAdCategorySection
               register={register}
               setValue={setValue}
               errors={errors}
-              categories={categories}
-              subcategories={subcategories}
               selectedCategoryId={selectedCategoryId}
               selectedSubcategoryId={selectedSubcategoryId}
-              isLoadingCategories={isLoadingCategories}
-              isLoadingSubcategories={isLoadingSubcategories}
-              isTitleEmpty={false}
             />
           </div>
         </div>

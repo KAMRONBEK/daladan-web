@@ -52,6 +52,32 @@ export const gatherDescendants = (target: string, tree: CategoryNode[]): Set<str
   return result
 }
 
+/** ID bo‘yicha ildizdan tanlangan tugungacha yo‘l. */
+export const findNodePathById = (tree: CategoryNode[], id: number): CategoryNode[] | null => {
+  if (!id) return null
+
+  const walk = (nodes: CategoryNode[], ancestors: CategoryNode[]): CategoryNode[] | null => {
+    for (const node of nodes) {
+      const path = [...ancestors, node]
+      if (node.id === id) return path
+      if (node.children?.length) {
+        const hit = walk(node.children, path)
+        if (hit) return hit
+      }
+    }
+    return null
+  }
+
+  for (const root of tree) {
+    const hit = walk([root], [])
+    if (hit) return hit
+  }
+  return null
+}
+
+export const formatCategoryPathLabel = (path: CategoryNode[]): string =>
+  path.map((node) => node.label).join(' & ')
+
 export const collectLabelsInTree = (tree: CategoryNode[]): Set<string> => {
   const labels = new Set<string>()
   const walk = (nodes: CategoryNode[]) => {

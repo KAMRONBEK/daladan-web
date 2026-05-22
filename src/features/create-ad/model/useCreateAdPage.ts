@@ -6,6 +6,7 @@ import { aiService, authService, marketplaceService, profileService } from '../.
 import type { CityOption, RegionOption } from '../../../services/contracts'
 import { PROFILE_AD_UNIT_OPTIONS } from '../../../services/profileAdPayloadBuilders'
 import { useAuth } from '../../../state/AuthContext'
+import { findNodePathById, loadCategoryTree } from '../../marketplace/model/categoryTree'
 import type { CategoryOption, SubcategoryOption } from '../../../types/marketplace'
 import { LOGIN_PATH } from '../../../utils/appPaths'
 import { parsePriceInput } from '../../../utils/price'
@@ -291,7 +292,24 @@ export function useCreateAdPage() {
     const selectedCategory = categories.find((item) => String(item.id) === selectedCategoryId)
     const selectedSubcategory = subcategories.find((item) => String(item.id) === selectedSubcategoryId)
 
-    if (!selectedCategory) {
+    let categoryName = selectedCategory?.name
+    let subcategoryName = selectedSubcategory?.name
+
+    if (!categoryName) {
+      try {
+        const tree = await loadCategoryTree()
+        const leafId = Number(selectedSubcategoryId) || Number(selectedCategoryId)
+        const path = findNodePathById(tree, leafId)
+        if (path?.length) {
+          categoryName = path[0].label
+          subcategoryName = path.length > 1 ? path[path.length - 1].label : undefined
+        }
+      } catch {
+        /* fallback below */
+      }
+    }
+
+    if (!categoryName) {
       setError("Kategoriya ma'lumotlarini topib bo'lmadi. Qayta urinib ko'ring.")
       return
     }
@@ -303,8 +321,8 @@ export function useCreateAdPage() {
     setIsGeneratingDescription(true)
     try {
       const description = await aiService.generateAdDescription({
-        categoryName: selectedCategory.name,
-        subcategoryName: selectedSubcategory?.name,
+        categoryName,
+        subcategoryName,
         title: title || undefined,
         priceText: priceText || undefined,
         unit: unit || undefined,
