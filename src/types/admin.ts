@@ -41,7 +41,10 @@ export interface AdminSubcategoryNestedParent {
 export interface AdminSubcategory {
   id: number
   category_id: number
+<<<<<<< HEAD
   /** `null` — root subcategory (Swagger: `parent_id=null`). */
+=======
+>>>>>>> fb8f8d6e005b9e2e93e3a8254bf328cf31252dbf
   parent_id: number | null
   name: string
   slug: string
@@ -53,14 +56,15 @@ export interface AdminSubcategory {
   /** API `icon_url` (UI label: icon). */
   image_url: string | null
   media: readonly unknown[]
+  children_count?: number
   category?: AdminSubcategoryNestedCategory
   parent?: AdminSubcategoryNestedParent
 }
 
 export interface AdminSubcategoryPayload {
   category_id: number
-  /** `null` — root; otherwise parent subcategory id. */
-  parent_id: number | null
+  /** Set for 3rd level; omit or `null` for 2nd-level root */
+  parent_id?: number | null
   name: string
   slug: string
   sort_order?: number | null

@@ -60,6 +60,12 @@ export interface AdminSubcategoryNestedCategoryApi {
   slug: string
 }
 
+export interface AdminSubcategoryNestedParentApi {
+  id: number
+  name: string
+  slug: string
+}
+
 export interface AdminSubcategoryApiRow {
   id: number
   category_id: number
@@ -75,8 +81,9 @@ export interface AdminSubcategoryApiRow {
   icon_url?: string | null
   image_url?: string | null
   media: unknown[]
+  children_count?: number
   category?: AdminSubcategoryNestedCategoryApi
-  parent?: AdminSubcategoryNestedCategoryApi
+  parent?: AdminSubcategoryNestedParentApi
 }
 
 export interface AdminUserRegionRef {

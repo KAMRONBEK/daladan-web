@@ -155,7 +155,7 @@ Admin panel does not expose Google sign-in.
 
 ### Admin panel (`admin.eldan.uz` and `admin.daladan.uz`)
 
-The same SPA switches to the admin UI when the browser hostname matches a built-in production admin host (`admin.eldan.uz` or legacy `admin.daladan.uz`), or any extra hostname listed in `VITE_ADMIN_APP_HOSTS` (comma-separated, for example `localhost,admin.local`). Admin screens call the same API base URL with Bearer auth on `/admin/categories`, `/admin/subcategories`, and `/admin/users`.
+The same SPA switches to the admin UI when the browser hostname matches a built-in production admin host (`admin.eldan.uz` or legacy `admin.daladan.uz`), or any extra hostname listed in `VITE_ADMIN_APP_HOSTS` (comma-separated, for example `localhost,admin.local`). Admin screens call the same API base URL with Bearer auth on `/admin/categories`, `/admin/subcategories` (optional `parent_id` for 3rd-level subcategories under a 2nd-level root), and `/admin/users`.
 
 **Session:** The auth token is stored in `localStorage`, which is **not** shared between the main site and the admin subdomain. Admins must **log in on the admin host** so the token is stored for that origin.
 
