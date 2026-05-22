@@ -81,7 +81,6 @@ export interface AdminSubcategoryApiRow {
   icon_url?: string | null
   image_url?: string | null
   media: unknown[]
-  children_count?: number
   category?: AdminSubcategoryNestedCategoryApi
   parent?: AdminSubcategoryNestedParentApi
 }
