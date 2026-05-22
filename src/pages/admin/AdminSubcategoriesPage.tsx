@@ -7,6 +7,8 @@ export const AdminSubcategoriesPage = () => {
   const {
     rows,
     categories,
+    parentOptions,
+    filterParentOptions,
     page,
     setPage,
     perPage,
@@ -14,6 +16,10 @@ export const AdminSubcategoriesPage = () => {
     total,
     filterCategoryId,
     setFilterCategoryId,
+    filterLevel,
+    setFilterLevel,
+    filterParentId,
+    setFilterParentId,
     filterActive,
     setFilterActive,
     loading,
@@ -28,6 +34,7 @@ export const AdminSubcategoriesPage = () => {
     watch,
     slugRegister,
     openCreate,
+    openCreateChild,
     openEdit,
     closeModal,
     onSubmit,
@@ -36,6 +43,11 @@ export const AdminSubcategoriesPage = () => {
     imageFile,
     setImageFile,
     imageFileInputRef,
+    levelWatch,
+    setFormLevel,
+    parentOptionsLoading,
+    childFilterNeedsParent,
+    canSaveSubcategory,
   } = useAdminSubcategoriesPage()
 
   const imageUrlField = watch('image_url')
@@ -52,6 +64,8 @@ export const AdminSubcategoriesPage = () => {
   }, [imageFile])
 
   const previewSrc = filePreviewUrl ?? (imageUrlField.trim() ? imageUrlField.trim() : null)
+  const showFilterParent =
+    filterCategoryId !== 'all' && (filterLevel === 'all' || filterLevel === 'child')
 
   return (
     <>
@@ -59,11 +73,13 @@ export const AdminSubcategoriesPage = () => {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Subkategoriyalar</h1>
-            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Kategoriyaga bog‘langan subkategoriyalar</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+              2-daraja (asosiy) va 3-daraja (ichki) subkategoriyalar
+            </p>
           </div>
           <button
             type="button"
-            onClick={openCreate}
+            onClick={() => openCreate()}
             className="rounded-ui bg-daladan-primary px-4 py-2.5 text-sm font-semibold text-white hover:opacity-95"
           >
             Yangi subkategoriya
@@ -88,6 +104,7 @@ export const AdminSubcategoriesPage = () => {
               value={filterCategoryId}
               onChange={(e) => {
                 setFilterCategoryId(e.target.value)
+                setFilterParentId('all')
                 setPage(1)
               }}
               className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
@@ -100,6 +117,45 @@ export const AdminSubcategoriesPage = () => {
               ))}
             </select>
           </label>
+          <label className="text-sm text-slate-600 dark:text-slate-400">
+            Daraja:
+            <select
+              value={filterLevel}
+              onChange={(e) => {
+                setFilterLevel(e.target.value as 'all' | 'root' | 'child')
+                setFilterParentId('all')
+                setPage(1)
+              }}
+              className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-900 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <option value="all">Barchasi</option>
+              <option value="root">2-daraja</option>
+              <option value="child">3-daraja</option>
+            </select>
+          </label>
+          {showFilterParent ? (
+            <label className="text-sm text-slate-600 dark:text-slate-400">
+              Ota subkategoriya:
+              <select
+                value={filterParentId}
+                onChange={(e) => {
+                  setFilterParentId(e.target.value)
+                  setPage(1)
+                }}
+                disabled={filterLevel === 'child' && filterParentOptions.length === 0}
+                className="ml-2 rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-slate-900 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+              >
+                <option value="all">
+                  {filterLevel === 'child' ? 'Tanlang' : 'Barchasi'}
+                </option>
+                {filterParentOptions.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label className="text-sm text-slate-600 dark:text-slate-400">
             Holat:
             <select
@@ -117,15 +173,24 @@ export const AdminSubcategoriesPage = () => {
           </label>
         </div>
 
+        {childFilterNeedsParent ? (
+          <p className="mt-3 text-sm text-amber-800 dark:text-amber-200">
+            3-daraja ro‘yxati uchun kategoriya va ota subkategoriyani tanlang.
+          </p>
+        ) : null}
+
         <div className="mt-4 overflow-x-auto rounded-ui border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
           <table className="min-w-full text-left text-sm">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-800/50">
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">ID</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Rasm</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Daraja</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Kategoriya</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Ota</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Nomi</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Slug</th>
+                <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Ichki</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200">Faol</th>
                 <th className="px-4 py-3 font-semibold text-slate-700 dark:text-slate-200" />
               </tr>
@@ -133,13 +198,19 @@ export const AdminSubcategoriesPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                     Yuklanmoqda...
+                  </td>
+                </tr>
+              ) : childFilterNeedsParent ? (
+                <tr>
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
+                    Ota subkategoriyani tanlang
                   </td>
                 </tr>
               ) : rows.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-12 text-center text-slate-500">
                     Ma&apos;lumot yo‘q
                   </td>
                 </tr>
@@ -160,12 +231,30 @@ export const AdminSubcategoriesPage = () => {
                       )}
                     </td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      {row.parent_id !== null && row.parent_id > 0 ? '3' : '2'}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
                       {row.category?.name ?? `ID ${row.category_id}`}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      {row.parent?.name ?? '—'}
                     </td>
                     <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{row.name}</td>
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{row.slug}</td>
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
+                      {row.has_children ? 'Ha' : 'Yo‘q'}
+                    </td>
                     <td className="px-4 py-3">{row.is_active ? 'Ha' : 'Yo‘q'}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
+                      {row.has_children ? (
+                        <button
+                          type="button"
+                          onClick={() => openCreateChild(row)}
+                          className="mr-2 text-sm font-medium text-slate-600 hover:underline dark:text-slate-300"
+                        >
+                          Ichki qo‘shish
+                        </button>
+                      ) : null}
                       <button
                         type="button"
                         onClick={() => void openEdit(row.id)}
@@ -194,7 +283,7 @@ export const AdminSubcategoriesPage = () => {
             lastPage={lastPage}
             total={total}
             perPage={perPage}
-            disabled={loading}
+            disabled={loading || childFilterNeedsParent}
             onPageChange={setPage}
             onPerPageChange={onPerPageChange}
           />
@@ -217,7 +306,7 @@ export const AdminSubcategoriesPage = () => {
               <button
                 type="submit"
                 form="subcategory-form"
-                disabled={saving}
+                disabled={saving || !canSaveSubcategory}
                 className="rounded-ui bg-daladan-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
               >
                 {saving ? 'Saqlanmoqda...' : 'Saqlash'}
@@ -241,6 +330,58 @@ export const AdminSubcategoriesPage = () => {
                 ))}
               </select>
             </div>
+            <input type="hidden" {...register('level')} />
+            <fieldset className="space-y-2">
+              <legend className="text-sm font-medium text-slate-700 dark:text-slate-300">Daraja</legend>
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                <input
+                  type="radio"
+                  name="subcategory-level"
+                  value="root"
+                  checked={levelWatch === 'root'}
+                  onChange={() => setFormLevel('root')}
+                  className="h-4 w-4 border-slate-300"
+                />
+                2-daraja (asosiy)
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                <input
+                  type="radio"
+                  name="subcategory-level"
+                  value="child"
+                  checked={levelWatch === 'child'}
+                  onChange={() => setFormLevel('child')}
+                  className="h-4 w-4 border-slate-300"
+                />
+                3-daraja (ichki)
+              </label>
+            </fieldset>
+            {levelWatch === 'child' ? (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Ota subkategoriya (2-daraja)
+                </label>
+                <select
+                  {...register('parent_id', { required: levelWatch === 'child' })}
+                  disabled={!watch('category_id') || parentOptionsLoading}
+                  className="mt-1 w-full rounded-ui border border-slate-300 px-3 py-2 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+                >
+                  <option value="">
+                    {parentOptionsLoading ? 'Yuklanmoqda...' : 'Tanlang'}
+                  </option>
+                  {parentOptions.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                {watch('category_id') && !parentOptionsLoading && parentOptions.length === 0 ? (
+                  <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+                    Avval shu kategoriyada 2-daraja subkategoriya yarating.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Nomi</label>
               <input
@@ -260,7 +401,7 @@ export const AdminSubcategoriesPage = () => {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Rasm (URL)</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Icon (URL)</label>
               <input
                 type="url"
                 {...register('image_url')}
@@ -269,11 +410,11 @@ export const AdminSubcategoriesPage = () => {
                 className="mt-1 w-full rounded-ui border border-slate-300 px-3 py-2 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
               />
               <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                To‘g‘ridan-to‘g‘ri rasm havolasi yoki pastdan fayl yuklang. Bo‘sh qoldirsangiz, saqlashda rasm olib tashlanadi.
+                API maydoni: <code>icon_url</code>. Fayl yuklash ham qo‘llab-quvvatlanadi.
               </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Rasm fayl</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Icon fayl</label>
               <input
                 ref={imageFileInputRef}
                 type="file"

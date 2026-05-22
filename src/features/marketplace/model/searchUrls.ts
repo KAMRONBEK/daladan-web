@@ -1,4 +1,5 @@
 /** Query value for `?cat=` must match `SearchPage` / `decodeURIComponent`. */
 export function searchUrlForCategoryLabel(label: string): string {
-  return `/?cat=${encodeURIComponent(label)}`
+  if (label === 'Barchasi') return '/search'
+  return `/search?cat=${encodeURIComponent(label)}`
 }

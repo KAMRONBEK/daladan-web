@@ -13,6 +13,7 @@ import {
 import { parseListingAdId } from '../features/profile-ad'
 import { profileService } from '../services'
 import type { Listing } from '../types/marketplace'
+import { getAuthUserSessionKey } from '../utils/authUserKey'
 import { useAuth } from './AuthContext'
 
 interface FavoritesContextValue {
@@ -37,7 +38,9 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
   const [syncedUserKey, setSyncedUserKey] = useState<string | null>(null)
   const loadedForUserKeyRef = useRef<string | null>(null)
 
-  const favoritesLoading = Boolean(user && syncedUserKey !== user.phone)
+  const userSessionKey = user ? getAuthUserSessionKey(user) : null
+
+  const favoritesLoading = Boolean(user && syncedUserKey !== userSessionKey)
 
   const isFavorite = useCallback((id: string) => favoriteIds.includes(id), [favoriteIds])
 
@@ -45,35 +48,39 @@ export const FavoritesProvider = ({ children }: { children: ReactNode }) => {
     loadedForUserKeyRef.current = null
     setFavoriteIds([])
     setSyncedUserKey(null)
-  }, [user?.phone])
+  }, [userSessionKey])
 
   const hydrateFavoriteIdsFromListings = useCallback(
     (listings: Listing[]) => {
       if (!user) return
-      loadedForUserKeyRef.current = user.phone
+      const key = getAuthUserSessionKey(user)
+      loadedForUserKeyRef.current = key
       setFavoriteIds(listings.map((l) => l.id))
-      setSyncedUserKey(user.phone)
+      setSyncedUserKey(key)
     },
     [user],
   )
 
   const ensureFavoriteIdsLoaded = useCallback(async () => {
     if (!user) return
-    if (loadedForUserKeyRef.current === user.phone) return
+    const key = getAuthUserSessionKey(user)
+    if (loadedForUserKeyRef.current === key) return
 
     try {
       const listings = await profileService.getFavorites()
       if (!user) return
-      if (loadedForUserKeyRef.current === user.phone) return
-      loadedForUserKeyRef.current = user.phone
+      const currentKey = getAuthUserSessionKey(user)
+      if (loadedForUserKeyRef.current === currentKey) return
+      loadedForUserKeyRef.current = currentKey
       setFavoriteIds(listings.map((l) => l.id))
-      setSyncedUserKey(user.phone)
+      setSyncedUserKey(currentKey)
     } catch {
       if (!user) return
-      if (loadedForUserKeyRef.current === user.phone) return
-      loadedForUserKeyRef.current = user.phone
+      const currentKey = getAuthUserSessionKey(user)
+      if (loadedForUserKeyRef.current === currentKey) return
+      loadedForUserKeyRef.current = currentKey
       setFavoriteIds([])
-      setSyncedUserKey(user.phone)
+      setSyncedUserKey(currentKey)
     }
   }, [user])
 
@@ -137,7 +144,7 @@ export const useFavorites = () => {
   useEffect(() => {
     if (!user) return
     void ensureFavoriteIdsLoaded()
-  }, [user?.phone, ensureFavoriteIdsLoaded])
+  }, [user ? getAuthUserSessionKey(user) : null, ensureFavoriteIdsLoaded])
 
   return rest
 }

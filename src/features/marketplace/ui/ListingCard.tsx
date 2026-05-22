@@ -2,6 +2,7 @@ import { Camera, Clock, Heart, MapPin } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { MouseEvent, SyntheticEvent } from 'react'
 
+import { BRAND_LOGO_SRC } from '../../../constants/brand'
 import { useFavorites } from '../../../state/FavoritesContext'
 import type { Listing } from '../../../types/marketplace'
 import { formatPrice } from '../../../utils/price'
@@ -215,7 +216,7 @@ export const ListingCard = ({
     const target = event.currentTarget
     if (target.dataset.fallbackApplied === '1') return
     target.dataset.fallbackApplied = '1'
-    target.src = '/daladan-logo-full-transparent.png'
+    target.src = BRAND_LOGO_SRC
   }
 
   const titleHeadingClass =

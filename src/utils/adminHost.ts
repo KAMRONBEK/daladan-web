@@ -1,4 +1,4 @@
-const BUILTIN_ADMIN_HOSTS = ['admin.daladan.uz']
+const BUILTIN_ADMIN_HOSTS = ['admin.eldan.uz', 'admin.daladan.uz']
 
 const normalizeHost = (value: string): string =>
   value

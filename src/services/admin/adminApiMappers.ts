@@ -40,7 +40,11 @@ export const mapCategory = (item: UnknownRecord): AdminCategory => ({
   is_active: getBoolean(item, 'is_active'),
   created_at: getString(item, 'created_at'),
   updated_at: getString(item, 'updated_at'),
+  icon_url: nullableStringField(item.icon_url) ?? nullableStringField(item.image_url),
 })
+
+export const isRootSubcategory = (row: AdminSubcategory): boolean =>
+  row.parent_id === null || row.parent_id <= 0
 
 export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
   const cat = asRecord(item.category)
@@ -52,18 +56,36 @@ export const mapSubcategory = (item: UnknownRecord): AdminSubcategory => {
     }
     : undefined
 
+  const par = asRecord(item.parent)
+  const parent = isNonEmptyRecord(par)
+    ? {
+      id: getNumber(par, 'id'),
+      name: getString(par, 'name'),
+      slug: getString(par, 'slug'),
+    }
+    : undefined
+
+  const parentIdRaw = getNullableNumber(item, 'parent_id')
+  const childrenCount = getNumber(item, 'children_count')
+  const parent_id = parentIdRaw !== null && parentIdRaw > 0 ? parentIdRaw : null
+  const iconUrl = nullableStringField(item.icon_url) ?? nullableStringField(item.image_url)
+
   return {
     id: getNumber(item, 'id'),
     category_id: getNumber(item, 'category_id'),
+    parent_id,
     name: getString(item, 'name'),
     slug: getString(item, 'slug'),
     sort_order: getNullableNumber(item, 'sort_order'),
     is_active: getBoolean(item, 'is_active'),
+    has_children: item.has_children === true || getNumber(item, 'children_count') > 0,
     created_at: getString(item, 'created_at'),
     updated_at: getString(item, 'updated_at'),
-    image_url: nullableStringField(item.image_url),
+    image_url: iconUrl,
     media: Array.isArray(item.media) ? item.media : [],
+    ...(childrenCount > 0 ? { children_count: childrenCount } : {}),
     category,
+    parent,
   }
 }
 
@@ -306,8 +328,30 @@ const findPaginatorRecord = (value: unknown, depth = 0): UnknownRecord | undefin
   return undefined
 }
 
+const mapPlainArrayPage = <T>(rows: unknown[], mapItem: (row: UnknownRecord) => T): LaravelPaginated<T> => {
+  const items = rows
+    .filter((item): item is UnknownRecord => !!item && typeof item === 'object')
+    .map(mapItem)
+  return {
+    items,
+    currentPage: 1,
+    perPage: Math.max(items.length, 1),
+    total: items.length,
+    lastPage: 1,
+  }
+}
+
 export const mapPaginated = <T>(raw: unknown, mapItem: (row: UnknownRecord) => T): LaravelPaginated<T> => {
-  const root = asRecord(normalizeAdminEnvelope(raw))
+  if (Array.isArray(raw)) {
+    return mapPlainArrayPage(raw, mapItem)
+  }
+
+  const normalized = normalizeAdminEnvelope(raw)
+  if (Array.isArray(normalized)) {
+    return mapPlainArrayPage(normalized, mapItem)
+  }
+
+  const root = asRecord(normalized)
   const meta = asRecord(root.meta)
   const inner = root.data
 
@@ -378,11 +422,16 @@ export const unwrapRecord = (raw: unknown): UnknownRecord => {
   return root
 }
 
+const queryParamValue = (value: string | number | boolean): string => {
+  if (typeof value === 'boolean') return value ? '1' : '0'
+  return String(value)
+}
+
 export const buildAdminQuery = (params: Record<string, string | number | boolean | undefined | null>) => {
   const qs = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
     if (value === undefined || value === null || value === '') continue
-    qs.set(key, String(value))
+    qs.set(key, queryParamValue(value))
   }
   const s = qs.toString()
   return s ? `?${s}` : ''

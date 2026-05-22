@@ -51,6 +51,7 @@ export interface AdminCategoryApiRow {
   is_active: boolean
   created_at: string
   updated_at: string
+  icon_url?: string | null
 }
 
 export interface AdminSubcategoryNestedCategoryApi {
@@ -59,18 +60,29 @@ export interface AdminSubcategoryNestedCategoryApi {
   slug: string
 }
 
+export interface AdminSubcategoryNestedParentApi {
+  id: number
+  name: string
+  slug: string
+}
+
 export interface AdminSubcategoryApiRow {
   id: number
   category_id: number
+  parent_id: number | null
   name: string
   slug: string
   sort_order: number | null
   is_active: boolean
+  has_children?: boolean
+  children_count?: number
   created_at: string
   updated_at: string
-  image_url: string | null
+  icon_url?: string | null
+  image_url?: string | null
   media: unknown[]
   category?: AdminSubcategoryNestedCategoryApi
+  parent?: AdminSubcategoryNestedParentApi
 }
 
 export interface AdminUserRegionRef {

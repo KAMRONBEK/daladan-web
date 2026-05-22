@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Moon, Sun } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { BrandLogoMark } from '../components/layout/BrandLogoMark'
 import { useAuth } from '../state/AuthContext'
 import { useTheme } from '../state/ThemeContext'
 import { formatUzPhoneInput, isUzPhoneComplete, normalizeUzPhone } from '../utils/phone'
@@ -60,7 +61,7 @@ export const LoginPage = ({ variant = 'site' }: LoginPageProps) => {
           {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
         </button>
         <Link to="/" className="mb-6 flex justify-center">
-          <img src="/daladan-logo-full-transparent.png" alt="Daladan" className="h-14 object-contain" />
+          <BrandLogoMark className="h-14 w-14 text-slate-900 dark:text-white" />
         </Link>
         <h1 className="text-4xl font-semibold text-slate-900 dark:text-slate-100">
           {variant === 'admin' ? 'Admin paneliga kirish' : 'Kirish'}

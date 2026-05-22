@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../state/AuthContext'
 import { EmailRegisterBlock } from '../components/auth/EmailRegisterBlock'
+import { GoogleSignInButton } from '../components/auth/GoogleSignInButton'
 import { PhoneRegisterPanel } from '../components/auth/PhoneRegisterPanel'
 import { formatUzPhoneInput, isUzPhoneComplete, normalizeUzPhone } from '../utils/phone'
 
@@ -95,11 +96,17 @@ function RegisterForm({ identity }: { identity: ReturnType<typeof useSmartInput>
   )
 }
 
-function LoginForm({ identity }: { identity: ReturnType<typeof useSmartInput> }) {
+function LoginForm({
+  identity,
+  returnPath,
+}: {
+  identity: ReturnType<typeof useSmartInput>
+  returnPath: string
+}) {
   const { loginWithPassword } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as { from?: string } | null)?.from ?? '/'
+  const from = (location.state as { from?: string } | null)?.from ?? returnPath
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [error, setError] = useState('')
@@ -164,6 +171,18 @@ function LoginForm({ identity }: { identity: ReturnType<typeof useSmartInput> })
           'Kirish'
         )}
       </button>
+
+      <div className="relative py-3">
+        <div className="absolute inset-0 flex items-center" aria-hidden>
+          <div className="w-full border-t border-slate-200 dark:border-slate-600" />
+        </div>
+        <p className="relative mx-auto w-fit bg-white px-2 text-xs text-slate-500 dark:bg-slate-900">yoki</p>
+      </div>
+
+      <GoogleSignInButton
+        returnPath={from}
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-5 text-sm font-semibold text-slate-900 hover:bg-slate-50 disabled:opacity-60 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+      />
     </form>
   )
 }
@@ -173,6 +192,8 @@ type Tab = 'login' | 'register'
 export const AuthPage = ({ defaultTab = 'login' }: { defaultTab?: Tab }) => {
   const tab: Tab = defaultTab
   const identity = useSmartInput()
+  const location = useLocation()
+  const returnPath = (location.state as { from?: string } | null)?.from ?? '/profile'
 
   return (
     <div className="auth-page min-h-screen bg-[#ebf2f7] p-4 dark:bg-slate-950">
@@ -202,7 +223,11 @@ export const AuthPage = ({ defaultTab = 'login' }: { defaultTab?: Tab }) => {
             </div>
 
             <div className="min-h-[290px]">
-              {tab === 'login' ? <LoginForm identity={identity} /> : <RegisterForm identity={identity} />}
+              {tab === 'login' ? (
+                <LoginForm identity={identity} returnPath={returnPath} />
+              ) : (
+                <RegisterForm identity={identity} />
+              )}
             </div>
           </div>
         </div>

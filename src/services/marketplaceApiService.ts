@@ -1,4 +1,5 @@
 import { boostPlans } from '../data/boostPlans'
+import { BRAND_LOGO_SRC } from '../constants/brand'
 import type {
   AdStats,
   BoostPlan,
@@ -78,24 +79,20 @@ const mapPromotionPlanResource = (item: UnknownRecord, index: number): Promotion
   }
 }
 
-const pickImageUrl = (item: UnknownRecord): string | null => {
-  const raw = item.image_url ?? item.icon_url ?? item.icon ?? item.image
-  if (raw === null || raw === undefined) return null
-  if (typeof raw === 'string' && raw.trim()) return raw.trim()
-  return null
-}
-
 const mapCategory = (item: UnknownRecord): CategoryOption => {
   const slugRaw = getString(item, 'slug', 'slug_en', 'slug_uz')
-  const image_url = pickImageUrl(item)
-  const mediaUrls = getMediaUrls(item.media)
-
+  const rawImage = item.icon_url ?? item.image_url
+  const image_url =
+    rawImage === null || rawImage === undefined
+      ? null
+      : typeof rawImage === 'string' && rawImage.trim()
+        ? rawImage.trim()
+        : null
   return {
     id: getNumber(item, 'id', 'category_id'),
     name: getString(item, 'name_uz', 'name_oz', 'name', 'title'),
     ...(slugRaw ? { slug: slugRaw } : {}),
-    image_url,
-    ...(mediaUrls.length ? { media: mediaUrls } : {}),
+    ...(image_url ? { image_url } : {}),
   }
 }
 
@@ -103,10 +100,13 @@ const mapSubcategory =
   (fallbackCategoryId: number) =>
   (item: UnknownRecord): SubcategoryOption => {
     const id = getNumber(item, 'id', 'subcategory_id')
-    const categoryIdFromApi = getNumber(item, 'category_id', 'parent_id')
+    const categoryIdFromApi = getNumber(item, 'category_id')
     const categoryId = categoryIdFromApi > 0 ? categoryIdFromApi : fallbackCategoryId
+    const parentIdRaw = getNumber(item, 'parent_id')
+    const parentId = parentIdRaw > 0 ? parentIdRaw : null
+    const hasChildren = item.has_children === true
     const slugRaw = getString(item, 'slug', 'slug_en', 'slug_uz')
-    const rawImage = item.image_url
+    const rawImage = item.icon_url ?? item.image_url
     const image_url =
       rawImage === null || rawImage === undefined
         ? null
@@ -120,8 +120,10 @@ const mapSubcategory =
     return {
       id,
       categoryId,
+      parentId,
       name: getString(item, 'name_uz', 'name_oz', 'name', 'title'),
       ...(slugRaw ? { slug: slugRaw } : {}),
+      ...(hasChildren ? { hasChildren: true } : {}),
       image_url,
       ...(mediaUrls.length ? { media: mediaUrls } : {}),
       is_active,
@@ -293,7 +295,7 @@ export const mapListing = (item: UnknownRecord): Listing => {
     description: getString(item, 'description', 'desc') || "Tavsif ko'rsatilmagan",
     quantity: quantity || undefined,
     deliveryInfo: deliveryInfo || undefined,
-    image: imageUrl || '/daladan-logo-full-transparent.png',
+    image: imageUrl || BRAND_LOGO_SRC,
     images: mergedImages.length > 0 ? mergedImages : undefined,
     status: getString(item, 'status') || undefined,
     createdAt: getString(item, 'created_at', 'createdAt') || undefined,
@@ -475,6 +477,14 @@ export const marketplaceApiService: MarketplaceService = {
 
   async getSubcategories(categoryId: number) {
     const response = await requestJson<unknown>(`/resources/subcategories?category_id=${categoryId}`)
+    return extractCollection(response)
+      .map(mapSubcategory(categoryId))
+      .filter((item) => item.id > 0 && item.categoryId > 0 && Boolean(item.name))
+      .filter((item) => item.is_active !== false)
+  },
+
+  async getSubcategoryChildren(parentId: number, categoryId = 0) {
+    const response = await requestJson<unknown>(`/resources/subcategories?parent_id=${parentId}`)
     return extractCollection(response)
       .map(mapSubcategory(categoryId))
       .filter((item) => item.id > 0 && item.categoryId > 0 && Boolean(item.name))

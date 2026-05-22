@@ -58,10 +58,8 @@ export interface CategoryOption {
   name: string
   /** API slug for URLs and tile imagery, e.g. fruit / poultry / animal */
   slug?: string
-  /** Primary image/icon when API returns `image_url` */
+  /** Primary image when API returns `icon_url` / `image_url` */
   image_url?: string | null
-  /** Resolved gallery URLs when API returns `media` */
-  media?: string[]
 }
 
 /** Row from `GET /resources/promotion-plans` (public tariff catalog). */
@@ -81,9 +79,11 @@ export interface PromotionPlanResource {
 export interface SubcategoryOption {
   id: number
   categoryId: number
+  parentId?: number | null
   name: string
   slug?: string
-  /** Primary image when API returns `image_url` */
+  hasChildren?: boolean
+  /** Primary image when API returns `icon_url` / `image_url` */
   image_url?: string | null
   /** Resolved gallery URLs when API returns `media` */
   media?: string[]

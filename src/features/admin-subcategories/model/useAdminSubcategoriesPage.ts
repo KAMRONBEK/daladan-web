@@ -1,24 +1,32 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { adminApiService } from '../../../services'
 import type { AdminCategory, AdminSubcategory } from '../../../types/admin'
 import { slugifyFromName } from '../../../utils/slugifyAdmin'
 import { getAdminErrorMessage, isAdminForbidden } from '../../../utils/adminApiError'
 import {
+  computeSubcategoryDepths,
   emptySubcategoryForm,
   subcategoryToForm,
   subcategoryToPayload,
   type AdminSubcategoryFormValues,
+  type AdminSubcategoryLevel,
 } from './subcategoryForm'
+
+export type AdminSubcategoryFilterLevel = 'all' | 'root' | 'child'
 
 export const useAdminSubcategoriesPage = () => {
   const [rows, setRows] = useState<AdminSubcategory[]>([])
   const [categories, setCategories] = useState<AdminCategory[]>([])
+  const [parentOptions, setParentOptions] = useState<AdminSubcategory[]>([])
+  const [filterParentOptions, setFilterParentOptions] = useState<AdminSubcategory[]>([])
   const [page, setPage] = useState(1)
   const [perPage, setPerPage] = useState(15)
   const [lastPage, setLastPage] = useState(1)
   const [total, setTotal] = useState(0)
   const [filterCategoryId, setFilterCategoryId] = useState<string>('all')
+  const [filterLevel, setFilterLevel] = useState<AdminSubcategoryFilterLevel>('all')
+  const [filterParentId, setFilterParentId] = useState<string>('all')
   const [filterActive, setFilterActive] = useState<'all' | 'true' | 'false'>('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -28,13 +36,20 @@ export const useAdminSubcategoriesPage = () => {
   const [slugManual, setSlugManual] = useState(false)
   const [saving, setSaving] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [parentOptionsLoading, setParentOptionsLoading] = useState(false)
   const imageFileInputRef = useRef<HTMLInputElement | null>(null)
+  const prevCategoryIdRef = useRef<string>('')
 
-  const { register, handleSubmit, reset, watch, setValue } = useForm<AdminSubcategoryFormValues>({
+  const { register, handleSubmit, reset, watch, setValue, getValues } = useForm<AdminSubcategoryFormValues>({
     defaultValues: emptySubcategoryForm,
   })
   const nameWatch = watch('name')
+  const categoryIdWatch = watch('category_id')
+  const parentIdWatch = watch('parent_id')
+  const levelWatch = watch('level')
   const slugRegister = register('slug', { required: true })
+
+  const rowDepths = useMemo(() => computeSubcategoryDepths(rows), [rows])
 
   const loadCategories = useCallback(async () => {
     try {
@@ -45,21 +60,118 @@ export const useAdminSubcategoriesPage = () => {
     }
   }, [])
 
+  const loadRootParents = useCallback(async (categoryId: number) => {
+    try {
+      return await adminApiService.listRootSubcategoriesForCategory(categoryId)
+    } catch {
+      return []
+    }
+  }, [])
+
   useEffect(() => {
     void loadCategories()
   }, [loadCategories])
+
+  useEffect(() => {
+    if (filterCategoryId === 'all') {
+      setFilterParentOptions([])
+      if (filterParentId !== 'all') setFilterParentId('all')
+      return
+    }
+    let cancelled = false
+    void (async () => {
+      const items = await loadRootParents(Number(filterCategoryId))
+      if (!cancelled) setFilterParentOptions(items)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [filterCategoryId, loadRootParents])
+
+  useEffect(() => {
+    if (filterLevel !== 'child') {
+      if (filterParentId !== 'all') setFilterParentId('all')
+    }
+  }, [filterLevel, filterParentId])
+
+  const loadModalParentOptions = useCallback(
+    async (categoryId: string) => {
+      if (!categoryId) {
+        setParentOptions([])
+        return
+      }
+      setParentOptionsLoading(true)
+      try {
+        const items = await loadRootParents(Number(categoryId))
+        setParentOptions(items)
+        const currentParent = getValues('parent_id').trim()
+        if (currentParent && !items.some((p) => String(p.id) === currentParent)) {
+          setValue('parent_id', '', { shouldValidate: true })
+        }
+      } catch {
+        setParentOptions([])
+        setValue('parent_id', '', { shouldValidate: true })
+      } finally {
+        setParentOptionsLoading(false)
+      }
+    },
+    [loadRootParents, getValues, setValue],
+  )
+
+  useEffect(() => {
+    if (!modalOpen) return
+    void loadModalParentOptions(categoryIdWatch)
+  }, [modalOpen, categoryIdWatch, loadModalParentOptions])
+
+  useEffect(() => {
+    if (!modalOpen) return
+    const prev = prevCategoryIdRef.current
+    if (prev && prev !== categoryIdWatch) {
+      setValue('parent_id', '', { shouldValidate: true })
+    }
+    prevCategoryIdRef.current = categoryIdWatch
+  }, [modalOpen, categoryIdWatch, setValue])
+
+  useEffect(() => {
+    if (levelWatch === 'root') {
+      setValue('parent_id', '', { shouldValidate: false })
+    }
+  }, [levelWatch, setValue])
 
   const load = useCallback(async () => {
     setError('')
     setForbidden(false)
     setLoading(true)
+
+    if (filterLevel === 'child' && filterParentId === 'all') {
+      setRows([])
+      setLastPage(1)
+      setTotal(0)
+      setLoading(false)
+      return
+    }
+
     try {
-      const res = await adminApiService.listSubcategories({
-        per_page: perPage,
-        page,
-        category_id: filterCategoryId === 'all' ? undefined : Number(filterCategoryId),
-        is_active: filterActive === 'all' ? undefined : filterActive === 'true',
-      })
+      const categoryId = filterCategoryId === 'all' ? undefined : Number(filterCategoryId)
+      const parentId = filterParentId !== 'all' ? Number(filterParentId) : undefined
+      const isActive = filterActive === 'all' ? undefined : filterActive === 'true'
+
+      const res =
+        filterLevel === 'root'
+          ? await adminApiService.listSubcategoriesRootsPage({
+              category_id: categoryId,
+              is_active: isActive,
+              per_page: perPage,
+              page,
+            })
+          : await adminApiService.listSubcategories({
+              per_page: perPage,
+              page,
+              category_id: categoryId,
+              parent_id: parentId,
+              is_active: isActive,
+            })
+
       setRows(res.items)
       setLastPage(res.lastPage)
       setTotal(res.total)
@@ -70,7 +182,7 @@ export const useAdminSubcategoriesPage = () => {
     } finally {
       setLoading(false)
     }
-  }, [page, perPage, filterCategoryId, filterActive])
+  }, [page, perPage, filterCategoryId, filterLevel, filterParentId, filterActive])
 
   useEffect(() => {
     void load()
@@ -81,13 +193,28 @@ export const useAdminSubcategoriesPage = () => {
     setValue('slug', slugifyFromName(nameWatch), { shouldValidate: false })
   }, [nameWatch, modalOpen, slugManual, editingId, setValue])
 
-  const openCreate = () => {
+  const openCreate = (preset?: { categoryId?: string; parentId?: string }) => {
     setEditingId(null)
     setSlugManual(false)
     setImageFile(null)
     if (imageFileInputRef.current) imageFileInputRef.current.value = ''
-    reset(emptySubcategoryForm)
+    const level: AdminSubcategoryLevel = preset?.parentId ? 'child' : 'root'
+    prevCategoryIdRef.current = preset?.categoryId ?? ''
+    reset({
+      ...emptySubcategoryForm,
+      category_id: preset?.categoryId ?? (filterCategoryId !== 'all' ? filterCategoryId : ''),
+      parent_id: preset?.parentId ?? '',
+      level,
+    })
+    setParentOptions([])
     setModalOpen(true)
+  }
+
+  const openCreateChild = (parent: AdminSubcategory) => {
+    openCreate({
+      categoryId: String(parent.category_id),
+      parentId: String(parent.id),
+    })
   }
 
   const openEdit = async (id: number) => {
@@ -99,7 +226,9 @@ export const useAdminSubcategoriesPage = () => {
     try {
       const s = await adminApiService.getSubcategory(id)
       reset(subcategoryToForm(s))
+      prevCategoryIdRef.current = String(s.category_id)
       setModalOpen(true)
+      await loadModalParentOptions(String(s.category_id))
     } catch (e) {
       setError(getAdminErrorMessage(e, 'Yuklashda xatolik'))
     }
@@ -109,13 +238,38 @@ export const useAdminSubcategoriesPage = () => {
     setModalOpen(false)
     setEditingId(null)
     setImageFile(null)
+    setParentOptions([])
+    prevCategoryIdRef.current = ''
     if (imageFileInputRef.current) imageFileInputRef.current.value = ''
+  }
+
+  const setFormLevel = (level: AdminSubcategoryLevel) => {
+    setValue('level', level, { shouldValidate: true })
+    if (level === 'root') {
+      setValue('parent_id', '', { shouldValidate: true })
+    }
+  }
+
+  const isParentValidForChild = (parentId: string, options: AdminSubcategory[]) => {
+    const trimmed = parentId.trim()
+    if (!trimmed) return false
+    return options.some((p) => String(p.id) === trimmed)
   }
 
   const onSubmit = async (values: AdminSubcategoryFormValues) => {
     if (!values.category_id) {
       setError('Kategoriya tanlang')
       return
+    }
+    if (values.level === 'child') {
+      if (!values.parent_id.trim()) {
+        setError('3-daraja uchun ota subkategoriya tanlang')
+        return
+      }
+      if (!isParentValidForChild(values.parent_id, parentOptions)) {
+        setError('Ota subkategoriya ushbu kategoriyadagi 2-daraja ro‘yxatidan tanlanishi kerak')
+        return
+      }
     }
     setSaving(true)
     setError('')
@@ -155,9 +309,22 @@ export const useAdminSubcategoriesPage = () => {
     setPage(1)
   }
 
+  const childFilterNeedsParent =
+    filterLevel === 'child' && filterParentId === 'all'
+
+  const canSaveSubcategory =
+    levelWatch !== 'child' ||
+    (!parentOptionsLoading &&
+      Boolean(categoryIdWatch) &&
+      Boolean(parentIdWatch.trim()) &&
+      isParentValidForChild(parentIdWatch, parentOptions))
+
   return {
     rows,
+    rowDepths,
     categories,
+    parentOptions,
+    filterParentOptions,
     page,
     setPage,
     perPage,
@@ -165,6 +332,10 @@ export const useAdminSubcategoriesPage = () => {
     total,
     filterCategoryId,
     setFilterCategoryId,
+    filterLevel,
+    setFilterLevel,
+    filterParentId,
+    setFilterParentId,
     filterActive,
     setFilterActive,
     loading,
@@ -179,6 +350,7 @@ export const useAdminSubcategoriesPage = () => {
     watch,
     slugRegister,
     openCreate,
+    openCreateChild,
     openEdit,
     closeModal,
     onSubmit,
@@ -187,5 +359,10 @@ export const useAdminSubcategoriesPage = () => {
     imageFile,
     setImageFile,
     imageFileInputRef,
+    levelWatch,
+    setFormLevel,
+    parentOptionsLoading,
+    childFilterNeedsParent,
+    canSaveSubcategory,
   }
 }

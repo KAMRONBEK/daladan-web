@@ -29,6 +29,7 @@ export interface MarketplaceService {
   getPromotionPlans(): Promise<PromotionPlanResource[]>
   getCategories(): Promise<CategoryOption[]>
   getSubcategories(categoryId: number): Promise<SubcategoryOption[]>
+  getSubcategoryChildren(parentId: number, categoryId?: number): Promise<SubcategoryOption[]>
   createProfileAd(payload: CreateProfileAdPayload): Promise<ProfileAd>
   createAdPromotionRequest(adId: number, payload: CreateAdPromotionPayload): Promise<void>
 }
@@ -45,7 +46,7 @@ export interface ProfileService {
 
 export interface GenerateAdDescriptionRequest {
   categoryName: string
-  subcategoryName: string
+  subcategoryName?: string
   title?: string
   /** Formatted as in the input (e.g. "1 500 000") */
   priceText?: string
@@ -73,8 +74,9 @@ export interface CityOption {
 export interface AuthUser {
   fullName: string
   phone: string
+  email?: string
   region: string
-  authMethod: 'password' | 'otp'
+  authMethod: 'password' | 'otp' | 'google'
 }
 
 export interface LoginRequest {
@@ -113,6 +115,8 @@ export interface AuthService {
   /** `POST /refresh` — new bearer token; profile sync happens in auth layer after persist. */
   refresh(): Promise<AuthResult>
   getMe(): Promise<AuthUser>
+  /** GET /auth/google/redirect — returns Google OAuth authorize URL. */
+  getGoogleOAuthUrl(): Promise<string>
   getRegions(): Promise<RegionOption[]>
   getCities(regionId?: number): Promise<CityOption[]>
   logout(): Promise<void>

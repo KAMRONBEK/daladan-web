@@ -99,7 +99,6 @@ export function CreateAdLocationSection({
         id: category.id,
         name: category.name,
         imageUrl: category.image_url,
-        media: category.media,
       })),
     [categories],
   )

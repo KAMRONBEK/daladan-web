@@ -1,12 +1,11 @@
-import { useEffect, useState } from 'react'
-import { Trash2, X } from 'lucide-react'
+import { useState } from 'react'
+import { Loader2, Sparkles, Trash2, X } from 'lucide-react'
 import { formatPriceInput, parsePriceInput } from '../../../utils/price'
 import { ERROR_TEXT_CLASS } from '../model/createAdFieldStyles'
 import { useCreateAdPage } from '../model/useCreateAdPage'
 import { CreateAdLocationSection } from './CreateAdLocationSection'
 import { CreateAdPhotosSection } from './CreateAdPhotosSection'
 import { CreateAdRegionCitySection } from './CreateAdRegionCitySection'
-import { CreateAdPageSpinner } from './CreateAdPageSpinner'
 import { CreateAdTitleDescriptionSection } from './CreateAdTitleDescriptionSection'
 
 /** Route: `/profile/ads/new` */
@@ -37,6 +36,7 @@ export function CreateAdView() {
     error,
     onSubmit,
     titleValue,
+    descriptionValue,
     handleClearAll,
     deliveryAvailable,
     contactNameValue,
@@ -45,31 +45,17 @@ export function CreateAdView() {
   const [showClearModal, setShowClearModal] = useState(false)
   const [descFocused, setDescFocused] = useState(false)
   const [descHovered, setDescHovered] = useState(false)
-  const [descValue, setDescValue] = useState('')
   const [priceFocused, setPriceFocused] = useState(false)
   const [priceDisplay, setPriceDisplay] = useState('')
   const [contactFocused, setContactFocused] = useState(false)
-  const [minSpinnerDone, setMinSpinnerDone] = useState(false)
 
-  const isInitialLoading = isLoadingCategories || isLoadingRegions
-  const showForm = !isInitialLoading && minSpinnerDone
-
-  useEffect(() => {
-    setMinSpinnerDone(false)
-    const timer = window.setTimeout(() => setMinSpinnerDone(true), 400)
-    return () => window.clearTimeout(timer)
-  }, [])
-
-  const descFloating = descFocused || descValue.length > 0
+  const descFloating = descFocused || descriptionValue.length > 0
   const priceFloating = priceFocused || priceDisplay.length > 0
   const contactFloating = contactFocused || contactNameValue.length > 0
-
-  const DESC_MAX = 850
 
   const { onChange: descOnChange, onBlur: descOnBlur, ...descRest } = register('description', {
     required: 'Tavsif majburiy',
     minLength: { value: 10, message: 'Kamida 10 ta belgi kiriting' },
-    maxLength: { value: DESC_MAX, message: `Maksimal ${DESC_MAX} ta belgi` },
   })
 
   const { onChange: priceOnChange, onBlur: priceOnBlur, ...priceRest } = register('price', {
@@ -88,17 +74,8 @@ export function CreateAdView() {
 
   function handleClearConfirm() {
     handleClearAll()
-    setDescValue('')
     setPriceDisplay('')
     setShowClearModal(false)
-  }
-
-  if (!showForm) {
-    return (
-      <div className="create-ad-page mx-auto -mt-6 w-full max-w-[880px] pt-[30px]">
-        <CreateAdPageSpinner />
-      </div>
-    )
   }
 
   return (
@@ -153,8 +130,23 @@ export function CreateAdView() {
 
             {/* Tavsif */}
             <div className="mb-4 w-full max-w-[860px]">
-              <div className="mb-1 flex justify-end">
-                <span className="text-xs text-slate-400">{descValue.length} / {DESC_MAX}</span>
+              <div className="mb-1 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    void model.handleGenerateDescription()
+                  }}
+                  disabled={model.isGenerateDescriptionDisabled}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-daladan-primary/40 px-2.5 py-1 text-xs font-medium text-daladan-primary transition-colors enabled:hover:bg-daladan-primary/10 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {model.isGeneratingDescription ? (
+                    <Loader2 size={14} className="animate-spin" aria-hidden />
+                  ) : (
+                    <Sparkles size={14} aria-hidden />
+                  )}
+                  {model.isGeneratingDescription ? 'AI yozmoqda...' : 'AI bilan tavsif yozish'}
+                </button>
+                <span className="text-xs text-slate-400">{descriptionValue.length} belgi</span>
               </div>
               <div className="relative overflow-visible">
                 <label
@@ -170,15 +162,14 @@ export function CreateAdView() {
                 <textarea
                   id="desc-input"
                   {...descRest}
-                  rows={5}
-                  maxLength={DESC_MAX}
+                  rows={10}
                   onFocus={() => setDescFocused(true)}
                   onBlur={(e) => { setDescFocused(false); void descOnBlur(e) }}
                   onMouseEnter={() => setDescHovered(true)}
                   onMouseLeave={() => setDescHovered(false)}
-                  onChange={(e) => { setDescValue(e.target.value); void descOnChange(e) }}
+                  onChange={(e) => { void descOnChange(e) }}
                   aria-invalid={Boolean(errors.description)}
-                  className={`w-full resize-none rounded-lg border bg-white px-3 pt-5 pb-3 text-base text-slate-700 outline-none ${
+                  className={`min-h-[260px] w-full resize-y rounded-lg border bg-white px-3 pt-5 pb-3 text-base text-slate-700 outline-none ${
                     errors.description ? 'border-red-400' : 'border-[#d1d5db]'
                   }`}
                 />

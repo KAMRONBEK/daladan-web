@@ -2,6 +2,7 @@ import type {
   AdminAdPromotionConfirmPayload,
   AdminCategoryPayload,
   AdminCheckAd,
+  AdminSubcategory,
   AdminSubcategoryPayload,
   AdminUserCreatePayload,
   AdminUserNestedAd,
@@ -21,6 +22,7 @@ import {
 import {
   buildAdminQuery,
   mapAdminCheckAd,
+  isRootSubcategory,
   mapCategory,
   mapAdminNestedAd,
   mapPaginated,
@@ -29,19 +31,54 @@ import {
   unwrapRecord,
 } from './adminApiMappers'
 
-const buildSubcategoryFormData = (payload: AdminSubcategoryPayload) => {
+const buildSubcategoryFormData = (
+  payload: AdminSubcategoryPayload,
+  options?: { omitUrlFields?: boolean },
+) => {
   const fd = new FormData()
   fd.append('category_id', String(payload.category_id))
+  if (payload.parent_id !== undefined && payload.parent_id !== null) {
+    fd.append('parent_id', String(payload.parent_id))
+  }
   fd.append('name', payload.name)
   fd.append('slug', payload.slug)
-  if (payload.sort_order !== undefined && payload.sort_order !== null) {
-    fd.append('sort_order', String(payload.sort_order))
-  }
+  const sortOrder =
+    payload.sort_order !== undefined && payload.sort_order !== null ? payload.sort_order : 0
+  fd.append('sort_order', String(sortOrder))
   fd.append('is_active', payload.is_active ? '1' : '0')
-  if (payload.image_url !== null && payload.image_url !== '') {
-    fd.append('image_url', payload.image_url)
+  if (!options?.omitUrlFields && payload.image_url !== null && payload.image_url !== '') {
+    fd.append('icon_url', payload.image_url)
   }
   return fd
+}
+
+const appendAdminIconFile = (body: FormData, imageFile: File) => {
+  body.append('icon', imageFile, imageFile.name)
+}
+
+const buildCategoryFormData = (
+  payload: AdminCategoryPayload,
+  options?: { omitUrlFields?: boolean },
+) => {
+  const fd = new FormData()
+  fd.append('name', payload.name)
+  fd.append('slug', payload.slug)
+  const sortOrder =
+    payload.sort_order !== undefined && payload.sort_order !== null ? payload.sort_order : 0
+  fd.append('sort_order', String(sortOrder))
+  fd.append('is_active', payload.is_active ? '1' : '0')
+  if (!options?.omitUrlFields && payload.icon_url !== null && payload.icon_url !== '') {
+    fd.append('icon_url', payload.icon_url)
+  }
+  return fd
+}
+
+const subcategoryJsonBody = (payload: AdminSubcategoryPayload) => {
+  const { parent_id, ...rest } = payload
+  if (parent_id !== undefined && parent_id !== null) {
+    return JSON.stringify({ ...rest, parent_id })
+  }
+  return JSON.stringify(rest)
 }
 
 export const adminApiService = {
@@ -145,7 +182,16 @@ export const adminApiService = {
     return mapCategory(unwrapRecord(raw))
   },
 
-  async createCategory(payload: AdminCategoryPayload) {
+  async createCategory(payload: AdminCategoryPayload, imageFile?: File | null) {
+    if (imageFile) {
+      const body = buildCategoryFormData(payload, { omitUrlFields: true })
+      appendAdminIconFile(body, imageFile)
+      const raw = await requestJson<unknown>('/admin/categories', {
+        method: 'POST',
+        body,
+      })
+      return mapCategory(unwrapRecord(raw))
+    }
     const raw = await requestJson<unknown>('/admin/categories', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -153,7 +199,17 @@ export const adminApiService = {
     return mapCategory(unwrapRecord(raw))
   },
 
-  async updateCategory(id: number, payload: AdminCategoryPayload) {
+  async updateCategory(id: number, payload: AdminCategoryPayload, imageFile?: File | null) {
+    if (imageFile) {
+      const body = buildCategoryFormData(payload, { omitUrlFields: true })
+      appendAdminIconFile(body, imageFile)
+      body.append('_method', 'PUT')
+      const raw = await requestJson<unknown>(`/admin/categories/${id}`, {
+        method: 'POST',
+        body,
+      })
+      return mapCategory(unwrapRecord(raw))
+    }
     const raw = await requestJson<unknown>(`/admin/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
@@ -167,18 +223,63 @@ export const adminApiService = {
 
   async listSubcategories(params?: {
     category_id?: number
+    parent_id?: number
     is_active?: boolean
     per_page?: number
     page?: number
-  }) {
+  }): Promise<LaravelPaginated<AdminSubcategory>> {
     const query = buildAdminQuery({
       category_id: params?.category_id,
+      parent_id: params?.parent_id,
       is_active: params?.is_active,
       per_page: params?.per_page,
       page: params?.page,
     })
     const raw = await requestJson<unknown>(`/admin/subcategories${query}`)
     return mapPaginated(raw, mapSubcategory)
+  },
+
+  /** 2nd-level subcategories for a category (production API has no working roots_only). */
+  async listRootSubcategoriesForCategory(
+    categoryId: number,
+    opts?: { is_active?: boolean },
+  ): Promise<AdminSubcategory[]> {
+    const res = await this.listSubcategories({
+      category_id: categoryId,
+      is_active: opts?.is_active,
+      per_page: 500,
+      page: 1,
+    })
+    return res.items.filter(isRootSubcategory)
+  },
+
+  /** Paginated 2nd-level rows via client-side filter (never sends roots_only). */
+  async listSubcategoriesRootsPage(params: {
+    category_id?: number
+    is_active?: boolean
+    per_page?: number
+    page?: number
+  }): Promise<LaravelPaginated<AdminSubcategory>> {
+    const page = params.page ?? 1
+    const perPage = params.per_page ?? 15
+    const res = await this.listSubcategories({
+      category_id: params.category_id,
+      is_active: params.is_active,
+      per_page: 500,
+      page: 1,
+    })
+    const roots = res.items.filter(isRootSubcategory)
+    const start = (page - 1) * perPage
+    const items = roots.slice(start, start + perPage)
+    const total = roots.length
+    const lastPage = Math.max(1, Math.ceil(total / perPage) || 1)
+    return {
+      items,
+      currentPage: page,
+      perPage,
+      total,
+      lastPage,
+    }
   },
 
   async getSubcategory(id: number) {
@@ -188,8 +289,8 @@ export const adminApiService = {
 
   async createSubcategory(payload: AdminSubcategoryPayload, imageFile?: File | null) {
     if (imageFile) {
-      const body = buildSubcategoryFormData(payload)
-      body.append('image', imageFile)
+      const body = buildSubcategoryFormData(payload, { omitUrlFields: true })
+      appendAdminIconFile(body, imageFile)
       const raw = await requestJson<unknown>('/admin/subcategories', {
         method: 'POST',
         body,
@@ -198,15 +299,15 @@ export const adminApiService = {
     }
     const raw = await requestJson<unknown>('/admin/subcategories', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: subcategoryJsonBody(payload),
     })
     return mapSubcategory(unwrapRecord(raw))
   },
 
   async updateSubcategory(id: number, payload: AdminSubcategoryPayload, imageFile?: File | null) {
     if (imageFile) {
-      const body = buildSubcategoryFormData(payload)
-      body.append('image', imageFile)
+      const body = buildSubcategoryFormData(payload, { omitUrlFields: true })
+      appendAdminIconFile(body, imageFile)
       body.append('_method', 'PUT')
       const raw = await requestJson<unknown>(`/admin/subcategories/${id}`, {
         method: 'POST',
@@ -216,7 +317,7 @@ export const adminApiService = {
     }
     const raw = await requestJson<unknown>(`/admin/subcategories/${id}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: subcategoryJsonBody(payload),
     })
     return mapSubcategory(unwrapRecord(raw))
   },

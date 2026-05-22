@@ -81,4 +81,13 @@ const localGenerateDescriptionApiPlugin = (): Plugin => ({
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), localGenerateDescriptionApiPlugin()],
+  server: {
+    proxy: {
+      '/api/v1': {
+        target: 'https://api.daladan.uz',
+        changeOrigin: true,
+        secure: true,
+      },
+    },
+  },
 })

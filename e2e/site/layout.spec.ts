@@ -4,7 +4,7 @@ import { expectSiteLoginPage } from '../helpers/loginPages'
 test.describe('layout', () => {
   test('header logo navigates home', async ({ page }) => {
     await page.goto('/search')
-    await page.locator('header').getByRole('link', { name: 'Daladan' }).first().click()
+    await page.locator('header').getByRole('link', { name: 'Eldan' }).first().click()
     await expect(page).toHaveURL(/\/?$/)
   })
 

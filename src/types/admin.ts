@@ -14,6 +14,8 @@ export interface AdminCategory {
   is_active: boolean
   created_at: string
   updated_at: string
+  /** API `icon_url` */
+  icon_url: string | null
 }
 
 export interface AdminCategoryPayload {
@@ -21,6 +23,7 @@ export interface AdminCategoryPayload {
   slug: string
   sort_order?: number | null
   is_active: boolean
+  icon_url: string | null
 }
 
 export interface AdminSubcategoryNestedCategory {
@@ -29,27 +32,41 @@ export interface AdminSubcategoryNestedCategory {
   slug: string
 }
 
+export interface AdminSubcategoryNestedParent {
+  id: number
+  name: string
+  slug: string
+}
+
 export interface AdminSubcategory {
   id: number
   category_id: number
+
+  parent_id: number | null
   name: string
   slug: string
   sort_order: number | null
   is_active: boolean
+  has_children: boolean
   created_at: string
   updated_at: string
+  /** API `icon_url` (UI label: icon). */
   image_url: string | null
   media: readonly unknown[]
+  children_count?: number
   category?: AdminSubcategoryNestedCategory
+  parent?: AdminSubcategoryNestedParent
 }
 
 export interface AdminSubcategoryPayload {
   category_id: number
+  /** Set for 3rd level; omit or `null` for 2nd-level root */
+  parent_id?: number | null
   name: string
   slug: string
   sort_order?: number | null
   is_active: boolean
-  /** `null` clears the stored URL when the API accepts it */
+  /** `null` clears icon URL when API accepts it */
   image_url: string | null
 }
 

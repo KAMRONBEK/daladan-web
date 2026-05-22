@@ -3,11 +3,8 @@ import type { SubcategoryOption } from '../../../types/marketplace'
 
 export interface CategoryNode {
   label: string
-  /** Present on root nodes loaded from API — used for static tile assets */
   id?: number
-  /** API slug (e.g. fruit, poultry, animal) — tile images */
   slug?: string
-  /** When API provides subcategory `image_url` or first gallery URL */
   imageUrl?: string
   children?: CategoryNode[]
 }
@@ -67,16 +64,43 @@ export const collectLabelsInTree = (tree: CategoryNode[]): Set<string> => {
   return labels
 }
 
-/** True when the filter row should show subcategories: parent or a child is selected, or the user opened it with the chevron. */
-export const isCategoryExpandedForFilter = (
-  category: CategoryNode,
-  selectedCategory: string,
-  manuallyExpanded: ReadonlySet<string>,
-): boolean => {
-  if (!category.children?.length) return false
-  if (selectedCategory === category.label) return true
-  if (category.children.some((s) => s.label === selectedCategory)) return true
-  return manuallyExpanded.has(category.label)
+const subcategoryToNode = async (
+  subcategory: SubcategoryOption,
+  categoryId: number,
+): Promise<CategoryNode> => {
+  const imageUrl =
+    (subcategory.image_url && subcategory.image_url.trim()) || subcategory.media?.[0]
+  if (!subcategory.hasChildren) {
+    return {
+      label: subcategory.name,
+      ...(subcategory.id ? { id: subcategory.id } : {}),
+      ...(subcategory.slug ? { slug: subcategory.slug } : {}),
+      ...(imageUrl ? { imageUrl } : {}),
+    }
+  }
+
+  let nested: SubcategoryOption[] = []
+  try {
+    nested = await marketplaceService.getSubcategoryChildren(subcategory.id, categoryId)
+  } catch {
+    nested = []
+  }
+
+  const children = (
+    await Promise.all(
+      nested
+        .filter((row) => Boolean(row.name))
+        .map((row) => subcategoryToNode(row, categoryId)),
+    )
+  ).filter((node) => Boolean(node.label))
+
+  return {
+    label: subcategory.name,
+    ...(subcategory.id ? { id: subcategory.id } : {}),
+    ...(subcategory.slug ? { slug: subcategory.slug } : {}),
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(children.length ? { children } : {}),
+  }
 }
 
 export const loadCategoryTree = (): Promise<CategoryNode[]> => {
@@ -86,44 +110,36 @@ export const loadCategoryTree = (): Promise<CategoryNode[]> => {
     const categories = await marketplaceService.getCategories()
     if (categories.length === 0) return []
 
-    const subcategoryPairs: Array<[number, SubcategoryOption[]]> = await Promise.all(
-      categories.map(async (category): Promise<[number, SubcategoryOption[]]> => {
-        try {
-          const subcategories = await marketplaceService.getSubcategories(category.id)
-          return [category.id, subcategories]
-        } catch {
-          return [category.id, []]
-        }
-      }),
+    return Promise.all(
+      categories
+        .filter((category) => Boolean(category.name))
+        .map(async (category) => {
+          let roots: SubcategoryOption[] = []
+          try {
+            roots = await marketplaceService.getSubcategories(category.id)
+          } catch {
+            roots = []
+          }
+
+          const children = (
+            await Promise.all(
+              roots
+                .filter((subcategory) => Boolean(subcategory.name))
+                .map((subcategory) => subcategoryToNode(subcategory, category.id)),
+            )
+          ).filter((node) => Boolean(node.label))
+
+          const imageUrl =
+            (category.image_url && category.image_url.trim()) || undefined
+          return {
+            id: category.id,
+            label: category.name,
+            ...(category.slug ? { slug: category.slug } : {}),
+            ...(imageUrl ? { imageUrl } : {}),
+            ...(children.length ? { children } : {}),
+          }
+        }),
     )
-
-    const subcategoriesByCategoryId = new Map<number, SubcategoryOption[]>(subcategoryPairs)
-
-    return categories
-      .filter((category) => Boolean(category.name))
-      .map((category) => {
-        const categoryImageUrl =
-          (category.image_url && category.image_url.trim()) || category.media?.[0]
-
-        return {
-          id: category.id,
-          label: category.name,
-          ...(category.slug ? { slug: category.slug } : {}),
-          ...(categoryImageUrl ? { imageUrl: categoryImageUrl } : {}),
-          children: (subcategoriesByCategoryId.get(category.id) ?? [])
-          .filter((subcategory) => Boolean(subcategory.name))
-          .map((subcategory) => {
-            const imageUrl =
-              (subcategory.image_url && subcategory.image_url.trim()) || subcategory.media?.[0]
-            return {
-              label: subcategory.name,
-              ...(subcategory.id ? { id: subcategory.id } : {}),
-              ...(subcategory.slug ? { slug: subcategory.slug } : {}),
-              ...(imageUrl ? { imageUrl } : {}),
-            }
-          }),
-        }
-      })
   })().catch((error) => {
     categoryTreePromise = null
     throw error
